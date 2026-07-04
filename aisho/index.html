@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本音の相性診断｜【極秘】相性極秘調査ファイル — ふたりの裏の相性、16タイプで開示</title>
+<meta name="description" content="きれいごとはなし。あなたとあの人の「本音の相性」を、ふたりのタイプを選ぶだけで診断。相性調査報告書が開示される無料の相性診断。黒塗りの下に、ふたりの裏の相性が書かれています。">
+
+<!-- OGP -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="【極秘】相性極秘調査ファイル｜ふたりの裏の相性、開示されます">
+<meta property="og:description" content="ふたりのタイプを選ぶだけで本音の相性を診断。相性調査報告書が開示されます。黒塗りの下に、ふたりの裏の相性。無料・即診断。">
+<meta property="og:url" content="https://ura.jr-genius.jp/aisho/">
+<meta property="og:image" content="https://ura.jr-genius.jp/ogp/aisho.png">
+<meta property="og:site_name" content="ウラ性格診断">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="【極秘】相性極秘調査ファイル｜ふたりの裏の相性、開示されます">
+<meta name="twitter:description" content="ふたりのタイプを選ぶだけで本音の相性を診断。黒塗りの下に、ふたりの裏の相性。">
+<meta name="twitter:image" content="https://ura.jr-genius.jp/ogp/aisho.png">
+
+<!-- ===== アクセス解析（GA）：測定IDが決まったら有効化 =====
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script>
+============================================================ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#17140f;          /* 深夜の机 */
+  --desk2:#0e0c09;
+  --paper:#eee3c9;         /* 古い調査書類の紙 */
+  --paper2:#e5d8b8;
+  --paper-line:#c9b78d;
+  --kraft:#a5854e;         /* クラフト封筒 */
+  --kraft2:#8a6c3c;
+  --ink:#26221a;           /* 万年筆のインク */
+  --ink2:#5c5340;
+  --ink3:#8a7d61;
+  --red:#b5121b;           /* 検印の朱 */
+  --red2:#8e0e15;
+  --black:#141210;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--desk);
+  color:var(--ink);
+  font-family:'Shippori Mincho B1',serif;
+  min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
+}
+/* 机の質感 */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(90,74,48,.20), transparent 65%),
+    radial-gradient(ellipse 120% 90% at 50% 110%, rgba(0,0,0,.55), transparent 60%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");}
+.wrap{position:relative;z-index:2;max-width:620px;margin:0 auto;padding:0 16px 70px;}
+
+.mono{font-family:'IBM Plex Mono',monospace;}
+
+/* ============ 紙（共通） ============ */
+.sheet{
+  position:relative;
+  background:var(--paper);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  border-radius:3px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 18px 50px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.45);
+  padding:26px 22px 30px;
+  margin-top:22px;
+}
+.sheet::before{
+  content:'';position:absolute;inset:10px;border:1px solid rgba(120,100,60,.4);pointer-events:none;border-radius:2px;
+}
+.sheet-head{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:18px;flex-wrap:wrap;
+}
+.sheet-head .doc-title{font-weight:800;font-size:15px;letter-spacing:.22em;}
+.sheet-head .doc-no{font-size:10.5px;color:var(--ink2);letter-spacing:.08em;}
+
+.chip-secret{
+  display:inline-block;border:2px solid var(--red);color:var(--red);
+  font-weight:800;font-size:11px;letter-spacing:.3em;padding:3px 8px 3px 11px;
+  transform:rotate(-4deg);opacity:.9;
+}
+
+/* ============ スタート：極秘ファイル封筒 ============ */
+.folder{
+  position:relative;margin-top:34px;
+  background:linear-gradient(160deg,var(--kraft),var(--kraft2) 70%);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='k'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23k)' opacity='0.09'/%3E%3C/svg%3E"),linear-gradient(160deg,var(--kraft),var(--kraft2) 70%);
+  border-radius:6px;
+  box-shadow:0 24px 60px rgba(0,0,0,.65), 0 6px 18px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset;
+  padding:34px 24px 30px;text-align:center;color:#2d2110;
+}
+.folder::before{
+  content:'調査記録 ／ URA FILE';
+  position:absolute;top:-16px;left:22px;
+  background:linear-gradient(var(--kraft),var(--kraft2));
+  color:#3a2c14;font-size:10px;letter-spacing:.18em;font-weight:700;
+  padding:4px 16px;border-radius:6px 6px 0 0;
+  box-shadow:0 -2px 6px rgba(0,0,0,.25);
+}
+.stamp-big{
+  display:inline-block;border:4px solid var(--red);color:var(--red);
+  font-weight:800;font-size:clamp(30px,9vw,44px);letter-spacing:.34em;
+  padding:8px 10px 8px 22px;transform:rotate(-7deg);
+  text-shadow:0 0 1px rgba(181,18,27,.4);
+  mix-blend-mode:multiply;opacity:.92;margin-bottom:16px;
+  animation:stampIn .5s cubic-bezier(.2,1.6,.4,1) both .25s;
+}
+@keyframes stampIn{
+  0%{transform:rotate(-7deg) scale(2.6);opacity:0;}
+  60%{transform:rotate(-7deg) scale(.94);opacity:1;}
+  100%{transform:rotate(-7deg) scale(1);opacity:.92;}
+}
+.folder .strip{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.4em;
+  color:rgba(45,33,16,.75);margin-bottom:14px;text-transform:uppercase;
+}
+.folder h1{font-weight:800;font-size:clamp(24px,7vw,32px);letter-spacing:.12em;line-height:1.4;}
+.folder .sub{margin-top:4px;font-size:12px;letter-spacing:.3em;color:rgba(45,33,16,.8);}
+.folder .lead{
+  margin:20px auto 0;max-width:400px;font-size:13.5px;line-height:2.1;color:#3a2c14;text-align:center;
+}
+.folder .lead b{color:var(--red2);font-weight:800;}
+.folder .meta{
+  display:flex;justify-content:center;gap:8px;margin:20px 0 4px;flex-wrap:wrap;
+}
+.folder .meta span{
+  font-size:11px;letter-spacing:.1em;color:#3a2c14;
+  border:1px solid rgba(58,44,20,.45);padding:6px 12px;border-radius:3px;background:rgba(255,250,235,.22);
+}
+.tie{display:flex;align-items:center;justify-content:center;gap:6px;margin:18px 0 6px;}
+.tie .knot{width:22px;height:22px;border-radius:50%;border:2.5px solid #7a1015;position:relative;}
+.tie .knot::after{content:'';position:absolute;inset:5px;border-radius:50%;background:#7a1015;opacity:.25;}
+.tie .string{width:74px;height:3px;background:repeating-linear-gradient(90deg,#7a1015 0 7px,transparent 7px 10px);border-radius:2px;transform:rotate(-2deg);}
+.warning{
+  margin:16px auto 0;max-width:420px;
+  border:1.5px dashed rgba(122,16,21,.55);border-radius:4px;
+  padding:12px 14px;font-size:11px;line-height:1.9;color:#4a3316;text-align:left;background:rgba(255,250,235,.18);
+}
+.warning b{color:var(--red2);}
+.btn-open{
+  display:block;margin:24px auto 0;width:100%;max-width:340px;
+  font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:17px;letter-spacing:.14em;
+  color:#f7ecd4;background:linear-gradient(160deg,#c0161f,#8e0e15);
+  border:1px solid rgba(0,0,0,.3);border-radius:4px;padding:18px 0;cursor:pointer;
+  box-shadow:0 10px 26px rgba(142,14,21,.45), 0 1px 0 rgba(255,255,255,.18) inset;
+  transition:transform .15s, box-shadow .15s, opacity .2s;
+}
+.btn-open:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(142,14,21,.55), 0 1px 0 rgba(255,255,255,.18) inset;}
+.btn-open:active{transform:translateY(0) scale(.99);}
+.free-note{margin-top:12px;font-size:10.5px;color:rgba(45,33,16,.7);letter-spacing:.06em;}
+
+/* ============ ピッカー：調査質問票 ============ */
+.quiz{display:none;}
+.quiz.active{display:block;animation:slideUp .4s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.pickers-note{font-size:11px;color:var(--ink2);letter-spacing:.06em;margin-bottom:16px;line-height:1.8;}
+.pickers{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.picker .who{font-size:12px;font-weight:800;letter-spacing:.18em;color:var(--red);margin-bottom:10px;text-align:center;border-bottom:1px solid rgba(120,100,60,.4);padding-bottom:8px;}
+.sel-disp{text-align:center;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;margin-bottom:12px;}
+.sel-disp .e{font-size:30px;line-height:1;}
+.sel-disp .n{font-size:11px;color:var(--ink);line-height:1.4;font-weight:700;}
+.sel-disp .none{font-size:11px;color:var(--ink3);}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.tbtn{
+  background:rgba(255,252,242,.5);border:1.5px solid rgba(92,83,64,.5);border-radius:3px;
+  padding:10px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .14s;
+}
+.tbtn:hover{border-color:var(--red);background:rgba(181,18,27,.06);}
+.tbtn.sel{border-color:var(--red);background:rgba(181,18,27,.12);box-shadow:0 2px 8px rgba(181,18,27,.18);}
+.tbtn .te{font-size:20px;line-height:1;}
+.tbtn .tn{font-size:8.5px;color:var(--ink3);line-height:1.2;text-align:center;}
+.tbtn.sel .tn{color:var(--ink2);}
+.hint{text-align:center;margin-top:16px;font-size:11.5px;color:var(--ink3);line-height:1.9;}
+.hint a{color:var(--red2);text-decoration:none;}
+.hint a:hover{text-decoration:underline;}
+.diag-wrap{text-align:center;}
+.btn-diag{opacity:.4;pointer-events:none;margin-top:22px;}
+.btn-diag.on{opacity:1;pointer-events:auto;}
+
+/* ============ 結果：相性調査報告書 ============ */
+.result{display:none;}
+.result.on{display:block;animation:slideUp .5s ease;}
+
+.report-head{position:relative;text-align:center;padding-top:6px;}
+.report-head .r-doc{font-weight:800;font-size:clamp(20px,6vw,26px);letter-spacing:.3em;padding-bottom:4px;}
+.report-head .r-sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.42em;color:var(--ink2);text-transform:uppercase;}
+.report-head .r-line{margin:14px auto 0;width:100%;border-bottom:3px double var(--ink);}
+.r-meta-row{display:flex;justify-content:space-between;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);letter-spacing:.06em;flex-wrap:wrap;gap:4px;}
+
+.stamp-corner{
+  position:absolute;top:-6px;right:-4px;
+  border:3px solid var(--red);color:var(--red);
+  font-weight:800;font-size:15px;letter-spacing:.24em;padding:5px 7px 5px 12px;
+  transform:rotate(8deg);mix-blend-mode:multiply;opacity:0;
+}
+.result.on .stamp-corner{animation:stampIn2 .45s cubic-bezier(.2,1.6,.4,1) both .9s;}
+@keyframes stampIn2{
+  0%{transform:rotate(8deg) scale(2.4);opacity:0;}
+  60%{transform:rotate(8deg) scale(.92);opacity:1;}
+  100%{transform:rotate(8deg) scale(1);opacity:.9;}
+}
+
+.r-pair-block{text-align:center;margin-top:18px;}
+.r-pair{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px;}
+.r-pair .p{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.r-pair .pe{font-size:42px;line-height:1;}
+.r-pair .pn{font-size:11px;color:var(--ink);font-weight:700;line-height:1.4;max-width:90px;}
+.r-pair .heart{font-size:24px;}
+.score-block{margin:8px 0 4px;}
+.score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:clamp(60px,16vw,84px);line-height:1;color:var(--red);text-shadow:0 2px 0 var(--red2);}
+.score-unit{font-family:'IBM Plex Mono',monospace;letter-spacing:.3em;font-size:10.5px;color:var(--ink3);text-transform:uppercase;margin-top:2px;}
+.r-title{font-size:clamp(19px,5.2vw,26px);font-weight:800;margin:12px 0 8px;letter-spacing:.02em;line-height:1.5;}
+.r-title span{border-bottom:3px solid var(--red);display:inline;padding-bottom:2px;}
+
+.redact-hint{font-size:10.5px;color:var(--red2);letter-spacing:.1em;margin:10px 0 8px;font-weight:700;}
+.redacted{
+  position:relative;display:block;cursor:pointer;border-radius:2px;
+  color:transparent;user-select:none;
+  padding:15px 16px;font-size:14px;line-height:2.05;
+  transition:color .45s ease .3s, background .45s ease .3s;
+}
+.redacted::after{
+  content:'㊙ シールをめくって開示';
+  position:absolute;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  background:
+    linear-gradient(to top left, #a8946b 0 9px, #3d362b 10px 13px, transparent 13px),
+    linear-gradient(150deg, #26221c, #191612 55%, #211d17);
+  border-radius:2px;
+  color:#8a7d61;font-size:12px;letter-spacing:.3em;font-weight:700;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+  transform-origin:50% 0;
+  backface-visibility:hidden;
+}
+.redacted.open{background:rgba(181,18,27,.06);color:var(--ink);cursor:default;}
+.redacted.open::after{
+  animation:peelOff .8s cubic-bezier(.45,.05,.55,.4) forwards;
+  pointer-events:none;
+}
+@keyframes peelOff{
+  0%  {transform:perspective(700px) rotateX(0deg);opacity:1;
+       box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  45% {transform:perspective(700px) rotateX(52deg) skewX(-2deg);opacity:1;
+       box-shadow:0 26px 30px rgba(0,0,0,.35);}
+  100%{transform:perspective(700px) rotateX(112deg) translateY(-14px);opacity:0;
+       box-shadow:0 40px 40px rgba(0,0,0,0);}
+}
+
+.sec-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:800;letter-spacing:.18em;margin-bottom:13px;}
+.sec-title::before{content:'■';color:var(--red);font-size:11px;}
+
+.axis-list{display:flex;flex-direction:column;gap:14px;}
+.axis-row{background:rgba(38,34,26,.05);border-radius:3px;padding:14px 16px;border:1px solid rgba(120,100,60,.3);}
+.axis-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px;}
+.axis-name{font-size:13px;font-weight:800;}
+.axis-judge{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:2px;white-space:nowrap;flex-shrink:0;}
+.judge-good{background:rgba(181,18,27,.1);color:var(--red2);}
+.judge-mix{background:rgba(38,34,26,.08);color:var(--ink2);}
+.axis-cmt{font-size:13px;line-height:1.8;color:var(--ink);}
+
+.tips-box{background:rgba(181,18,27,.05);border-left:3px solid var(--red);border-radius:2px;padding:15px 17px;font-size:14px;line-height:1.95;color:var(--ink);white-space:pre-line;}
+
+/* 追加調査（アフィリ枠） */
+.affiliate{
+  border:2.5px solid var(--red);border-radius:3px;position:relative;
+  padding:24px 20px;text-align:center;
+  background:linear-gradient(rgba(181,18,27,.05),rgba(181,18,27,.05)),var(--paper);
+}
+.affiliate .a-tab{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:#f7ecd4;font-size:10.5px;letter-spacing:.3em;font-weight:700;
+  padding:5px 18px 5px 22px;border-radius:2px;white-space:nowrap;
+}
+.affiliate h3{font-size:17px;font-weight:800;line-height:1.7;margin:6px 0 10px;}
+.affiliate p{font-size:12.5px;color:var(--ink2);line-height:2;margin-bottom:18px;}
+.affiliate .a-btn{
+  display:inline-block;background:linear-gradient(160deg,#c0161f,#8e0e15);color:#f7ecd4;
+  font-weight:800;font-size:14.5px;letter-spacing:.1em;border-radius:3px;padding:15px 34px;text-decoration:none;
+  box-shadow:0 8px 22px rgba(142,14,21,.4);
+}
+.affiliate .a-note{margin-top:12px;font-size:9.5px;color:var(--ink3);}
+
+.ad-slot{margin-top:22px;min-height:0;}
+
+/* 拡散 */
+.share-box{text-align:center;}
+.share-quote{font-size:13px;color:var(--ink2);line-height:2;margin-bottom:16px;white-space:pre-line;}
+.btn-x{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;
+  background:var(--black);border:1px solid rgba(0,0,0,.4);color:#f0e9d8;font-weight:800;font-size:14.5px;letter-spacing:.08em;
+  border-radius:3px;padding:16px 0;cursor:pointer;transition:transform .15s;
+  font-family:'Shippori Mincho B1',serif;box-shadow:0 8px 20px rgba(0,0,0,.35);
+}
+.btn-x:hover{transform:translateY(-2px);}
+.btn-copy{
+  display:inline-block;margin-top:12px;background:none;border:1.5px solid rgba(92,83,64,.55);color:var(--ink2);
+  border-radius:3px;padding:13px 26px;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:.08em;
+  font-family:'Shippori Mincho B1',serif;width:100%;max-width:340px;
+}
+.btn-copy:hover{border-color:var(--ink2);color:var(--ink);}
+.shot-note{margin-top:14px;font-size:11px;color:var(--red2);letter-spacing:.1em;font-weight:700;}
+
+.retry{text-align:center;margin-top:28px;}
+.retry button{
+  background:none;border:1px solid rgba(238,227,201,.3);color:#b9ad8f;border-radius:3px;
+  padding:13px 30px;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:.14em;font-family:'Shippori Mincho B1',serif;
+}
+.retry button:hover{border-color:#e6d9ba;color:#eee3c9;}
+
+footer{text-align:center;padding:40px 18px 10px;position:relative;z-index:2;}
+.foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+.foot-links a{color:#877c63;font-size:12px;text-decoration:none;letter-spacing:.06em;}
+.foot-links a:hover{color:#b9ad8f;}
+.foot-copy{font-family:'IBM Plex Mono',monospace;letter-spacing:.3em;font-size:10.5px;color:#6b634e;}
+.foot-note{margin-top:10px;font-size:10.5px;color:#6b634e;line-height:1.8;max-width:480px;margin-left:auto;margin-right:auto;}
+
+@media(max-width:520px){.pickers{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ スタート：極秘ファイル ============ -->
+  <section id="screen-start">
+    <div class="folder">
+      <div><span class="stamp-big">極　秘</span></div>
+      <p class="strip">CONFIDENTIAL ── URA SHINDAN FILE</p>
+      <h1>相性極秘調査ファイル</h1>
+      <p class="sub">─ 本音の相性診断 ─</p>
+      <p class="lead">きれいごとは、なし。<br>あなたとあの人、<b>裏の本音</b>ではうまくいく？<br>ふたりのタイプを選ぶだけで、<br>相性調査報告書が開示されます。</p>
+      <div class="meta">
+        <span>調査時間　約1分</span>
+        <span>対象　ふたりのタイプ選択</span>
+        <span>判定　16×16類型</span>
+      </div>
+      <div class="tie"><span class="knot"></span><span class="string"></span><span class="knot"></span></div>
+      <div class="warning">
+        <b>【取扱注意】</b>本ファイルには、ふたりの本音の相性に関する記録が含まれます。開示された内容に心当たりがあっても、当調査室は一切の責任を負いません。
+      </div>
+      <button class="btn-open" id="btn-start">封を切って調査を開始する</button>
+      <p class="free-note">無料・登録不要・結果は保存されません</p>
+    </div>
+  </section>
+
+  <!-- ============ ピッカー：調査対象者の指定 ============ -->
+  <section class="sheet quiz" id="screen-picker">
+    <div class="sheet-head">
+      <span class="doc-title">調査対象者の指定</span>
+      <span class="chip-secret">極秘</span>
+    </div>
+    <p class="pickers-note">▼ ふたりの裏タイプを、それぞれ指定してください</p>
+    <div class="pickers">
+      <div class="picker">
+        <p class="who">対象者A（あなた）</p>
+        <div class="sel-disp" id="disp-you"><span class="none">下から選択</span></div>
+        <div class="grid" id="grid-you"></div>
+      </div>
+      <div class="picker">
+        <p class="who">対象者B（あの人）</p>
+        <div class="sel-disp" id="disp-partner"><span class="none">下から選択</span></div>
+        <div class="grid" id="grid-partner"></div>
+      </div>
+    </div>
+    <p class="hint">自分のタイプがわからない人は<br><a href="../honne/index.html">→ 本音タイプ診断で1分チェック</a></p>
+    <div class="diag-wrap"><button class="btn-open btn-diag" id="btn-diag">本音の相性を暴く →</button></div>
+  </section>
+
+  <!-- ============ 結果：相性調査報告書 ============ -->
+  <section class="result" id="result">
+
+    <div class="sheet">
+      <div class="report-head">
+        <span class="stamp-corner">㊙ 極秘</span>
+        <p class="r-doc">相性調査報告書</p>
+        <p class="r-sub mono">Confidential Compatibility Report</p>
+        <div class="r-line"></div>
+        <div class="r-meta-row">
+          <span>対象：A（あなた）× B（あの人）</span>
+          <span>調査完了日：<span id="r-date">----/--/--</span></span>
+        </div>
+      </div>
+
+      <div class="r-pair-block">
+        <div class="r-pair">
+          <div class="p"><span class="pe" id="you-e">🎭</span><span class="pn" id="you-n">―</span></div>
+          <span class="heart" id="heart">💗</span>
+          <div class="p"><span class="pe" id="par-e">🎭</span><span class="pn" id="par-n">―</span></div>
+        </div>
+        <div class="score-block">
+          <div class="score" id="score">--</div>
+          <div class="score-unit">Honne Match</div>
+        </div>
+        <h2 class="r-title"><span id="r-title">―</span></h2>
+        <p class="redact-hint">▼ 相性の核心は機密保持につき封印。タップで開示。</p>
+        <div class="redacted" id="r-secret">―</div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <h3 class="sec-title">本音で見る、4つの相性</h3>
+      <div class="axis-list" id="axis-list"></div>
+    </div>
+
+    <div class="sheet">
+      <h3 class="sec-title">うまくやる裏ワザ</h3>
+      <div class="tips-box" id="tips">―</div>
+    </div>
+
+    <!-- 占いアフィリ枠 -->
+    <div class="sheet affiliate">
+      <span class="a-tab">別紙：追加調査のご案内</span>
+      <h3>ふたりの相性、もっと深く調査しますか？</h3>
+      <p>表の相性はここまで。プロの調査官（占い師）が、あの人の本音とふたりの行方を極秘に視ます。──初回は無料。</p>
+      <a class="a-btn" href="#" id="aff-link" rel="nofollow sponsored" target="_blank">無料で深層調査を依頼する →</a>
+      <p class="a-note">※ ここに電話占い系のアフィリエイトリンクを設置（PR）</p>
+    </div>
+
+    <!-- 広告枠（PVが育ったら有効化） -->
+    <div class="ad-slot" id="ad-slot"><!-- AdSense枠：審査通過後にコード差し込み --></div>
+
+    <div class="sheet share-box">
+      <h3 class="sec-title" style="justify-content:center;">─ 相性調査結果を拡散する ─</h3>
+      <p class="share-quote" id="r-share">―</p>
+      <button class="btn-x" id="btn-x">𝕏 で結果を公開する</button>
+      <button class="btn-copy" id="btn-copy">結果のテキストをコピー</button>
+      <p class="shot-note">📸 スクショして友達に送るのも、有効な拡散手段です</p>
+    </div>
+
+    <div class="retry"><button id="btn-retry">↺ ほかの相性を見る</button></div>
+  </section>
+
+  <footer>
+    <div class="foot-links">
+      <a href="../index.html">ウラ性格診断トップ</a>
+      <a href="../honne/index.html">本音タイプ診断</a>
+      <a href="../renai/index.html">恋愛の本音診断</a>
+      <a href="../unei/index.html">運営・免責</a>
+      <a href="../privacy/index.html">プライバシー</a>
+    </div>
+    <p class="foot-copy">URA SHINDAN ── CONFIDENTIAL</p>
+    <p class="foot-note">本診断はエンタメコンテンツです。相性の結果は科学的・医学的根拠を示すものではありません。当たっても当たらなくても、笑って楽しんでください。</p>
+  </footer>
+</div>
+
+<script>
+// =====================================================
+//  16タイプ（看板診断と対応）
+// =====================================================
+const TYPES = {
+  INTJ:{e:'🦉',n:'裏で全部見てる軍師'}, INTP:{e:'🌀',n:'脳内会議が止まらない人'},
+  ENTJ:{e:'👑',n:'仕切らないと気が済まない王'}, ENTP:{e:'⚡',n:'ヒマだと突っかかる論客'},
+  INFJ:{e:'🌙',n:'聖人の顔した見抜きの鬼'}, INFP:{e:'🐚',n:'いい子の仮面の妄想家'},
+  ENFJ:{e:'🌻',n:'みんなの母を演じる疲れ屋'}, ENFP:{e:'🦎',n:'かまってほしいカメレオン'},
+  ISTJ:{e:'📏',n:'ルールを見張る監視員'}, ISFJ:{e:'🧸',n:'尽くすけど根に持つ人'},
+  ESTJ:{e:'📢',n:'正論を振りかざす隊長'}, ESFJ:{e:'🎀',n:'空気を読みすぎる八方美人'},
+  ISTP:{e:'🔧',n:'省エネを極めたクール職人'}, ISFP:{e:'🎨',n:'ゆるふわに見えて超頑固'},
+  ESTP:{e:'🔥',n:'ノリと勢いの目立ちたがり'}, ESFP:{e:'🎉',n:'パリピの顔した寂しがり'}
+};
+const ORDER = ['INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP','ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP'];
+
+// =====================================================
+//  相性ロジック（軸ベース・本音テーマ）
+// =====================================================
+function compat(a, b){
+  const EI=[a[0],b[0]], SN=[a[1],b[1]], TF=[a[2],b[2]], JP=[a[3],b[3]];
+  const sEI=EI[0]===EI[1], sSN=SN[0]===SN[1], sTF=TF[0]===TF[1], sJP=JP[0]===JP[1];
+  let score = 40;
+  score += sSN ? 18 : -10;   // 価値観・話の通じ方（最重要）
+  score += sTF ? 16 : -6;    // ケンカ・傷つけ方
+  score += sJP ? 12 : -5;    // 生活ペース
+  score += sEI ? 6  : 9;     // エネルギー（違いは補完でやや高評価）
+  score = Math.max(33, Math.min(96, score));
+
+  const axes = [];
+  axes.push({name:'エネルギー（人前 / ひとり）', same:sEI, judge:sEI?'似てる':'ちがう',
+    cmt: !sEI ? 'かたや人前モード、かたやひとりモード。ペースは違うけど、足りない部分を自然に補い合える名コンビ。'
+      : (EI[0]==='E' ? 'ふたりとも人前モード。一緒だと無限に盛り上がる。ただし二人そろって充電切れになりがち。'
+                     : 'ふたりともひとりモード。無言でも気まずくない、稀有な安心感。誘い合うのを忘れないで。')});
+  axes.push({name:'見てる世界（リアル / モウソウ）', same:sSN, judge:sSN?'かみ合う':'すれ違い注意',
+    cmt: sSN ? '話のテンポと“見てる世界”が同じ。何気ない会話が、地味にちゃんと通じ合う。'
+      : '片方は現実、片方は妄想。話がすれ違いやすいぶん、お互いの視野を広げ合える関係。'});
+  axes.push({name:'判断のクセ（ロジック / ハート）', same:sTF, judge:sTF?'こじれにくい':'翻訳が必要',
+    cmt: sTF ? '物事の判断基準が近い。ケンカしても、根っこでは分かり合えるからこじれにくい。'
+      : '正論で来る人と、気持ちで動く人。グサッと傷つけ合う前に、ひと呼吸の“翻訳”を。'});
+  axes.push({name:'生き方のペース（カッチリ / ノリ）', same:sJP, judge:sJP?'ラク':'火花注意',
+    cmt: sJP ? '生活のペースが合う。予定でモメにくい、一緒にいてラクな関係。'
+      : '計画派と出たとこ勝負。ドタキャンと段取りで、たまに火花が散るかも。'});
+
+  return {score, axes, sEI,sSN,sTF,sJP};
+}
+
+function titleFor(s){
+  if(s>=85) return {t:'裏側まで見せ合える運命の相方', s:'建前ぬきで素を出せる、めったにない相性。一緒にいるほどラクになっていく二人です。'};
+  if(s>=70) return {t:'本音で笑い合えるベストバランス', s:'似てるところと違うところのバランスが絶妙。長く心地よくいられる関係です。'};
+  if(s>=55) return {t:'違うからこそ深まる二人', s:'最初はズレを感じても、わかり合えたとき一気に深くなるタイプの相性です。'};
+  if(s>=45) return {t:'すれ違いやすいけど、知れば最強', s:'放っておくとすれ違いがち。でもお互いの“裏”を理解すれば化ける関係です。'};
+  return {t:'正反対。だから刺激的', s:'価値観はかなり違う二人。ぶつかりもするけど、世界を広げ合える刺激的な相手。'};
+}
+
+function tipsFor(r){
+  const t=[];
+  if(!r.sSN) t.push('話が噛み合わない時は「事実」と「気持ち」を分けて話すと一気にラクになる。');
+  if(!r.sTF) t.push('指摘したい時は、正論の前に「気持ち」をワンクッション。冷たく聞こえるのを防げる。');
+  if(!r.sJP) t.push('予定は“ゆるめの計画”で折り合いを。片方に合わせきらないのがコツ。');
+  if(!r.sEI) t.push('一緒にいる時間と、それぞれ一人の時間、両方を最初に約束しておくと長続きする。');
+  if(t.length===0) t.push('そっくりな二人。ラクな反面、同じ弱点でハマりやすいので、苦手なことは早めに分担を。');
+  return t.join('\n');
+}
+
+// =====================================================
+//  画面遷移
+// =====================================================
+const screens = {
+  start:document.getElementById('screen-start'),
+  picker:document.getElementById('screen-picker'),
+  result:document.getElementById('result')
+};
+
+// ピッカー構築
+let selYou=null, selPartner=null;
+function buildGrid(id, which){
+  const g=document.getElementById(id); g.innerHTML='';
+  ORDER.forEach(code=>{
+    const t=TYPES[code];
+    const b=document.createElement('button');
+    b.className='tbtn'; b.dataset.code=code;
+    b.innerHTML='<span class="te">'+t.e+'</span><span class="tn">'+t.n.replace(/(.{6})/g,'$1<br>')+'</span>';
+    b.addEventListener('click',()=>select(code,which));
+    g.appendChild(b);
+  });
+}
+function select(code, which){
+  const gridId = which==='you'?'grid-you':'grid-partner';
+  const dispId = which==='you'?'disp-you':'disp-partner';
+  document.querySelectorAll('#'+gridId+' .tbtn').forEach(x=>x.classList.remove('sel'));
+  document.querySelector('#'+gridId+' [data-code="'+code+'"]').classList.add('sel');
+  const t=TYPES[code];
+  document.getElementById(dispId).innerHTML='<span class="e">'+t.e+'</span><span class="n">'+t.n+'</span>';
+  if(which==='you') selYou=code; else selPartner=code;
+  document.getElementById('btn-diag').classList.toggle('on', !!(selYou&&selPartner));
+}
+buildGrid('grid-you','you'); buildGrid('grid-partner','partner');
+
+// 封筒を開く → ピッカーへ
+document.getElementById('btn-start').addEventListener('click', ()=>{
+  screens.start.style.display='none';
+  screens.picker.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+const SHARE_URL='https://ura.jr-genius.jp/aisho/';
+let lastShare='';
+document.getElementById('btn-diag').addEventListener('click', ()=>{
+  if(!selYou||!selPartner) return;
+  const r=compat(selYou,selPartner);
+  const ttl=titleFor(r.score);
+  const ty=TYPES[selYou], tp=TYPES[selPartner];
+
+  document.getElementById('you-e').textContent=ty.e;
+  document.getElementById('you-n').textContent=ty.n;
+  document.getElementById('par-e').textContent=tp.e;
+  document.getElementById('par-n').textContent=tp.n;
+  document.getElementById('heart').textContent = r.score>=70?'💗':(r.score>=45?'💛':'💔');
+  document.getElementById('r-title').textContent=ttl.t;
+
+  // 相性の核心（黒塗りシールで隠す）
+  const secret=document.getElementById('r-secret');
+  secret.textContent=ttl.s;
+  secret.classList.remove('open');
+
+  const al=document.getElementById('axis-list'); al.innerHTML='';
+  r.axes.forEach(ax=>{
+    const row=document.createElement('div'); row.className='axis-row';
+    row.innerHTML='<div class="axis-head"><span class="axis-name">'+ax.name+'</span>'+
+      '<span class="axis-judge '+(ax.same?'judge-good':'judge-mix')+'">'+ax.judge+'</span></div>'+
+      '<p class="axis-cmt">'+ax.cmt+'</p>';
+    al.appendChild(row);
+  });
+  document.getElementById('tips').textContent=tipsFor(r);
+
+  // 調査完了日
+  const d=new Date();
+  document.getElementById('r-date').textContent = d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0');
+
+  lastShare='【'+ty.n+'】×【'+tp.n+'】の本音の相性は '+r.score+'点💘\n「'+ttl.t+'」\n\n#ウラ性格診断 #本音の相性診断';
+  document.getElementById('r-share').textContent=lastShare;
+
+  // スコア演出
+  const el=document.getElementById('score'); let n=0;
+  const iv=setInterval(()=>{ el.textContent=Math.floor(Math.random()*100); },60);
+  setTimeout(()=>{ clearInterval(iv); el.textContent=r.score; },1100);
+
+  screens.result.classList.add('on');
+  setTimeout(()=>document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'}),120);
+});
+
+// 黒塗り開示（タップ）
+document.addEventListener('click', (e)=>{
+  const r = e.target.closest('.redacted');
+  if(r && !r.classList.contains('open')) r.classList.add('open');
+});
+
+// シェア
+document.getElementById('btn-x').addEventListener('click',()=>{
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(lastShare)+'&url='+encodeURIComponent(SHARE_URL),'_blank','width=600,height=460');
+});
+document.getElementById('btn-copy').addEventListener('click',async(e)=>{
+  try{await navigator.clipboard.writeText(lastShare+'\n'+SHARE_URL);e.target.textContent='コピーしました ✓';setTimeout(()=>e.target.textContent='結果のテキストをコピー',1800);}catch(_){e.target.textContent='コピーできませんでした';}
+});
+document.getElementById('btn-retry').addEventListener('click',()=>{
+  screens.result.classList.remove('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ウラ性格診断｜あなたの「裏の顔」と本音を暴く16タイプ診断</title>
+<meta name="description" content="表ではいい人。でも本当は…？ 無料・1分で裏の顔と本音がバレる16タイプ性格診断。本音タイプ診断・恋愛の本音診断・本音の相性診断ほか。スクショして友達に送りたくなるエンタメ診断サイト。">
+
+<!-- OGP -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="ウラ性格診断｜あなたの「裏の顔」と本音を暴く">
+<meta property="og:description" content="表ではいい人。でも本当は…？ 無料・1分で裏の顔と本音がバレる16タイプ診断。">
+<meta property="og:url" content="https://ura.jr-genius.jp/">
+<meta property="og:image" content="https://ura.jr-genius.jp/ogp/top.png">
+<meta property="og:site_name" content="ウラ性格診断">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ウラ性格診断｜あなたの「裏の顔」と本音を暴く">
+<meta name="twitter:description" content="表ではいい人。でも本当は…？ 1分でバレる16タイプ診断。">
+<meta name="twitter:image" content="https://ura.jr-genius.jp/ogp/top.png">
+
+<!-- ===== アクセス解析（GA）：測定IDが決まったら有効化 =====
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script>
+============================================================ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#17140f;          /* 深夜の机 */
+  --desk2:#0e0c09;
+  --paper:#eee3c9;         /* 古い調査書類の紙 */
+  --paper2:#e5d8b8;
+  --paper-line:#c9b78d;
+  --kraft:#a5854e;         /* クラフト封筒 */
+  --kraft2:#8a6c3c;
+  --ink:#26221a;           /* 万年筆のインク */
+  --ink2:#5c5340;
+  --ink3:#8a7d61;
+  --red:#b5121b;           /* 検印の朱 */
+  --red2:#8e0e15;
+  --black:#141210;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--desk);
+  color:var(--ink);
+  font-family:'Shippori Mincho B1',serif;
+  min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;
+}
+/* 机の質感 */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(90,74,48,.20), transparent 65%),
+    radial-gradient(ellipse 120% 90% at 50% 110%, rgba(0,0,0,.55), transparent 60%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");}
+.wrap{position:relative;z-index:2;max-width:880px;margin:0 auto;padding:0 16px 70px;}
+
+.mono{font-family:'IBM Plex Mono',monospace;}
+
+/* ============ ヘッダー ============ */
+.site-header{text-align:center;padding:54px 12px 8px;}
+.hero-stamp{margin-bottom:14px;}
+.stamp-big{
+  display:inline-block;border:4px solid var(--red);color:var(--red);
+  font-weight:800;font-size:clamp(28px,8vw,38px);letter-spacing:.34em;
+  padding:7px 10px 7px 22px;transform:rotate(-6deg);
+  text-shadow:0 0 1px rgba(181,18,27,.4);
+  mix-blend-mode:normal;opacity:.92;
+  animation:stampIn .5s cubic-bezier(.2,1.6,.4,1) both .25s;
+}
+@keyframes stampIn{
+  0%{transform:rotate(-6deg) scale(2.6);opacity:0;}
+  60%{transform:rotate(-6deg) scale(.94);opacity:1;}
+  100%{transform:rotate(-6deg) scale(1);opacity:.92;}
+}
+.site-header .strip{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.4em;
+  color:#877c63;margin-bottom:14px;text-transform:uppercase;
+}
+.logo{
+  font-weight:800;font-size:clamp(34px,9vw,52px);letter-spacing:.12em;line-height:1.3;
+  color:#eee3c9;text-shadow:0 2px 0 rgba(0,0,0,.45);
+}
+.site-header .lead{
+  margin:22px auto 0;max-width:460px;font-size:14px;line-height:2;color:#b9ad8f;
+}
+.site-header .lead b{color:var(--red);font-weight:800;}
+.archive-note{margin-top:20px;font-size:11px;letter-spacing:.16em;color:#877c63;}
+
+/* ============ 封筒風カードメニュー ============ */
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:28px;margin-top:38px;}
+.file-card{
+  position:relative;display:block;text-decoration:none;
+  background:linear-gradient(160deg,var(--kraft),var(--kraft2) 70%);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='k'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23k)' opacity='0.09'/%3E%3C/svg%3E"),linear-gradient(160deg,var(--kraft),var(--kraft2) 70%);
+  border-radius:6px;padding:30px 22px 24px;text-align:center;color:#2d2110;
+  box-shadow:0 18px 44px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.12) inset;
+  transition:transform .18s, box-shadow .18s;
+}
+.file-card::before{
+  content:'調査記録 ／ URA FILE';
+  position:absolute;top:-13px;left:18px;
+  background:linear-gradient(var(--kraft),var(--kraft2));
+  color:#3a2c14;font-size:9px;letter-spacing:.18em;font-weight:700;
+  padding:4px 14px;border-radius:5px 5px 0 0;
+  box-shadow:0 -2px 6px rgba(0,0,0,.25);
+}
+.file-card:hover{transform:translateY(-4px);box-shadow:0 26px 56px rgba(0,0,0,.62), 0 6px 18px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.14) inset;}
+.file-card:active{transform:translateY(-1px);}
+
+.file-badge{position:absolute;top:14px;right:14px;z-index:3;font-size:10px;font-weight:800;letter-spacing:.12em;padding:5px 11px;border-radius:3px;transform:rotate(4deg);}
+.file-badge-key{background:rgba(255,250,235,.75);color:var(--red2);border:1.5px solid var(--red2);}
+.file-badge-new{background:var(--red);color:#f7ecd4;}
+
+.file-emoji{font-size:52px;line-height:1;margin-bottom:10px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25));}
+.file-tab{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.26em;color:rgba(45,33,16,.7);margin-bottom:8px;text-transform:uppercase;}
+.file-title{font-weight:800;font-size:21px;letter-spacing:.06em;color:#2d2110;margin-bottom:10px;}
+.file-desc{font-size:12.5px;line-height:1.95;color:#3a2c14;margin-bottom:18px;text-align:left;}
+.file-btn{
+  display:inline-block;background:linear-gradient(160deg,#c0161f,#8e0e15);color:#f7ecd4;
+  font-weight:800;font-size:13px;letter-spacing:.1em;border-radius:3px;padding:12px 24px;
+}
+
+/* ============ なぜ当たるのか（書類） ============ */
+.sheet{
+  position:relative;
+  background:var(--paper);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  border-radius:3px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 18px 50px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.45);
+  padding:26px 22px 30px;
+  margin-top:40px;
+}
+.sheet::before{
+  content:'';position:absolute;inset:10px;border:1px solid rgba(120,100,60,.4);pointer-events:none;border-radius:2px;
+}
+.sheet-head{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:20px;flex-wrap:wrap;
+}
+.sheet-head .doc-title{font-weight:800;font-size:15px;letter-spacing:.22em;}
+.chip-secret{
+  display:inline-block;border:2px solid var(--red);color:var(--red);
+  font-weight:800;font-size:11px;letter-spacing:.3em;padding:3px 8px 3px 11px;
+  transform:rotate(-4deg);opacity:.9;
+}
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:22px;}
+.why-item{text-align:center;}
+.why-item .ic{font-size:32px;margin-bottom:10px;}
+.why-item h3{font-size:14.5px;font-weight:800;margin-bottom:8px;color:var(--ink);}
+.why-item p{font-size:12.5px;line-height:1.85;color:var(--ink2);}
+
+/* ============ フッター ============ */
+footer{text-align:center;padding:50px 18px 10px;position:relative;z-index:2;}
+.foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+.foot-links a{color:#877c63;font-size:12px;text-decoration:none;letter-spacing:.06em;}
+.foot-links a:hover{color:#b9ad8f;}
+.foot-copy{font-family:'IBM Plex Mono',monospace;letter-spacing:.3em;font-size:10.5px;color:#6b634e;}
+.foot-note{margin-top:10px;font-size:10.5px;color:#6b634e;line-height:1.8;max-width:480px;margin-left:auto;margin-right:auto;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="site-header">
+    <div class="hero-stamp"><span class="stamp-big">極　秘</span></div>
+    <p class="strip">CONFIDENTIAL ── URA SHINDAN ARCHIVE</p>
+    <h1 class="logo">ウラ性格診断</h1>
+    <p class="lead">みんな、表ではいい人。<br>でも<b>本当の自分</b>は、自分が一番わかってる。<br>無料・1分で、あなたの<b>裏の顔</b>を暴きます。</p>
+    <p class="archive-note">▼ 以下の調査ファイルより、いずれかを開封してください</p>
+  </header>
+
+  <section class="menu">
+
+    <a class="file-card" href="honne/index.html">
+      <span class="file-badge file-badge-key">看板ファイル</span>
+      <div class="file-emoji">🎭</div>
+      <div class="file-tab">FILE 01 ／ PERSONALITY</div>
+      <h2 class="file-title">本音タイプ診断</h2>
+      <p class="file-desc">表の顔と裏の本音のギャップを暴く看板診断。12問であなたの裏キャラ・心の声・あるある・相性まで丸わかり。</p>
+      <span class="file-btn">このファイルを開く →</span>
+    </a>
+
+    <a class="file-card" href="renai/index.html">
+      <span class="file-badge file-badge-new">NEW</span>
+      <div class="file-emoji">💔</div>
+      <div class="file-tab">FILE 02 ／ ROMANCE</div>
+      <h2 class="file-title">恋愛の本音診断</h2>
+      <p class="file-desc">恋をした時に出てしまう「本当のあなた」を暴く。8問で、恋愛時の裏の顔・本命への態度・恋のやらかしを開示。</p>
+      <span class="file-btn">このファイルを開く →</span>
+    </a>
+
+    <a class="file-card" href="aisho/index.html">
+      <div class="file-emoji">💞</div>
+      <div class="file-tab">FILE 03 ／ COMPATIBILITY</div>
+      <h2 class="file-title">本音の相性診断</h2>
+      <p class="file-desc">建前なしの「裏の相性」を診断。あなたとあの人、本音ではうまくいく？ ふたりのタイプを選ぶだけ。</p>
+      <span class="file-btn">このファイルを開く →</span>
+    </a>
+
+  </section>
+
+  <section class="sheet why-sheet">
+    <div class="sheet-head">
+      <span class="doc-title">なぜウラ性格診断は当たるのか</span>
+      <span class="chip-secret">極秘</span>
+    </div>
+    <div class="why-grid">
+      <div class="why-item"><div class="ic">🎭</div><h3>表と裏の二段構え</h3><p>キレイゴトじゃない、「裏の本音」まで言い当てるから刺さる。</p></div>
+      <div class="why-item"><div class="ic">⚡</div><h3>1分でサクッと</h3><p>12問・直感で答えるだけ。スキマ時間に、スマホで完結。</p></div>
+      <div class="why-item"><div class="ic">📲</div><h3>送りたくなる</h3><p>「これ、あなたっぽい」と友達に送りたくなる結果に。</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-links">
+      <a href="honne/index.html">本音タイプ診断</a>
+      <a href="renai/index.html">恋愛の本音診断</a>
+      <a href="aisho/index.html">本音の相性診断</a>
+      <a href="unei/index.html">運営・免責</a>
+      <a href="privacy/index.html">プライバシー</a>
+    </div>
+    <p class="foot-copy">URA SHINDAN ── CONFIDENTIAL</p>
+    <p class="foot-note">本サイトの診断はすべてエンタメコンテンツです。科学的・医学的な根拠を示すものではありません。結果は楽しむためのものとしてご利用ください。</p>
+  </footer>
+</div>
+</body>
+</html>
