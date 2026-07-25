@@ -153,6 +153,18 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .why-item h3{font-size:14.5px;font-weight:800;margin-bottom:8px;color:var(--ink);}
 .why-item p{font-size:12.5px;line-height:1.85;color:var(--ink2);}
 
+/* ============ 16タイプ図鑑への導線 ============ */
+.type-lead{font-size:13px;line-height:1.95;color:var(--ink2);}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:16px;}
+.type-grid a{display:block;text-decoration:none;color:var(--ink);text-align:center;border:1px solid var(--paper-line);border-radius:2px;padding:12px 6px;background:rgba(255,255,255,.28);transition:transform .15s,background .15s;}
+.type-grid a:hover{transform:translateY(-2px);background:rgba(255,255,255,.5);}
+.type-grid .em{font-size:26px;line-height:1;}
+.type-grid .cd{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--ink3);margin-top:5px;}
+.type-grid .nm{font-size:12px;font-weight:800;line-height:1.5;margin-top:3px;}
+.type-more{margin-top:18px;text-align:center;}
+.type-more a{color:var(--red2);font-weight:800;font-size:13px;text-decoration:none;letter-spacing:.06em;}
+.type-more a:hover{text-decoration:underline;}
+
 /* ============ フッター ============ */
 footer{text-align:center;padding:50px 18px 10px;position:relative;z-index:2;}
 .foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
@@ -211,6 +223,35 @@ footer{text-align:center;padding:50px 18px 10px;position:relative;z-index:2;}
 
   </section>
 
+  <!-- TYPE-INDEX:START -->
+  <section class="sheet">
+    <div class="sheet-head">
+      <span class="doc-title">裏の顔・16タイプ図鑑</span>
+      <span class="chip-secret">極秘</span>
+    </div>
+    <p class="type-lead">16タイプそれぞれの「表の顔」と「裏の本音」を、1タイプずつ調査報告書にまとめました。あるある・強みと弱点・恋をしたときの変化・相性まで、診断しなくても読めます。</p>
+    <div class="type-grid">
+      <a href="type/INTJ/index.html"><div class="em">🦉</div><div class="cd">INTJ</div><div class="nm">裏で全部見てる軍師</div></a>
+      <a href="type/INTP/index.html"><div class="em">🌀</div><div class="cd">INTP</div><div class="nm">脳内会議が止まらない人</div></a>
+      <a href="type/ENTJ/index.html"><div class="em">👑</div><div class="cd">ENTJ</div><div class="nm">仕切らないと気が済まない王</div></a>
+      <a href="type/ENTP/index.html"><div class="em">⚡</div><div class="cd">ENTP</div><div class="nm">ヒマだと突っかかる論客</div></a>
+      <a href="type/INFJ/index.html"><div class="em">🌙</div><div class="cd">INFJ</div><div class="nm">聖人の顔した見抜きの鬼</div></a>
+      <a href="type/INFP/index.html"><div class="em">🐚</div><div class="cd">INFP</div><div class="nm">いい子の仮面の妄想家</div></a>
+      <a href="type/ENFJ/index.html"><div class="em">🌻</div><div class="cd">ENFJ</div><div class="nm">みんなの母を演じる疲れ屋</div></a>
+      <a href="type/ENFP/index.html"><div class="em">🦎</div><div class="cd">ENFP</div><div class="nm">かまってほしいカメレオン</div></a>
+      <a href="type/ISTJ/index.html"><div class="em">📏</div><div class="cd">ISTJ</div><div class="nm">ルールを見張る監視員</div></a>
+      <a href="type/ISFJ/index.html"><div class="em">🧸</div><div class="cd">ISFJ</div><div class="nm">尽くすけど根に持つ人</div></a>
+      <a href="type/ESTJ/index.html"><div class="em">📢</div><div class="cd">ESTJ</div><div class="nm">正論を振りかざす隊長</div></a>
+      <a href="type/ESFJ/index.html"><div class="em">🎀</div><div class="cd">ESFJ</div><div class="nm">空気を読みすぎる八方美人</div></a>
+      <a href="type/ISTP/index.html"><div class="em">🔧</div><div class="cd">ISTP</div><div class="nm">省エネを極めたクール職人</div></a>
+      <a href="type/ISFP/index.html"><div class="em">🎨</div><div class="cd">ISFP</div><div class="nm">ゆるふわに見えて超頑固</div></a>
+      <a href="type/ESTP/index.html"><div class="em">🔥</div><div class="cd">ESTP</div><div class="nm">ノリと勢いの目立ちたがり</div></a>
+      <a href="type/ESFP/index.html"><div class="em">🎉</div><div class="cd">ESFP</div><div class="nm">パリピの顔した寂しがり</div></a>
+    </div>
+    <p class="type-more"><a href="type/index.html">▶ 16タイプ図鑑をまとめて見る</a></p>
+  </section>
+  <!-- TYPE-INDEX:END -->
+
   <section class="sheet why-sheet">
     <div class="sheet-head">
       <span class="doc-title">なぜウラ性格診断は当たるのか</span>
@@ -225,6 +266,7 @@ footer{text-align:center;padding:50px 18px 10px;position:relative;z-index:2;}
 
   <footer>
     <div class="foot-links">
+      <a href="type/index.html">16タイプ図鑑</a>
       <a href="honne/index.html">本音タイプ診断</a>
       <a href="renai/index.html">恋愛の本音診断</a>
       <a href="aisho/index.html">本音の相性診断</a>

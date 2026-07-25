@@ -407,6 +407,12 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opac
 }
 .retry button:hover{border-color:#e6d9ba;color:#eee3c9;}
 
+/* ============ 調査資料（タイプ図鑑）への導線 ============ */
+.type-more-box{text-align:center;margin-top:20px;}
+.type-more-box p{font-size:12.5px;line-height:1.9;color:var(--ink2);}
+.type-more-link{display:inline-block;margin-top:8px;color:var(--red2);font-weight:800;font-size:13.5px;text-decoration:none;letter-spacing:.04em;border-bottom:1px solid rgba(142,14,21,.4);padding-bottom:2px;}
+.type-more-link:hover{border-bottom-color:var(--red2);}
+
 footer{text-align:center;padding:40px 18px 10px;position:relative;z-index:2;}
 .foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
 .foot-links a{color:#877c63;font-size:12px;text-decoration:none;letter-spacing:.06em;}
@@ -561,6 +567,11 @@ footer{text-align:center;padding:40px 18px 10px;position:relative;z-index:2;}
       <button class="btn-x" id="btn-x">𝕏 で報告書を公開する</button>
       <button class="btn-copy" id="btn-copy">報告書のテキストをコピー</button>
       <p class="shot-note">📸 スクショして友達に送るのも、有効な拡散手段です</p>
+    </div>
+
+    <div class="sheet type-more-box">
+      <p>このタイプの全文（普段の性格・あるある・相性のいいタイプ）は、<br>資料室でいつでも読めます。</p>
+      <a class="type-more-link" id="r-typelink" href="../type/index.html">▶ このタイプの調査資料を読む</a>
     </div>
 
     <div class="retry"><button id="btn-retry">↺ 再調査を依頼する</button></div>
@@ -844,6 +855,10 @@ function showResult(code){
   document.getElementById('bad-name').textContent = b.name;
 
   document.getElementById('r-share').textContent = t.share;
+
+  const tl = document.getElementById('r-typelink');
+  tl.href = '../type/' + code + '/';
+  tl.textContent = '▶ ' + t.name + '（' + code + '）の調査資料を読む';
 
   window.scrollTo({top:0,behavior:'smooth'});
 }
