@@ -73,6 +73,37 @@ h2.sec{
 }
 h3.sub{font-size:13.5px;font-weight:800;letter-spacing:.1em;color:var(--ink2);margin:20px 0 8px;}
 p.body{font-size:14px;line-height:2.05;color:var(--ink);}
+p.lead{font-size:12.5px;line-height:1.9;color:var(--ink3);margin:0 0 10px;}
+
+/* 16タイプ全員との相性 */
+.aisho-list{display:flex;flex-direction:column;gap:1px;background:rgba(0,0,0,.09);
+  border:1px solid rgba(0,0,0,.12);border-radius:4px;overflow:hidden;}
+.aisho-list a{
+  display:grid;grid-template-columns:34px 30px 1fr;gap:10px;align-items:center;
+  background:var(--paper);padding:11px 12px;text-decoration:none;color:inherit;
+  transition:background .15s;
+}
+.aisho-list a:hover{background:rgba(142,14,21,.045);}
+.aisho-list .rk{
+  font-size:16px;font-weight:800;text-align:center;line-height:1;
+  font-family:'Shippori Mincho B1',serif;
+}
+.aisho-list .rk.r1{color:#2f6b3d;}
+.aisho-list .rk.r2{color:var(--ink2);}
+.aisho-list .rk.r3{color:#9a7a1e;}
+.aisho-list .rk.r4{color:var(--red2);}
+.aisho-list .em{font-size:19px;line-height:1;text-align:center;}
+.aisho-list .tx .cd{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+  color:var(--ink3);font-weight:600;
+}
+.aisho-list .tx .nm{font-size:12.5px;font-weight:800;margin-left:7px;color:var(--ink);}
+.aisho-list .tx .ln{font-size:12.5px;line-height:1.8;color:var(--ink);margin-top:3px;}
+.aisho-list a.self{background:rgba(0,0,0,.035);}
+@media(max-width:420px){
+  .aisho-list a{grid-template-columns:26px 24px 1fr;gap:7px;padding:10px 9px;}
+  .aisho-list .tx .ln{font-size:12px;}
+}
 p.body + p.body{margin-top:.9em;}
 ul.aru{list-style:none;margin-top:6px;}
 ul.aru li{
