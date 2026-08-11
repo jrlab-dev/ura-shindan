@@ -174,3 +174,36 @@ footer{text-align:center;padding:44px 18px 10px;position:relative;z-index:2;}
 .foot-links a:hover{color:#b9ad8f;}
 .foot-copy{font-family:'IBM Plex Mono',monospace;letter-spacing:.3em;font-size:10.5px;color:#6b634e;}
 .foot-note{margin-top:10px;font-size:10.5px;color:#6b634e;line-height:1.8;max-width:480px;margin-left:auto;margin-right:auto;}
+
+/* ============ 取扱説明書（他人視点） ============ */
+.gokai{display:flex;flex-direction:column;gap:11px;margin-top:12px;}
+.gokai .g{border:1px solid var(--paper-line);border-radius:2px;
+  background:rgba(255,255,255,.25);padding:13px 15px;}
+.gokai .mie{
+  font-size:13.5px;font-weight:800;line-height:1.75;color:var(--ink2);
+  position:relative;padding-left:30px;
+}
+.gokai .mie::before{
+  content:'噂';position:absolute;left:0;top:1px;
+  font-size:9.5px;font-weight:800;letter-spacing:.1em;color:var(--ink3);
+  border:1px solid var(--paper-line);border-radius:2px;padding:2px 5px;line-height:1;
+}
+.gokai .jitsu{
+  margin-top:9px;padding-top:9px;border-top:1px dashed var(--paper-line);
+  font-size:13.5px;line-height:1.95;position:relative;padding-left:30px;
+}
+.gokai .jitsu::before{
+  content:'実';position:absolute;left:0;top:11px;
+  font-size:9.5px;font-weight:800;letter-spacing:.1em;color:#fff;background:var(--red);
+  border-radius:2px;padding:2px 5px;line-height:1;
+}
+ul.dont,ul.do{list-style:none;margin-top:9px;}
+ul.dont li,ul.do li{position:relative;padding-left:27px;margin:.85em 0;}
+ul.dont li::before{content:'✕';position:absolute;left:3px;top:1px;color:var(--red);font-weight:800;font-size:14px;}
+ul.do li::before{content:'○';position:absolute;left:2px;top:1px;color:#2f6b3d;font-weight:800;font-size:13px;}
+ul.dont li b,ul.do li b{display:block;font-size:13.5px;font-weight:800;line-height:1.75;}
+ul.dont li span,ul.do li span{display:block;font-size:13px;line-height:1.95;color:var(--ink2);margin-top:4px;}
+.tsukare{
+  margin-top:20px;border-top:1px solid var(--paper-line);padding-top:15px;
+  font-size:13.5px;line-height:2.05;color:var(--ink2);
+}
