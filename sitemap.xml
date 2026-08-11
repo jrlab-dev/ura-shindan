@@ -22,6 +22,6 @@
   <url><loc>https://ura.jr-genius.jp/type/ISFP/</loc><lastmod>2026-08-01</lastmod></url>
   <url><loc>https://ura.jr-genius.jp/type/ESTP/</loc><lastmod>2026-08-01</lastmod></url>
   <url><loc>https://ura.jr-genius.jp/type/ESFP/</loc><lastmod>2026-08-01</lastmod></url>
-  <url><loc>https://ura.jr-genius.jp/unei/</loc><lastmod>2026-07-04</lastmod></url>
-  <url><loc>https://ura.jr-genius.jp/privacy/</loc><lastmod>2026-07-04</lastmod></url>
+  <!-- unei/・privacy/ は meta robots=noindex のため、サイトマップには載せない
+       （載せる＝登録してほしいという合図なので、noindexと矛盾する。2026-08-11に除去） -->
 </urlset>
