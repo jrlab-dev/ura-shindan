@@ -1,0 +1,57 @@
+/* 相性ペアページ 追加スタイル（/type/file.css を読み込んだ上で使う） */
+.pair-hero{text-align:center;padding:26px 10px 20px;}
+/* ⚠️スマホで縦に割れないよう nowrap ＋ min-width:0 で縮ませる（2026-08-16に実物を見て修正） */
+.pair-faces{display:flex;align-items:flex-start;justify-content:center;gap:8px;flex-wrap:nowrap;}
+.pf{flex:1 1 0;text-align:center;min-width:0;max-width:160px;}
+.pf .em{font-size:38px;line-height:1.1;}
+.pf .cd{font-family:'IBM Plex Mono',monospace;font-size:16.5px;font-weight:600;
+        letter-spacing:.06em;color:var(--ink);margin-top:2px;}
+.pf .nm{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.5;}
+.pf a{text-decoration:none;color:inherit;display:block;}
+.pf a:hover .cd{color:var(--red);}
+.pair-x{flex:0 0 auto;font-size:20px;color:var(--kraft2);font-weight:700;padding-top:14px;}
+.pair-hero h1{font-size:20px;margin:18px 0 6px;letter-spacing:.02em;line-height:1.6;}
+.pair-hero .catch{font-size:14px;color:var(--ink2);line-height:1.9;margin-top:6px;}
+
+.verdict{display:flex;align-items:center;justify-content:center;gap:12px;
+         margin:18px auto 4px;padding:12px 18px;max-width:420px;
+         border:1px solid var(--paper-line);background:rgba(255,255,255,.22);}
+.verdict .mk{font-size:32px;line-height:1;font-weight:700;}
+.verdict .lb{font-size:13px;color:var(--ink2);letter-spacing:.08em;}
+/* 判定記号は一覧の要。薄いと読めないので濃くする（2026-08-16に実物を見て調整） */
+.m-best{color:#b5121b;} .m-good{color:#5f7d3a;} .m-mid{color:#9a6a1e;} .m-bad{color:#6b4a4a;}
+.kataomoi{display:inline-block;margin:10px auto 0;padding:5px 12px;font-size:11.5px;
+          letter-spacing:.08em;color:#fff;background:var(--red2);}
+
+.mikata{display:grid;gap:12px;margin-top:6px;}
+.mikata .mi{border-left:3px solid var(--kraft);padding:10px 14px;background:rgba(255,255,255,.14);}
+.mikata .mi .who{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+                 letter-spacing:.06em;color:var(--red);margin-bottom:5px;}
+.mikata .mi p{font-size:14px;line-height:1.95;color:var(--ink);}
+
+.plist{display:grid;gap:14px;}
+.plist .it .nani{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.6;}
+.plist .it .naze{font-size:13.5px;line-height:1.95;color:var(--ink2);}
+.plist.ng .it .nani::before{content:"▲ ";color:var(--red);font-size:12px;}
+.plist.ok .it .nani::before{content:"○ ";color:#7d6a2f;font-weight:700;}
+
+.ptext{font-size:14px;line-height:2.0;color:var(--ink);}
+.pair-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px;}
+.pair-links a{display:inline-block;padding:9px 16px;border:1px solid var(--paper-line);
+              font-size:13px;color:var(--ink);text-decoration:none;background:rgba(255,255,255,.18);}
+.pair-links a:hover{border-color:var(--red);color:var(--red);}
+
+.pair-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;}
+.pair-grid a{display:block;padding:10px 8px 9px;text-align:center;text-decoration:none;
+             border:1px solid var(--paper-line);background:rgba(255,255,255,.14);position:relative;}
+.pair-grid a:hover{border-color:var(--red);}
+.pair-grid .cd{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);}
+.pair-grid .mk{font-size:19px;margin-top:2px;line-height:1.2;font-weight:700;}
+.pair-grid .ct{font-size:10.5px;color:var(--ink3);margin-top:3px;line-height:1.45;}
+.pair-grid .kt{display:inline-block;margin-top:4px;padding:1px 6px;font-size:9.5px;
+               letter-spacing:.04em;color:#fff;background:var(--red2);}
+/* 一覧の導入文は左揃え（中央揃えだと長文の改行位置が不自然になる。2026-08-16に実物を見て修正） */
+.pair-lead{font-size:13.5px;line-height:2.0;color:var(--ink2);text-align:left;padding:2px 2px 4px;}
+@media(max-width:420px){
+  .pf{min-width:96px;} .pf .em{font-size:34px;} .pair-hero h1{font-size:17.5px;}
+}
