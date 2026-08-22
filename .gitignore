@@ -2,5 +2,5 @@ _design/
 _一時/
 __pycache__/
 *.pyc
-*.bak_*
+*.bak*
 *.bak
