@@ -1,5 +1,5 @@
-const CACHE = 'little-companion-shell-v24';
-const ASSETS = ['./', './index.html', './styles.css?v=24', './brain.js?v=24', './pet-life.js?v=24', './story-engine.js?v=24', './week-engine.js?v=24', './voice-memory.js?v=24', './companion-scenes.js?v=24', './companion-director.js?v=24', './activity-lock.js?v=24', './pet-presentations.js?v=24', './pet-speech.js?v=24', './two-pet-scenes.js?v=24', './two-pet-director.js?v=24', './speech-arbiter.js?v=24', './app.js?v=24', './manifest.webmanifest', './sw.js', './icons/poko.svg'];
+const CACHE = 'little-companion-shell-v25';
+const ASSETS = ['./', './index.html', './styles.css?v=25', './brain.js?v=25', './pet-life.js?v=25', './story-engine.js?v=25', './week-engine.js?v=25', './voice-memory.js?v=25', './companion-scenes.js?v=25', './companion-director.js?v=25', './activity-lock.js?v=25', './pet-presentations.js?v=25', './pet-speech.js?v=25', './two-pet-scenes.js?v=25', './two-pet-director.js?v=25', './speech-arbiter.js?v=25', './app.js?v=25', './manifest.webmanifest', './sw.js', './icons/poko.svg'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', event => {
