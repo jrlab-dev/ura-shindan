@@ -39,12 +39,16 @@
   const LIVE_HEALTH_TIMEOUT_MS = 3500;
   const GRAIN_MS = 110;
   const GRAIN_HOP_MS = 18;
+  const LOW_GRAIN_MS = 120;
+  const LOW_GRAIN_HOP_MS = 40;
   const MAX_GRAINS = 350;
   const DEFAULT_TUNING = { pitchRate:1.42, speedRate:1, doubleMix:.18, brightness:60, timingMode:'preserve' };
   const normalizeTuning = value => {
     const raw = value && typeof value === 'object' ? value : {};
     const number = (key, fallback, min, max) => typeof raw[key] === 'number' && Number.isFinite(raw[key]) ? Math.max(min, Math.min(max, raw[key])) : fallback;
-    return { pitchRate:number('pitchRate', DEFAULT_TUNING.pitchRate, 1.2, 3.5), speedRate:number('speedRate', DEFAULT_TUNING.speedRate, .7, 1.4), doubleMix:number('doubleMix', DEFAULT_TUNING.doubleMix, .08, .36), brightness:Math.round(number('brightness', DEFAULT_TUNING.brightness, 0, 100)), timingMode:raw.timingMode === 'fast' ? 'fast' : 'preserve' };
+    const requestedPitch = number('pitchRate', DEFAULT_TUNING.pitchRate, .55, 3.5);
+    const pitchRate = requestedPitch === 1 ? 1.2 : requestedPitch;
+    return { pitchRate, speedRate:number('speedRate', DEFAULT_TUNING.speedRate, .7, 1.4), doubleMix:number('doubleMix', DEFAULT_TUNING.doubleMix, 0, .36), brightness:Math.round(number('brightness', DEFAULT_TUNING.brightness, 0, 100)), timingMode:raw.timingMode === 'fast' ? 'fast' : 'preserve' };
   };
   const normalizeTemporaryLimits = ({ stopMs, maxDurationMs, maxBytes } = {}) => {
     const bounded = (value, fallback, min, max) => typeof value === 'number' && Number.isFinite(value) ? Math.max(min, Math.min(max, Math.round(value))) : fallback;
@@ -55,12 +59,15 @@
       maxBytes:bounded(maxBytes, TEST_MAX_BYTES, 1, TEST_MAX_BYTES)
     };
   };
-  const grainPlan = durationSeconds => {
+  const grainPlan = (durationSeconds, pitchRate = 1) => {
     const duration = Math.max(0, Math.min(TEST_MAX_DURATION_MS / 1000, Number(durationSeconds) || 0));
-    const count = Math.min(MAX_GRAINS, Math.ceil(duration * 1000 / GRAIN_HOP_MS));
+    const low = Number(pitchRate) < 1;
+    const grainMs = low ? LOW_GRAIN_MS : GRAIN_MS;
+    const hopMs = low ? LOW_GRAIN_HOP_MS : GRAIN_HOP_MS;
+    const count = Math.min(MAX_GRAINS, Math.ceil(duration * 1000 / hopMs));
     return Array.from({ length:count }, (_, index) => {
-      const offset = index * GRAIN_HOP_MS / 1000;
-      return { offset, duration:Math.min(GRAIN_MS / 1000, Math.max(0, duration - offset)) };
+      const offset = index * hopMs / 1000;
+      return { offset, duration:Math.min(grainMs / 1000, Math.max(0, duration - offset)), low };
     }).filter(item => item.duration > 0);
   };
 
@@ -1056,24 +1063,25 @@
         const settings = normalizeTuning(tuning);
         const durationSeconds = Math.min(TEST_MAX_DURATION_MS / 1000, audio.duration);
         const high = context.createBiquadFilter();
+        const low = context.createBiquadFilter();
         const peak = context.createBiquadFilter();
         const compressor = context.createDynamicsCompressor();
         const mainGain = context.createGain();
-        const echoDelay = context.createDelay();
-        const echoGain = context.createGain();
-        high.type = 'highpass'; high.frequency.value = 250 + settings.brightness * 6;
+        const echoDelay = settings.doubleMix > 0 ? context.createDelay() : null;
+        const echoGain = settings.doubleMix > 0 ? context.createGain() : null;
+        high.type = settings.pitchRate < 1 ? 'lowpass' : 'highpass'; high.frequency.value = settings.pitchRate < 1 ? 2500 + settings.brightness * 10 : 250 + settings.brightness * 6;
+        low.type = settings.pitchRate < 1 ? 'lowshelf' : 'highshelf'; low.frequency.value = settings.pitchRate < 1 ? 180 : 1800; low.gain.value = settings.pitchRate < 1 ? 4 : settings.brightness / 30;
         peak.type = 'peaking'; peak.frequency.value = 1800; peak.Q.value = 1; peak.gain.value = settings.brightness / 15;
         compressor.threshold.value = -20; compressor.ratio.value = 5;
         mainGain.gain.value = .75;
-        echoDelay.delayTime.value = .03;
-        echoGain.gain.value = settings.doubleMix;
-        high.connect(peak); peak.connect(compressor); compressor.connect(mainGain); compressor.connect(echoDelay); echoDelay.connect(echoGain);
+        if (echoDelay && echoGain) { echoDelay.delayTime.value = .03; echoGain.gain.value = settings.doubleMix; }
+        high.connect(low); low.connect(peak); peak.connect(compressor); compressor.connect(mainGain); if (echoDelay && echoGain) { compressor.connect(echoDelay); echoDelay.connect(echoGain); }
 
         const baseTime = context.currentTime + .02;
         const starts = [];
         let durationMs;
         if (settings.timingMode === 'preserve') {
-          const plan = grainPlan(durationSeconds);
+          const plan = grainPlan(durationSeconds, settings.pitchRate);
           let audibleEnd = 0;
           plan.forEach(grain => {
             const source = context.createBufferSource();
@@ -1104,7 +1112,7 @@
         // 保存音声はDB世代、一時音声はsessionを、出力接続の直前にも再確認する。
         if (!await stillCurrent()) throw new Error('invalidated');
         mainGain.connect(context.destination);
-        echoGain.connect(context.destination);
+        if (echoGain) echoGain.connect(context.destination);
         starts.forEach(start => start());
         const current = { context, sources, timer:null };
         this.playback = current;
@@ -1134,7 +1142,7 @@
     ECHO_MAX_DURATION_MS, ECHO_STOP_MS, ECHO_MAX_BYTES, LIVE_CALIBRATION_MS, LIVE_PREROLL_MS,
     LIVE_SPEECH_START_MS, LIVE_SILENCE_END_MS, LIVE_UTTERANCE_STOP_MS, LIVE_MAX_DURATION_MS,
     LIVE_MAX_BYTES, LIVE_FRAME_MS, LIVE_MIN_RMS, LIVE_MAX_RMS, LIVE_THRESHOLD_MULTIPLIER,
-    LIVE_CALIBRATION_PERCENTILE, LIVE_HEALTH_TIMEOUT_MS, GRAIN_MS, GRAIN_HOP_MS, MAX_GRAINS,
+    LIVE_CALIBRATION_PERCENTILE, LIVE_HEALTH_TIMEOUT_MS, GRAIN_MS, GRAIN_HOP_MS, LOW_GRAIN_MS, LOW_GRAIN_HOP_MS, MAX_GRAINS,
     DEFAULT_TUNING, normalizeTuning, normalizeTemporaryLimits, grainPlan, safeId, clipKey, supportedMime, validateClip,
     LiveEchoDetector,
     nextGeneration, epochMatches, VoiceMemory
