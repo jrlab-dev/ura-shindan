@@ -52,7 +52,7 @@
     clearTimeout(state.replyTimer);
     const visualPet = petNode(visualPetId()) || pet;
     visualPet.dataset.state = next;
-    if (next === 'sleepy') $('status-pill').textContent = 'ねむねむ';
+    if (next === 'sleepy') $('status-pill').textContent = 'すやすや';
     else if (next === 'listening') $('status-pill').textContent = 'きいてるよ';
     else if (next === 'thinking') $('status-pill').textContent = 'んーっと';
     else if (next === 'talking') $('status-pill').textContent = 'おはなし中';
@@ -65,7 +65,7 @@
     else if (next === 'copy-thinking') $('status-pill').textContent = 'んーっと';
     else if (next === 'copy-speaking') $('status-pill').textContent = 'まねっこ中';
     else if (next === 'copy-happy') $('status-pill').textContent = 'できた';
-    else $('status-pill').textContent = state.data.energy < 30 ? 'ねむねむ' : 'げんきだよ';
+    else { const sleepingNow = Boolean(Life && Life.isPetSleeping && Life.isPetSleeping(visualPetId(), new Date())); $('status-pill').textContent = sleepingNow || state.data.energy < 30 ? 'すやすや' : 'げんきだよ'; }
     if (duration && !['listening', 'talking'].includes(next)) state.replyTimer = setTimeout(() => setState(state.data.energy < 30 ? 'sleepy' : 'normal', 0), duration);
   }
   function bubble(text) { if (state.echoSession && state.echoSession.imitatorPetId) { $('bubble').hidden = true; showPetBubble(state.echoSession.imitatorPetId, text); return; } $('bubble').hidden = false; $('bubble').textContent = text; }
@@ -299,7 +299,7 @@
     const profileList = $('profile-list'); profileList.replaceChildren(); profiles.forEach(profile => { const row = document.createElement('div'); row.className = 'profile-row'; const label = document.createElement('span'); label.textContent = `${profile.name}${profile.id === state.data.activeProfileId ? '（いまここ）' : ''}`; const actions = document.createElement('span'); const select = document.createElement('button'); select.type = 'button'; select.className = 'small-button'; select.textContent = '選ぶ'; select.dataset.profileSelect = profile.id; actions.appendChild(select); if (profile.id !== 'p-default') { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'small-button'; remove.textContent = '消す'; remove.dataset.profileDelete = profile.id; actions.appendChild(remove); } row.append(label, actions); profileList.appendChild(row); });
     const target = state.voiceTarget; const targetStillExists = target && target.profileId === state.data.activeProfileId && learned.some(item => item.id === target.wordId); const showVoiceRecord = Boolean(state.data.voiceMemoryEnabled && targetStillExists && state.data.bondStory && state.data.bondStory.beat === 'seed' && !Life.isSafetyPaused(state.data)); $('voice-record-panel').hidden = !showVoiceRecord;
     if (Week && state.data.weekProgress) { const day = Week.DAY_THEMES[(state.data.weekProgress.dayIndex || 1) - 1] || Week.DAY_THEMES[0]; $('week-today').hidden = false; $('week-today').textContent = `きょうのテーマ：${day.title}（${state.data.weekProgress.dayIndex}/7）`; }
-    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets();
+    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets();
   }
   function refreshVoices() { if (speechAvailable) speechVoices = window.speechSynthesis.getVoices(); }
   function preferredVoice() {
