@@ -1,4 +1,4 @@
-const CACHE = 'little-companion-shell-v17';
+const CACHE = 'little-companion-shell-v18';
 const ASSETS = ['./', './index.html', './styles.css', './brain.js', './pet-life.js', './story-engine.js', './week-engine.js', './voice-memory.js', './companion-scenes.js', './companion-director.js', './activity-lock.js', './pet-presentations.js', './two-pet-scenes.js', './two-pet-director.js', './speech-arbiter.js', './app.js', './manifest.webmanifest', './sw.js', './icons/poko.svg'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });

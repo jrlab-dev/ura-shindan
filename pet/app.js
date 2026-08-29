@@ -124,7 +124,7 @@
       if(state.data.soundMode==='text'){window.setTimeout(done,20);return;}
       if(!item.text||!speechAvailable||state.data.soundMode==='pet'){const duration=playTwoPetNonverbal(item.petId,item.sound);window.setTimeout(done,duration+30);return;}
       try {
-        const utterance=new SpeechSynthesisUtterance(item.text); utterance.lang='ja-JP'; utterance.rate=Number(presentation.ttsRate)||.92; utterance.pitch=Number(presentation.ttsPitch)||1.15; const voice=preferredVoice(); if(voice)utterance.voice=voice;
+        const utterance=new SpeechSynthesisUtterance(item.text); utterance.lang='ja-JP'; utterance.rate=Number(presentation.ttsRate)||(item.petId==='pet-2'?.85:1.11); utterance.pitch=Number(presentation.ttsPitch)||(item.petId==='pet-2'?.55:2.0); const voice=preferredVoice(); if(voice)utterance.voice=voice;
         const timeout=window.setTimeout(()=>{window.speechSynthesis.cancel();fallback();},5000);
         utterance.onend=()=>{window.clearTimeout(timeout);done();};
         utterance.onerror=()=>{window.clearTimeout(timeout);fallback();};
@@ -133,7 +133,7 @@
     }));
   }
   function finishTwoPetScene(token, scene) { if (token !== state.twoPetToken || !state.twoPetSession || !scene) return; window.clearTimeout(state.twoPetSceneTimer); state.twoPetSceneTimer = null; const relation = pairRelation(); if (relation) { relation.recentSceneIds = [...new Set([...(relation.recentSceneIds || []), scene.id])].slice(-12); relation.lastEventAt = new Date().toISOString(); const word = scene.requiresWord ? (state.data.learnedWords || []).slice().reverse().find(item => (item.profileId || 'p-default') === activeProfileId()) : null; if (word && !(relation.sharedWords || []).some(item => item.wordId === word.id)) relation.sharedWords = [...(relation.sharedWords || []), { profileId:activeProfileId(), wordId:word.id, taughtByPetId:'pet-1', sharedWithPetId:'pet-2', sharedAt:new Date().toISOString(), lastUsedAt:new Date().toISOString() }].slice(-20); if (scene.requiresToy) { const toy = scene.toy || 'ball'; const old = (relation.sharedToys || []).find(item => item.toyId === toy); if (old) { old.lastAt = new Date().toISOString(); old.playCount = (Number(old.playCount) || 0) + 1; } else relation.sharedToys = [...(relation.sharedToys || []), {toyId:toy,petIds:['pet-1','pet-2'],firstAt:new Date().toISOString(),lastAt:new Date().toISOString(),playCount:1}].slice(-20); } relation.sharedEvents = [...(relation.sharedEvents || []), {id:`pair-${Date.now()}-${scene.id}`,sceneId:scene.id,petIds:['pet-1','pet-2'],wordId:word && word.id || '',toyId:scene.toy || '',at:new Date().toISOString()}].slice(-60); if (relation.phase === 'solo' || relation.phase === 'visiting') { relation.visitCount = Math.min(3, (Number(relation.visitCount) || 0) + 1); relation.phase = relation.visitCount >= 3 ? 'cohabiting' : 'visiting'; relation.friendshipStage = relation.visitCount >= 3 ? 'together' : relation.visitCount >= 2 ? 'familiar' : 'visiting'; if (relation.phase === 'cohabiting') relation.cohabitedAt = new Date().toISOString(); } }
-    TwoPetDirector.expire(state.twoPetSession, {now:Date.now(),blocked:false}); if (state.activityLock) state.activityLock.cancelAll('two-pet-complete'); state.twoPetGuestVisible = false; clearPetBubbles(); ['pet-1','pet-2'].forEach(id => setPetState(id, 'normal')); bubble('…'); save(); updateScreen(); scheduleTwoPetMoment(); }
+    TwoPetDirector.expire(state.twoPetSession, {now:Date.now(),blocked:false}); if (state.activityLock) state.activityLock.cancelAll('two-pet-complete'); state.twoPetGuestVisible = Boolean(relation && relation.phase === 'visiting'); clearPetBubbles(); ['pet-1','pet-2'].forEach(id => setPetState(id, 'normal')); bubble('…'); save(); updateScreen(); scheduleTwoPetMoment(); }
   function runTwoPetScene(scene, token) {
     if(!scene||token!==state.twoPetToken)return; $('bubble').textContent='…'; $('bubble').hidden=true; const startedAt=Date.now(), steps=(scene.steps||[]).slice().sort((a,b)=>Number(a.atMs)-Number(b.atMs)), spoken=steps.some(step=>step.text);
     const present=step=>{if(token!==state.twoPetToken||document.hidden)return false;const other=step.actorPetId==='pet-1'?'pet-2':'pet-1';setPetState(step.actorPetId,step.actorState||'watching');setPetState(other,step.observerState||'ear-react');if(step.text)showPetBubble(step.actorPetId,step.text);else clearPetBubbles();return true;};
@@ -543,8 +543,9 @@
   function speakTestPhrase() {
     if (!speechAvailable) return false;
     try {
+      const presentation = twoPetPresentation('pet-1');
       const utterance = new SpeechSynthesisUtterance('こえ、きこえる？');
-      utterance.lang = 'ja-JP'; utterance.volume = 1; utterance.rate = .88; utterance.pitch = 1.1;
+      utterance.lang = 'ja-JP'; utterance.volume = 1; utterance.rate = Number(presentation.ttsRate) || 1.11; utterance.pitch = Number(presentation.ttsPitch) || 2.0;
       const voice = preferredVoice(); if (voice) utterance.voice = voice;
       utterance.onstart = () => { setVoiceStatus('3/3 日本語音声を再生中です'); bubble('こえ、きこえる？'); setState('talking', 0); };
       utterance.onend = () => { clearSpeechWatchdog(); setVoiceStatus('再生処理は完了しました。実際に聞こえたか確認してね'); setState(state.data.energy < 30 ? 'sleepy' : 'normal', 350); };
@@ -563,8 +564,9 @@
     try {
       window.speechSynthesis.cancel();
       const interruptToken = state.manualInterruptToken;
+      const presentation = twoPetPresentation('pet-1');
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ja-JP'; utterance.volume = 1; utterance.rate = .92; utterance.pitch = 1.15;
+      utterance.lang = 'ja-JP'; utterance.volume = 1; utterance.rate = Number(presentation.ttsRate) || 1.11; utterance.pitch = Number(presentation.ttsPitch) || 2.0;
       const voice = preferredVoice(); if (voice) utterance.voice = voice;
       utterance.onstart = () => { if (interruptToken === state.manualInterruptToken && !state.echoSession) setState('talking', 0); };
       utterance.onend = () => { clearSpeechWatchdog(); if (interruptToken === state.manualInterruptToken && !state.echoSession) setState(state.data.energy < 30 ? 'sleepy' : 'normal', 350); };
