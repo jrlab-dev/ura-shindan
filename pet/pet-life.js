@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:7, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:false,
+      version:8, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -100,7 +100,7 @@
     if (privateLike(data.petName) || /死にたい|自殺|けが|怪我|薬|裸|性的|エッチ/.test(data.petName)) data.petName = 'ぽこ'; if (privateLike(data.childName) || /死にたい|自殺|けが|怪我|薬|裸|性的|エッチ/.test(data.childName)) data.childName = '';
     data.soundMode = old.soundMode === 'pet' || old.soundMode === 'text' || old.soundMode === 'auto' ? old.soundMode : old.soundEnabled === false ? 'text' : 'auto';
     data.voiceMemoryEnabled = old.voiceMemoryEnabled === true;
-    data.echoModeEnabled = old.echoModeEnabled === true; const tune = old.voiceTuning && typeof old.voiceTuning === 'object' ? old.voiceTuning : {}; const tuneNumber = (key, fallback, min, max) => typeof tune[key] === 'number' && Number.isFinite(tune[key]) ? Math.max(min, Math.min(max, tune[key])) : fallback; data.voiceTuning = { pitchRate:tuneNumber('pitchRate',1.42,1.2,3.5), speedRate:tuneNumber('speedRate',1,.7,1.4), doubleMix:tuneNumber('doubleMix',.18,.08,.36), brightness:Math.round(tuneNumber('brightness',60,0,100)), timingMode:tune.timingMode === 'fast' ? 'fast' : 'preserve' }; const rawOverrides = old.echoVoiceOverrides && typeof old.echoVoiceOverrides === 'object' ? old.echoVoiceOverrides : {}; data.echoVoiceOverrides = {}; ['pet-1','pet-2'].forEach(petId => { const item=rawOverrides[petId]; if (!item || typeof item !== 'object') return; const number=(key,min,max)=>Number.isFinite(Number(item[key])) ? Math.max(min,Math.min(max,Number(item[key]))) : null; const pitch=number('pitchRate',.55,3.5), speed=number('speedRate',.7,1.4), doubleMix=number('doubleMix',0,.36), brightness=number('brightness',0,100); if (pitch !== null && speed !== null && doubleMix !== null && brightness !== null) data.echoVoiceOverrides[petId]={pitchRate:pitch === 1 ? 1.2 : pitch,speedRate:speed,doubleMix,brightness:Math.round(brightness),timingMode:item.timingMode === 'fast' ? 'fast' : 'preserve'}; });
+    data.echoModeEnabled = Number(old.version) >= 8 ? old.echoModeEnabled === true : true; const tune = old.voiceTuning && typeof old.voiceTuning === 'object' ? old.voiceTuning : {}; const tuneNumber = (key, fallback, min, max) => typeof tune[key] === 'number' && Number.isFinite(tune[key]) ? Math.max(min, Math.min(max, tune[key])) : fallback; data.voiceTuning = { pitchRate:tuneNumber('pitchRate',1.42,1.2,3.5), speedRate:tuneNumber('speedRate',1,.7,1.4), doubleMix:tuneNumber('doubleMix',.18,.08,.36), brightness:Math.round(tuneNumber('brightness',60,0,100)), timingMode:tune.timingMode === 'fast' ? 'fast' : 'preserve' }; const rawOverrides = old.echoVoiceOverrides && typeof old.echoVoiceOverrides === 'object' ? old.echoVoiceOverrides : {}; data.echoVoiceOverrides = {}; ['pet-1','pet-2'].forEach(petId => { const item=rawOverrides[petId]; if (!item || typeof item !== 'object') return; const number=(key,min,max)=>Number.isFinite(Number(item[key])) ? Math.max(min,Math.min(max,Number(item[key]))) : null; const pitch=number('pitchRate',.55,3.5), speed=number('speedRate',.7,1.4), doubleMix=number('doubleMix',0,.36), brightness=number('brightness',0,100); if (pitch !== null && speed !== null && doubleMix !== null && brightness !== null) data.echoVoiceOverrides[petId]={pitchRate:pitch === 1 ? 1.2 : pitch,speedRate:speed,doubleMix,brightness:Math.round(brightness),timingMode:item.timingMode === 'fast' ? 'fast' : 'preserve'}; });
     data.bond = clamp(old.bond === undefined ? data.bond : old.bond); data.energy = clamp(old.energy === undefined ? data.energy : old.energy); data.mood = clamp(old.mood === undefined ? data.mood : old.mood); data.curiosity = clamp(old.curiosity === undefined ? 50 : old.curiosity);
     data.likes = listSafe(old.likes); data.dislikes = listSafe(old.dislikes);
     data.careCount = { ...data.careCount, ...(old.careCount || {}) }; data.traits = { ...data.traits, ...(old.traits || {}) };
@@ -139,7 +139,7 @@
     normalizeV6Structures(data, old, now);
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
-    delete data.soundEnabled; data.version = 7; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    delete data.soundEnabled; data.version = 8; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }
