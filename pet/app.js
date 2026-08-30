@@ -548,7 +548,7 @@
   function playPetSound(kind = 'normal') {
     if (!state.data || state.data.soundMode === 'text') return false;
     const context = unlockAudio(); if (!context) return false;
-    const patterns = { happy:[660,880,1040], normal:[520,620], call:[760,520,760], thinking:[440,540], sleepy:[360,280], sad:[420,330], play:[700,820,700,920], danger:[300], curious:[580,760,680], proud:[520,780,980], quiet:[300,360], shy:[410,460] };
+    const patterns = { happy:[660,880,1040], normal:[520,620], call:[760,520,760], thinking:[440,540], sleepy:[360,280], sad:[420,330], play:[700,820,700,920], danger:[300], curious:[580,760,680], proud:[520,780,980], quiet:[300,360], shy:[410,460], puni:[380,260,330] };
     try { stopPetAudio(); const frequencies = patterns[kind] || patterns.normal; const now = context.currentTime; frequencies.forEach((frequency, index) => { const oscillator=context.createOscillator(); const gain=context.createGain(); const start=now + index*.12; oscillator.type='triangle'; oscillator.frequency.value=frequency; gain.gain.setValueAtTime(.001,start); gain.gain.exponentialRampToValueAtTime(.13,start+.015); gain.gain.exponentialRampToValueAtTime(.001,start+.1); oscillator.connect(gain); gain.connect(context.destination); oscillator.start(start); oscillator.stop(start+.12); state.audioNodes.push(oscillator); }); state.audioTimer=window.setTimeout(stopPetAudio, frequencies.length*120+300); return true; } catch (_) { return false; }
   }
   function clearSpeechWatchdog() { window.clearTimeout(state.speechWatchdog); state.speechWatchdog = null; }
@@ -642,7 +642,7 @@
     if (stageAsleep()) return; if (twoPetActive()) { noteTwoPetAction(kind); return; }
     const reply = Brain.touchReply(kind, state.data.lastReplies); Life.applyAction(state.data, kind); noteTwoPetCare(kind); noteTwoPetAction(kind); state.data.lastReplies = [...state.data.lastReplies, reply.id].slice(-12); noteInteraction(); if (companionAction(kind)) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble(reply.text); setState(kind === 'hold' || kind === 'stroke' ? 'happy' : 'happy'); playPetSound(kind === 'hold' ? 'normal' : 'happy'); speak(reply.text, kind === 'hold' ? 'normal' : 'happy'); } setSeen(); updateScreen();
   }
-  function handlePuniPoke() { const puni = $('puni'); if (!puni) return; window.clearTimeout(handlePuniPoke.timer); puni.dataset.poke = 'true'; handlePuniPoke.timer = window.setTimeout(() => { const p = $('puni'); if (p) delete p.dataset.poke; }, 600); }
+  function handlePuniPoke() { const puni = $('puni'); if (!puni) return; window.clearTimeout(handlePuniPoke.timer); puni.dataset.poke = 'true'; playPetSound('puni'); handlePuniPoke.timer = window.setTimeout(() => { const p = $('puni'); if (p) delete p.dataset.poke; }, 600); }
   function openPlayMenu() { if (stageAsleep()) return; if (!state.data || state.echoSession || state.game || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('play-menu'); cancelCompanionMoment(); $('play-menu-dialog').showModal(); }
   function openEchoPetMenu() { $('play-menu-dialog').close(); $('echo-pet-1-name').textContent=petInfo('pet-1').name; $('echo-pet-2-name').textContent=petInfo('pet-2').name; $('echo-pet-note').textContent=state.data.echoModeEnabled===true?'まねする子をえらんでね':'おとなと設定してね'; $('echo-pet-dialog').showModal(); }
   function startManualEcho(petId) { $('echo-pet-dialog').close(); if (state.data.echoModeEnabled!==true) { showToast('おとなと設定してね'); return; } startEchoSession('manual',petId); }
