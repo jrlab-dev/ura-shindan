@@ -19,7 +19,7 @@
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null} };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -710,6 +710,94 @@
   function weekCallback() { if (!Week || !state.data || state.echoSession || companionActive() || twoPetIntroductionPending() || Life.isSafetyPaused(state.data) || document.hidden || state.game || state.director || (Story && Story.isActive(state.data))) return false; const event = Week.callback(state.data, new Date()); if (!event) return false; bubble(event.text); setState('talking', 0); playPetSound(event.sound || 'happy'); speak(event.text, event.sound || 'happy'); save(); updateScreen(); return true; }
   function nextSpontaneousLine() { const recent = (state.data.daily.seenReplyIds || []).filter(id => String(id).startsWith('mono:')).map(id => String(id).slice(5)); const candidate = Brain.spontaneousPick(state.data, new Date(), recent); if (!candidate) return null; state.data.daily.seenReplyIds = [...(state.data.daily.seenReplyIds || []), `mono:${candidate.id}`].slice(-50); save(); return candidate; }
   function welcomeOnOpen(previousSeen, firstToday) { if (stageAsleep()) { setState('sleepy', 0); return; } const now = new Date(); const gap = Date.parse(previousSeen || '') && now.getTime() - Date.parse(previousSeen) >= 86400000; const activePetIsSleeping = petSleepingNow(activePetId()); const message = activePetIsSleeping ? 'ねむねむ。おかえり' : gap ? 'あえた。うれしい' : firstToday ? (now.getHours() < 12 ? 'おはよ。きょうもあえた' : 'こんにちは。あえたね') : 'おかえり。ここだよ'; bubble(message); if (activePetIsSleeping) setState('sleepy', 0); else { setState('happy'); speak(message, 'happy'); } }
+  function updateLookDirection() {
+    if (!state.data || document.hidden) return;
+    ['pet-1', 'pet-2'].forEach(petId => {
+      const node = petNode(petId);
+      if (!node) return;
+      const sleepingNow = petSleepingNow(petId);
+      if (sleepingNow) { node.style.setProperty('--look-x', '0px'); return; }
+      const slot = document.querySelector(`.pet-slot[data-pet-id="${petId}"]`);
+      if (slot && slot.dataset.attention === 'true') { node.style.setProperty('--look-x', '0px'); return; }
+      const petRect = node.getBoundingClientRect();
+      const petCenterX = petRect.left + petRect.width / 2;
+      let lookX = 0;
+      const puni = $('puni');
+      if (puni) {
+        const puniRect = puni.getBoundingClientRect();
+        const puniCenterX = puniRect.left + puniRect.width / 2;
+        const distPuni = Math.abs(puniCenterX - petCenterX);
+        if (distPuni <= 200) {
+          lookX = (puniCenterX > petCenterX ? 1 : -1) * (3 + 5 * (1 - distPuni / 200));
+        }
+      }
+      if (lookX === 0) {
+        const otherPetId = petId === 'pet-1' ? 'pet-2' : 'pet-1';
+        const otherNode = petNode(otherPetId);
+        if (otherNode) {
+          const otherRect = otherNode.getBoundingClientRect();
+          const otherCenterX = otherRect.left + otherRect.width / 2;
+          const distOther = Math.abs(otherCenterX - petCenterX);
+          if (distOther <= 150) {
+            lookX = (otherCenterX > petCenterX ? 1 : -1) * (3 + 5 * (1 - distOther / 150));
+          }
+        }
+      }
+      node.style.setProperty('--look-x', `${lookX}px`);
+    });
+    state.lookDirectionTimer = setTimeout(updateLookDirection, 150 + Math.floor(Math.random() * 50));
+  }
+  function scheduleYawn(petId) {
+    if (!state.data || !Life) return;
+    const timer = state.yawnTimers[petId];
+    if (timer) { clearTimeout(timer); state.yawnTimers[petId] = null; }
+    if (petSleepingNow(petId)) return;
+    const node = petNode(petId);
+    if (!node) return;
+    const slot = document.querySelector(`.pet-slot[data-pet-id="${petId}"]`);
+    if (slot && slot.dataset.attention === 'true') return;
+    if (state.echoSession || state.game) return;
+    const now = new Date();
+    const sleepHours = Life.PET_SLEEP_HOURS && Life.PET_SLEEP_HOURS[petId] || { start:22, end:8 };
+    const [startH, startM] = (sleepHours.start || '22:00').split(':').map(Number);
+    const [endH, endM] = (sleepHours.end || '8:00').split(':').map(Number);
+    const sleepStart = new Date(now);
+    sleepStart.setHours(startH, startM || 0, 0, 0);
+    const sleepEnd = new Date(now);
+    sleepEnd.setHours(endH, endM || 0, 0, 0);
+    if (sleepEnd < sleepStart) sleepEnd.setDate(sleepEnd.getDate() + 1);
+    const thirtyBefore = new Date(sleepStart.getTime() - 30 * 60 * 1000);
+    if (now < thirtyBefore || now >= sleepStart) return;
+    const delay = 60000 + Math.floor(Math.random() * 90000);
+    state.yawnTimers[petId] = setTimeout(() => {
+      if (!state.data || petSleepingNow(petId)) return;
+      const n = petNode(petId);
+      const s = document.querySelector(`.pet-slot[data-pet-id="${petId}"]`);
+      if (n && s && s.dataset.attention !== 'true' && !state.echoSession && !state.game) {
+        n.dataset.yawn = 'true';
+        setTimeout(() => { if (n) delete n.dataset.yawn; }, 1200);
+      }
+      scheduleYawn(petId);
+    }, delay);
+  }
+  function scheduleRoll(petId) {
+    if (!state.data) return;
+    const timer = state.rollTimers[petId];
+    if (timer) { clearTimeout(timer); state.rollTimers[petId] = null; }
+    if (!petSleepingNow(petId)) return;
+    const slot = document.querySelector(`.pet-slot[data-pet-id="${petId}"]`);
+    if (!slot) return;
+    const delay = 40000 + Math.floor(Math.random() * 60000);
+    state.rollTimers[petId] = setTimeout(() => {
+      if (!state.data || !petSleepingNow(petId)) return;
+      const s = document.querySelector(`.pet-slot[data-pet-id="${petId}"]`);
+      if (s) {
+        s.dataset.roll = 'true';
+        setTimeout(() => { if (s) delete s.dataset.roll; }, 3000);
+      }
+      scheduleRoll(petId);
+    }, delay);
+  }
   function initialize() {
     if (speechAvailable) { refreshVoices(); window.speechSynthesis.onvoiceschanged = refreshVoices; }
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
@@ -720,7 +808,7 @@
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
     document.querySelectorAll('.care-button').forEach(button => button.addEventListener('click', () => care(button.dataset.action)));
     let pointerStart = null; let holdTimer = null; let holdTriggered = false;
-    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) return; pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
+    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
     $('talk-button').addEventListener('click', () => { cancelTwoPetMoment('conversation'); cancelEcho(); state.recognizing ? stopRecognition() : startRecognition(); });
     $('teach-word-button').addEventListener('click', () => { if (!state.data || !Story || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('teaching'); cancelCompanionMoment(); cancelEcho(); hideQuestion(); const event = Story.startTeaching(state.data, {source:'manual',now:new Date()}); if (event) { state.storyDraft = null; storyPresent(event); save(); updateScreen(); } else showToast('いまのことばを教え終わってから、つぎを教えてね'); });
     $('echo-button').addEventListener('click', runEcho); $('echo-press-button').addEventListener('click', runEcho); $('echo-stop-button').addEventListener('click', () => finishEcho('stop'));
@@ -745,8 +833,8 @@
     $('learned-words').addEventListener('click', async event => { const id = event.target && event.target.dataset.forgetWord; if (!id) return; await deleteWordWithLedger(activeProfileId(), id); });
     $('voice-record-button').addEventListener('click', () => { cancelEcho(); recordWordVoice(); }); $('voice-clear-button').addEventListener('click', () => { cancelEcho(); $('voice-clear-confirm-box').hidden = false; $('forget-confirm-box').hidden = true; }); $('voice-clear-cancel').addEventListener('click', () => { $('voice-clear-confirm-box').hidden = true; }); $('voice-clear-confirm').addEventListener('click', async () => { cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('voice-memory-status').textContent = '消せません。もう一度ためしてね'; return; } $('voice-clear-confirm-box').hidden = true; await refreshVoiceCount(); showToast('声の記憶を消しました'); });
     $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); scheduleStoryRecall(); updateScreen(); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
-    if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
+    if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); });
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
