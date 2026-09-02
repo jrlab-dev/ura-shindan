@@ -13,13 +13,14 @@
   const TwoPetScenes = window.LittleCompanionTwoPetScenes;
   const TwoPetDirector = window.LittleCompanionTwoPetDirector;
   const SpeechArbiter = window.LittleCompanionSpeechArbiter;
+  const Trouble = window.LittleCompanionTrouble;
   const PetPresentations = window.LittleCompanionPetPresentations;
   const PetSpeech = window.LittleCompanionPetSpeech;
   const PET_PRESENTATIONS = PetPresentations && PetPresentations.PET_PRESENTATIONS || {};
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null} };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0 };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -298,7 +299,7 @@
     const profileList = $('profile-list'); profileList.replaceChildren(); profiles.forEach(profile => { const row = document.createElement('div'); row.className = 'profile-row'; const label = document.createElement('span'); label.textContent = `${profile.name}${profile.id === state.data.activeProfileId ? '（いまここ）' : ''}`; const actions = document.createElement('span'); const select = document.createElement('button'); select.type = 'button'; select.className = 'small-button'; select.textContent = '選ぶ'; select.dataset.profileSelect = profile.id; actions.appendChild(select); if (profile.id !== 'p-default') { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'small-button'; remove.textContent = '消す'; remove.dataset.profileDelete = profile.id; actions.appendChild(remove); } row.append(label, actions); profileList.appendChild(row); });
     const target = state.voiceTarget; const targetStillExists = target && target.profileId === state.data.activeProfileId && learned.some(item => item.id === target.wordId); const showVoiceRecord = Boolean(state.data.voiceMemoryEnabled && targetStillExists && state.data.bondStory && state.data.bondStory.beat === 'seed' && !Life.isSafetyPaused(state.data)); $('voice-record-panel').hidden = !showVoiceRecord;
     if (Week && state.data.weekProgress) { const day = Week.DAY_THEMES[(state.data.weekProgress.dayIndex || 1) - 1] || Week.DAY_THEMES[0]; $('week-today').hidden = false; $('week-today').textContent = `きょうのテーマ：${day.title}（${state.data.weekProgress.dayIndex}/7）`; }
-    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets();
+    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets(); updateTroublePanel();
   }
   function refreshVoices() { if (speechAvailable) speechVoices = window.speechSynthesis.getVoices(); }
   function preferredVoice() {
@@ -461,7 +462,7 @@
     if (!state.echoSession) return;
     const token = state.echoSession.token;
     state.echoEndTimer = window.setTimeout(() => { if (state.echoSession && state.echoSession.token === token) finishEcho('timeout'); }, 120000);
-    const checkIdle = () => { if (!state.echoSession || state.echoSession.token !== token) return; const reason = Life.echoShouldEnd(state.echoSession, Date.now()); if (reason) finishEcho(reason); else state.echoIdleTimer = window.setTimeout(checkIdle, 1000); };
+    const checkIdle = () => { if (!state.echoSession || state.echoSession.token !== token) return; if (!echoImitatorSleepCheck()) return; const reason = Life.echoShouldEnd(state.echoSession, Date.now()); if (reason) finishEcho(reason); else state.echoIdleTimer = window.setTimeout(checkIdle, 1000); };
     state.echoIdleTimer = window.setTimeout(checkIdle, 1000);
   }
   function echoFailure(token) { if (!state.echoSession || state.echoSession.token !== token) return; const resume = liveEchoApi('resumeLiveEchoDetection'); if (state.echoSession.inputMode === 'live' && resume) resume(); state.echoRecording = false; state.echoSession.phase = state.echoSession.inputMode === 'live' ? 'live' : 'ready'; state.echoSession.consecutiveFailures += 1; if (Life.echoShouldEnd(state.echoSession, Date.now()) === 'failed') finishEcho('failed'); else { bubble('まねっこできなかった。もういっこ？'); setState(state.echoSession.inputMode === 'live' ? 'copy-live' : 'copy-ready', 0); updateScreen(); } }
@@ -473,7 +474,19 @@
     echoSession.inputMode = 'press'; echoSession.phase = 'ready'; state.echoRecording = false;
     bubble('うまく聞こえないから「はなす」をおしてね'); setState('copy-ready', 0); updateScreen();
   }
-  function switchEchoImitator(echoSession) { if (!echoSession || echoSession.manualSelection || echoSession.rounds < echoSession.switchAtRound || !canSwitchActivePet()) return false; const next = echoSession.imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1'; if (!switchActivePet(next, `${petInfo(next).name} が こんどは まねするよ`)) return false; echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); return true; }
+  function switchEchoImitator(echoSession) { if (!echoSession || echoSession.manualSelection || echoSession.rounds < echoSession.switchAtRound || !canSwitchActivePet()) return false; const next = echoSession.imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1'; if (petSleepingNow(next)) return false; if (!switchActivePet(next, `${petInfo(next).name} が こんどは まねするよ`)) return false; echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); return true; }
+  /* まねっこの相手が寝る時刻へ入ったら、起きている子へ交代する。ふたりとも寝たら既存の理由コードで終える */
+  function echoImitatorSleepCheck() {
+    const echoSession = state.echoSession;
+    if (!echoSession || !petSleepingNow(echoSession.imitatorPetId)) return true;
+    const next = echoSession.imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1';
+    if (petSleepingNow(next)) { finishEcho('timeout'); return false; }
+    const message = `${petInfo(next).name} が こんどは まねするよ`;
+    const midRound = state.echoRecording || state.tuningBlob || state.audioNodes.length || (state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording || state.voice.playback)) || (speechAvailable && window.speechSynthesis.speaking);
+    if (activePetId() === next) { echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); showPetBubble(next, message); setState(echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); return true; }
+    if (!switchActivePet(next, message)) { if (midRound) return true; finishEcho('timeout'); return false; }
+    echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); setState(echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); return true;
+  }
   function echoSucceeded(token) { if (!state.echoSession || state.echoSession.token !== token) return; state.echoRecording = false; state.echoSession.phase = state.echoSession.inputMode === 'live' ? 'live' : 'ready'; state.echoSession.rounds += 1; state.echoSession.consecutiveFailures = 0; state.echoSession.lastActionAt = Date.now(); Life.recordEchoRound(state.data, new Date()); const changed = switchEchoImitator(state.echoSession); const companionHandled = companionAction('echo'); const reaction = companionHandled ? '' : echoReaction(); if (companionHandled && $('companion-moment').textContent) bubble($('companion-moment').textContent); save(); const reason = Life.echoShouldEnd(state.echoSession, Date.now()); if (reason === 'satisfied') finishEcho('satisfied'); else { if (!companionHandled && !changed) bubble(state.echoSession.inputMode === 'press' ? `${reaction}　もういっこ？ 「はなす」をおしてね` : `${reaction}　もういっこ、きくよ`); setState(state.echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); } }
   async function playLiveEcho(utterance, token) {
     if (!state.echoSession || state.echoSession.token !== token || state.echoSession.inputMode !== 'live' || state.echoSession.phase !== 'live' || !utterance) return;
@@ -495,7 +508,9 @@
     if (source === 'manual') interruptForManualEcho();
     const petInvited = source === 'spontaneous' || source === 'companion';
     prepareEchoAudio(); const token = ++state.echoToken; const liveStart = source === 'manual' && liveEchoApi('startLiveEchoSession');
-    const imitatorPetId = selectedPetId === 'pet-2' ? 'pet-2' : selectedPetId === 'pet-1' ? 'pet-1' : activePetId();
+    let imitatorPetId = selectedPetId === 'pet-2' ? 'pet-2' : selectedPetId === 'pet-1' ? 'pet-1' : activePetId();
+    if (petSleepingNow(imitatorPetId)) imitatorPetId = imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1';
+    if (petSleepingNow(imitatorPetId)) return;
     const relation = pairRelation(); const temporaryGuest = imitatorPetId === 'pet-2' && Boolean(relation && relation.phase === 'solo');
     state.echoSession = { token, source, imitatorPetId, manualSelection:Boolean(selectedPetId), temporaryGuest, inputMode:liveStart ? 'live' : 'press', startedAt:Date.now(), lastActionAt:Date.now(), lastVoiceAt:0, rounds:0, targetRounds:3 + Math.floor(Math.random() * 8), switchAtRound:2 + Math.floor(Math.random() * 3), consecutiveFailures:0, liveFallback:false, phase:liveStart ? 'calibrating' : 'ready' };
     if (temporaryGuest) state.twoPetGuestVisible = true;
@@ -645,7 +660,7 @@
   function handlePuniPoke() { const puni = $('puni'); if (!puni) return; window.clearTimeout(handlePuniPoke.timer); puni.dataset.poke = 'true'; playPetSound('puni'); handlePuniPoke.timer = window.setTimeout(() => { const p = $('puni'); if (p) delete p.dataset.poke; }, 600); const current = puni.dataset.spot || '0'; const spots = ['0','1','2','3','4','5'].filter(s => s !== current); const next = spots[Math.floor(Math.random() * spots.length)]; puni.dataset.spot = next; }
   function handleSleepyPetTouch(petNode) { if (!petNode || petNode.dataset.state !== 'sleepy') return; petNode.dataset.doze = 'true'; window.clearTimeout(handleSleepyPetTouch.timer); handleSleepyPetTouch.timer = window.setTimeout(() => { if (petNode && petNode.dataset.state === 'sleepy') delete petNode.dataset.doze; }, 2000); }
   function openPlayMenu() { if (stageAsleep()) return; if (!state.data || state.echoSession || state.game || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('play-menu'); cancelCompanionMoment(); $('play-menu-dialog').showModal(); }
-  function openEchoPetMenu() { $('play-menu-dialog').close(); $('echo-pet-1-name').textContent=petInfo('pet-1').name; $('echo-pet-2-name').textContent=petInfo('pet-2').name; $('echo-pet-note').textContent=state.data.echoModeEnabled===true?'まねする子をえらんでね':'おとなと設定してね'; $('echo-pet-dialog').showModal(); }
+  function openEchoPetMenu() { $('play-menu-dialog').close(); ['pet-1','pet-2'].forEach((id, index) => { const sleeping = petSleepingNow(id); const button = $(`echo-pet-${index + 1}-button`); const label = $(`echo-pet-${index + 1}-name`); if (button) button.disabled = sleeping; if (label) label.textContent = `${petInfo(id).name}${sleeping ? '（ねてるよ）' : ''}`; }); $('echo-pet-note').textContent=state.data.echoModeEnabled===true?'まねする子をえらんでね':'おとなと設定してね'; $('echo-pet-dialog').showModal(); }
   function startManualEcho(petId) { $('echo-pet-dialog').close(); if (state.data.echoModeEnabled!==true) { showToast('おとなと設定してね'); return; } startEchoSession('manual',petId); }
   function care(action) {
     if (stageAsleep()) return; if (action === 'pet' || action === 'stroke') { performTouch('stroke'); return; }
@@ -703,13 +718,149 @@
     scheduleEchoInvite();
     if ((!state.data.daily.talk || (Story && Story.isActive(state.data) && state.data.bondStory.beat === 'idle')) && !companionActive() && !twoPetIntroductionPending() && !state.director && !Life.isSafetyPaused(state.data)) state.initialPromptTimer = window.setTimeout(() => { if (!stageAsleep() && !document.hidden && !state.echoSession && !companionActive() && !twoPetIntroductionPending() && !state.game && !state.director && !Life.isSafetyPaused(state.data)) { if (Story && Story.isActive(state.data)) startStoryFlow(); else if (!weekStartDay()) startConversationTheme(); } }, 8000 + Math.floor(Math.random() * 7000));
   }
-  function noteInteraction() { unlockAudio(); state.lastInteractionAt = Date.now(); scheduleSpontaneous(); scheduleCompanionMoment(); scheduleTwoPetMoment(); }
+  function noteInteraction() { unlockAudio(); state.lastInteractionAt = Date.now(); scheduleSpontaneous(); scheduleCompanionMoment(); scheduleTwoPetMoment(); scheduleTrouble(); }
   function pauseForSafety() { if (!state.data) return; cancelTwoPetMoment('safety'); if (state.activityLock) state.activityLock.activateHardBlock('safety'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); Life.pauseSafety(state.data, new Date()); if (state.voice) state.voice.invalidate(); clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; window.clearTimeout(state.weekTimer); state.weekTimer = null; if (state.recognizing) stopRecognition(); if (state.director) { state.director = null; hideQuestion(); } save(); }
   function weekStartDay() { if (!Week || !state.data || state.echoSession || companionActive() || twoPetIntroductionPending() || Life.isSafetyPaused(state.data) || state.game || state.director || (Story && Story.isActive(state.data) && state.data.weekProgress && state.data.weekProgress.dayIndex === 1)) return false; const event = Week.visit(state.data, new Date()); if (!event) return false; Week.advanceBeat(state.data, 'question'); bubble(event.text); setState('thinking', 0); playPetSound(event.sound || 'call'); speak(event.text, event.sound || 'call'); save(); updateScreen(); const themeByDay = [null,'favorite-food','mood','treasure','copycat','together','thank-you']; const themeId = themeByDay[event.dayIndex]; if (themeId) window.setTimeout(() => { if (!document.hidden && !state.echoSession && !companionActive() && !twoPetIntroductionPending() && !Life.isSafetyPaused(state.data) && !state.game && !state.director && !(Story && Story.isActive(state.data))) startConversationTheme(themeId); }, 900); return true; }
   function weekSpontaneous() { if (!Week || !state.data || state.echoSession || companionActive() || twoPetIntroductionPending() || Life.isSafetyPaused(state.data) || document.hidden || state.game || state.director || (Story && Story.isActive(state.data))) return false; const event = Week.dailyEvent(state.data, new Date()); if (!event) return false; bubble(event.text); setState('talking', 0); playPetSound(event.sound || 'curious'); speak(event.text, event.sound || 'curious'); save(); updateScreen(); return true; }
   function weekCallback() { if (!Week || !state.data || state.echoSession || companionActive() || twoPetIntroductionPending() || Life.isSafetyPaused(state.data) || document.hidden || state.game || state.director || (Story && Story.isActive(state.data))) return false; const event = Week.callback(state.data, new Date()); if (!event) return false; bubble(event.text); setState('talking', 0); playPetSound(event.sound || 'happy'); speak(event.text, event.sound || 'happy'); save(); updateScreen(); return true; }
   function nextSpontaneousLine() { const recent = (state.data.daily.seenReplyIds || []).filter(id => String(id).startsWith('mono:')).map(id => String(id).slice(5)); const candidate = Brain.spontaneousPick(state.data, new Date(), recent); if (!candidate) return null; state.data.daily.seenReplyIds = [...(state.data.daily.seenReplyIds || []), `mono:${candidate.id}`].slice(-50); save(); return candidate; }
-  function welcomeOnOpen(previousSeen, firstToday) { if (stageAsleep()) { setState('sleepy', 0); return; } const now = new Date(); const gap = Date.parse(previousSeen || '') && now.getTime() - Date.parse(previousSeen) >= 86400000; const activePetIsSleeping = petSleepingNow(activePetId()); const message = activePetIsSleeping ? 'ねむねむ。おかえり' : gap ? 'あえた。うれしい' : firstToday ? (now.getHours() < 12 ? 'おはよ。きょうもあえた' : 'こんにちは。あえたね') : 'おかえり。ここだよ'; bubble(message); if (activePetIsSleeping) setState('sleepy', 0); else { setState('happy'); speak(message, 'happy'); } }
+  /* --- 困りごとと助け（trouble-engine.js が無くても落ちない。部品が無くても落ちない） --- */
+  function troubleData() { return state.data && state.data.trouble ? state.data.trouble : null; }
+  function troubleOccurrences() { const trouble = troubleData(); if (!trouble) return 0; const daily = trouble.daily && typeof trouble.daily === 'object' ? trouble.daily : {}; const kinds = Array.isArray(daily.kinds) ? daily.kinds : []; return Math.max(Math.max(0, Number(daily.count) || 0), kinds.length); }
+  function troubleFastMode() { try { return localStorage.getItem('little-companion-trouble-fast') === '1'; } catch (_) { return false; } }
+  function troubleBlocked() {
+    if (!Trouble) return true;
+    const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
+    const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
+    const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
+    return Boolean(!state.data || document.hidden || state.data.soundMode === 'text' || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
+  }
+  function troubleMissingPartKinds(activePetId) {
+    const missing = [];
+    if (!$('trouble-book')) missing.push('book');
+    if (!$('trouble-ball')) missing.push('ball');
+    if (!$('trouble-window')) missing.push('window');
+    if (!$(`trouble-leaf-${activePetId === 'pet-2' ? '2' : '1'}`)) missing.push('leaf');
+    if (!$('puni')) missing.push('puni');
+    return missing;
+  }
+  function scheduleTrouble() {
+    if (!Trouble || !state.data) return;
+    window.clearTimeout(state.troubleTimer); state.troubleTimer = null;
+    const hadActive = Boolean(troubleData() && troubleData().active);
+    Trouble.troubleDailyReset(state.data, new Date());
+    if (hadActive && !(troubleData() && troubleData().active)) { state.troubleHiccupTaps = 0; stopTroubleReminder(); applyTroubleAttributes(); save(); }
+    if (!state.data.trouble.enabled || (troubleData() && troubleData().active) || troubleOccurrences() >= 2) { state.troubleNextAt = 0; return; }
+    const now = Date.now();
+    if (!state.troubleNextAt || state.troubleNextAt <= now) {
+      const delay = troubleOccurrences() === 0 ? (troubleFastMode() ? 5000 : 120000 + Math.floor(Math.random() * 180001)) : (troubleFastMode() ? 20000 : 900000 + Math.floor(Math.random() * 60001));
+      state.troubleNextAt = now + delay;
+    }
+    const token = ++state.troubleToken;
+    state.troubleTimer = window.setTimeout(() => { if (token === state.troubleToken) fireTrouble(); }, Math.max(500, state.troubleNextAt - now));
+  }
+  function fireTrouble() {
+    state.troubleTimer = null;
+    if (!Trouble || !state.data) return;
+    const trouble = troubleData();
+    if (!trouble || !trouble.enabled || trouble.active || troubleOccurrences() >= 2) { state.troubleNextAt = 0; return; }
+    if (troubleBlocked()) {
+      const hardWait = document.hidden || Life.isQuietTime(new Date()) || stageAsleep() || Life.isSafetyPaused(state.data) || Boolean($('setup-dialog') && $('setup-dialog').open);
+      const token = ++state.troubleToken;
+      state.troubleTimer = window.setTimeout(() => { if (token === state.troubleToken) fireTrouble(); }, hardWait ? 60000 : 3000);
+      return;
+    }
+    state.troubleNextAt = 0;
+    const now = new Date();
+    const stage = Life.getStageState(state.data, activeProfileId(), now);
+    const kind = Trouble.pickTrouble(state.data, { activePetId: stage.activePetId, awakePetIds: stage.awakePetIds, quiet: Life.isQuietTime(now), allAsleep: stage.allAsleep, enabled: trouble.enabled !== false, exclude: troubleMissingPartKinds(stage.activePetId) }, now);
+    if (!kind) return;
+    const petId = kind === 'book' && stage.awakePetIds.includes('pet-2') ? 'pet-2' : stage.activePetId;
+    beginTrouble(kind, petId);
+  }
+  function applyTroubleAttributes() {
+    const stage = document.querySelector('.pet-stage');
+    const active = troubleData() && troubleData().active;
+    ['pet-1','pet-2'].forEach(id => { const node = petNode(id); if (node) delete node.dataset.trouble; });
+    const puni = $('puni'); if (puni) delete puni.dataset.hide;
+    if (stage) { delete stage.dataset.trouble; delete stage.dataset.troublePet; }
+    if (!active) return;
+    if (stage) { stage.dataset.trouble = active.kind; stage.dataset.troublePet = active.petId; }
+    const node = petNode(active.petId); if (node) node.dataset.trouble = active.kind;
+    if (active.kind === 'puni' && puni && puni.dataset.front !== 'true') puni.dataset.hide = active.hide || 'right';
+  }
+  function beginTrouble(kind, petId) {
+    if (!Trouble) return;
+    const active = Trouble.startTrouble(state.data, kind, petId, new Date());
+    if (!active) return;
+    if (kind === 'puni' && !active.hide) active.hide = ['left','right','bottom'][Math.floor(Math.random() * 3)];
+    state.troubleHiccupTaps = 0;
+    save(); applyTroubleAttributes(); startTroubleReminder();
+    showPetBubble(petId, Trouble.phrases[kind].troubled);
+    playPetSound('curious');
+    speak(Trouble.phrases[kind].troubled, 'curious');
+  }
+  function startTroubleReminder() {
+    window.clearTimeout(state.troubleRemindTimer); state.troubleRemindTimer = null;
+    if (!Trouble) return;
+    const token = ++state.troubleRemindToken;
+    const remind = () => {
+      if (token !== state.troubleRemindToken) return;
+      const active = troubleData() && troubleData().active;
+      if (!active) return;
+      if (!document.hidden && !troubleBlocked() && !petSleepingNow(active.petId)) { showPetBubble(active.petId, Trouble.phrases[active.kind].troubled); playPetSound('curious'); }
+      state.troubleRemindTimer = window.setTimeout(remind, 30000);
+    };
+    state.troubleRemindTimer = window.setTimeout(remind, 30000);
+  }
+  function stopTroubleReminder() { window.clearTimeout(state.troubleRemindTimer); state.troubleRemindTimer = null; state.troubleRemindToken += 1; }
+  function resolveActiveTrouble() {
+    const trouble = troubleData();
+    if (!Trouble || !trouble || !trouble.active) return false;
+    const kind = trouble.active.kind; const petId = trouble.active.petId;
+    Trouble.resolveTrouble(state.data, new Date());
+    stopTroubleReminder(); state.troubleHiccupTaps = 0;
+    applyTroubleAttributes();
+    const node = petNode(petId); if (node) node.style.setProperty('--look-x', '0px');
+    setPetState(petId, 'happy');
+    const text = Trouble.resolvedPhrase(kind, state.data.childName);
+    showPetBubble(petId, text);
+    playPetSound('happy');
+    speak(text, 'happy');
+    save(); updateScreen();
+    scheduleTrouble();
+    return true;
+  }
+  function tryResolveTroubleTarget(kind, petId = '') {
+    const trouble = troubleData();
+    if (!trouble || !trouble.active || trouble.active.kind !== kind) return false;
+    if (petId && trouble.active.petId !== petId) return false;
+    return resolveActiveTrouble();
+  }
+  function handleTroublePuniPoke(event) {
+    const puni = $('puni');
+    if (!puni || !puni.dataset.hide) return;
+    if (tryResolveTroubleTarget('puni')) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }
+  function noteTroubleHiccupTap(petId) {
+    const trouble = troubleData();
+    if (!trouble || !trouble.active || trouble.active.kind !== 'hiccup' || trouble.active.petId !== petId) return false;
+    state.troubleHiccupTaps += 1;
+    if (state.troubleHiccupTaps >= 3) return resolveActiveTrouble();
+    return false;
+  }
+  function updateTroublePanel() {
+    if (!Trouble || !state.data || !state.data.trouble) return;
+    const toggle = $('trouble-toggle'); if (toggle) toggle.checked = state.data.trouble.enabled !== false;
+    const todayCount = $('trouble-count-today'); if (todayCount) todayCount.textContent = String(Math.max(0, Number(state.data.trouble.daily && state.data.trouble.daily.count) || 0));
+    const totalCount = $('trouble-count-total'); if (totalCount) totalCount.textContent = String(Math.max(0, Number(state.data.trouble.helpTotal) || 0));
+  }
+  function restoreTroubleOnLoad() {
+    if (!Trouble || !state.data) return;
+    Trouble.troubleDailyReset(state.data, new Date());
+    if (troubleData() && troubleData().active) { state.troubleHiccupTaps = 0; applyTroubleAttributes(); startTroubleReminder(); }
+  }
+  function welcomeOnOpen(previousSeen, firstToday) { if (stageAsleep()) { setState('sleepy', 0); return; } const now = new Date(); const gap = Date.parse(previousSeen || '') && now.getTime() - Date.parse(previousSeen) >= 86400000; const activePetIsSleeping = petSleepingNow(activePetId()); const helpedKind = firstToday && Trouble ? Trouble.helpedYesterday(state.data, now) : null; const message = helpedKind && Trouble.phrases[helpedKind] ? Trouble.phrases[helpedKind].nextDay : activePetIsSleeping ? 'ねむねむ。おかえり' : gap ? 'あえた。うれしい' : firstToday ? (now.getHours() < 12 ? 'おはよ。きょうもあえた' : 'こんにちは。あえたね') : 'おかえり。ここだよ'; bubble(message); if (activePetIsSleeping) setState('sleepy', 0); else { setState('happy'); speak(message, 'happy'); } }
   function updateLookDirection() {
     if (!state.data || document.hidden) return;
     ['pet-1', 'pet-2'].forEach(petId => {
@@ -803,12 +954,14 @@
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
     if (!state.data) { state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); $('setup-dialog').showModal(); }
     state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
-    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession();
+    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad();
     updateScreen(); if (savedData) { welcomeOnOpen(previousSeen, firstToday); const resumedStory = Story.resume(state.data); if (resumedStory) storyPresent(resumedStory); else if (!Story.isActive(state.data)) weekStartDay(); } setSeen();
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
     document.querySelectorAll('.care-button').forEach(button => button.addEventListener('click', () => care(button.dataset.action)));
     let pointerStart = null; let holdTimer = null; let holdTriggered = false;
-    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
+    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { noteTroubleHiccupTap(petId); if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handleTroublePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') handleTroublePuniPoke(event); }); puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
+    [['trouble-book','book',''],['trouble-ball','ball',''],['trouble-window','window',''],['trouble-leaf-1','leaf','pet-1'],['trouble-leaf-2','leaf','pet-2']].forEach(([id, kind, petId]) => { const part = $(id); if (!part) return; part.addEventListener('click', () => tryResolveTroubleTarget(kind, petId)); if (part.tagName !== 'BUTTON') part.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); tryResolveTroubleTarget(kind, petId); } }); });
+    { const troubleToggle = $('trouble-toggle'); if (troubleToggle) troubleToggle.addEventListener('change', () => { if (!state.data || !state.data.trouble) return; state.data.trouble.enabled = troubleToggle.checked; save(); updateTroublePanel(); scheduleTrouble(); }); }
     $('talk-button').addEventListener('click', () => { cancelTwoPetMoment('conversation'); cancelEcho(); state.recognizing ? stopRecognition() : startRecognition(); });
     $('teach-word-button').addEventListener('click', () => { if (!state.data || !Story || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('teaching'); cancelCompanionMoment(); cancelEcho(); hideQuestion(); const event = Story.startTeaching(state.data, {source:'manual',now:new Date()}); if (event) { state.storyDraft = null; storyPresent(event); save(); updateScreen(); } else showToast('いまのことばを教え終わってから、つぎを教えてね'); });
     $('echo-button').addEventListener('click', runEcho); $('echo-press-button').addEventListener('click', runEcho); $('echo-stop-button').addEventListener('click', () => finishEcho('stop'));
@@ -832,9 +985,9 @@
     $('forget-cancel').addEventListener('click', () => { $('forget-confirm-box').hidden = true; });
     $('learned-words').addEventListener('click', async event => { const id = event.target && event.target.dataset.forgetWord; if (!id) return; await deleteWordWithLedger(activeProfileId(), id); });
     $('voice-record-button').addEventListener('click', () => { cancelEcho(); recordWordVoice(); }); $('voice-clear-button').addEventListener('click', () => { cancelEcho(); $('voice-clear-confirm-box').hidden = false; $('forget-confirm-box').hidden = true; }); $('voice-clear-cancel').addEventListener('click', () => { $('voice-clear-confirm-box').hidden = true; }); $('voice-clear-confirm').addEventListener('click', async () => { cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('voice-memory-status').textContent = '消せません。もう一度ためしてね'; return; } $('voice-clear-confirm-box').hidden = true; await refreshVoiceCount(); showToast('声の記憶を消しました'); });
-    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
+    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); scheduleTrouble(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
-    if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); });
+    if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleTrouble(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); });
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }

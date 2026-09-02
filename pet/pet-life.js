@@ -25,7 +25,8 @@
       themeDates:{}, recentMoods:[], questionAnswers:0, learnedWords:[], bondStory,
       wordMemoryV2:{stories:[bondStory],requestDate:'',requestProfileId:'',deletionLedger:[]},
       pets:defaultPets('ぽこ'), profilePetStates:[defaultProfilePetState('p-default','pet-1'),defaultProfilePetState('p-default','pet-2')],
-      pairRelations:[defaultPairRelation('p-default')], ownPreference:'round', moments:[], bondStage:0,lastSeenAt:'',lastReplies:[]
+      pairRelations:[defaultPairRelation('p-default')], ownPreference:'round', moments:[], bondStage:0,lastSeenAt:'',lastReplies:[],
+      trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true}
     };
   }
   function listSafe(values) { return Array.isArray(values) ? values.map(safeText).filter(value => value && !privateLike(value)).slice(-5) : []; }
@@ -117,6 +118,20 @@
     data.urge = ['curious','playful','quiet','sleepy','proud'].includes(old.urge) ? old.urge : 'curious'; data.attention = clamp(old.attention === undefined ? 50 : old.attention); data.surpriseSeed = Math.max(0, Math.floor(Number(old.surpriseSeed) || 17));
     data.moments = Array.isArray(old.moments) ? old.moments.map(item => ({ id:safeText(item && item.id).slice(0,50), profileId:safeText(item && item.profileId).slice(0,30) || 'p-default', type:'learned-word', word:safeText(item && item.word).slice(0,12), category:['food','animal','play','thing','other'].includes(item && item.category) ? item.category : 'other', text:safeText(item && item.text).slice(0,40), at:safeTimestamp(item && item.at) })).filter(item => item.id && item.word).slice(-30) : [];
     data.lastReplies = Array.isArray(old.lastReplies) ? old.lastReplies.slice(-12) : [];
+    const TROUBLE_KINDS = ['puni','book','window','hiccup','leaf','ball'];
+    const oldTrouble = old.trouble && typeof old.trouble === 'object' ? old.trouble : {};
+    const oldTroubleDaily = oldTrouble.daily && typeof oldTrouble.daily === 'object' ? oldTrouble.daily : {};
+    const troubleToday = today(now);
+    const troubleSameDay = oldTroubleDaily.date === troubleToday;
+    const troubleKinds = Array.isArray(oldTroubleDaily.kinds) ? [...new Set(oldTroubleDaily.kinds.map(value => safeText(value).slice(0, 10)).filter(value => TROUBLE_KINDS.includes(value)))].slice(0, 6) : [];
+    const oldTroubleActive = oldTrouble.active && typeof oldTrouble.active === 'object' && TROUBLE_KINDS.includes(oldTrouble.active.kind) ? oldTrouble.active : null;
+    data.trouble = {
+      active: oldTroubleActive && oldTroubleActive.date === troubleToday ? { kind:oldTroubleActive.kind, petId:oldTroubleActive.petId === 'pet-2' ? 'pet-2' : 'pet-1', startedAt:safeTimestamp(oldTroubleActive.startedAt), hide:['left','right','bottom'].includes(oldTroubleActive.hide) ? oldTroubleActive.hide : '', date:troubleToday } : null,
+      daily: { date:troubleToday, count:troubleSameDay ? Math.max(0, Math.min(99, Math.floor(Number(oldTroubleDaily.count) || 0))) : 0, kinds:troubleSameDay ? troubleKinds : [] },
+      helpLog: Array.isArray(oldTrouble.helpLog) ? oldTrouble.helpLog.map(item => ({ date:safeText(item && item.date).slice(0, 10), kind:TROUBLE_KINDS.includes(item && item.kind) ? item.kind : '', petId:item && item.petId === 'pet-2' ? 'pet-2' : 'pet-1', at:safeTimestamp(item && item.at) })).filter(item => /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.kind).slice(-60) : [],
+      helpTotal: Math.max(0, Math.floor(Number(oldTrouble.helpTotal) || 0)),
+      enabled: oldTrouble.enabled !== false
+    };
     const profileSafe = value => safeText(value).slice(0, 8);
     const hadProfiles = Array.isArray(old.profiles) && old.profiles.length > 0; const rawProfiles = hadProfiles ? old.profiles : [];
     data.profiles = rawProfiles.map((item, index) => ({ id:safeText(item && item.id).slice(0, 30) || `p-${index + 1}`, name:profileSafe(item && item.name) && !privateLike(profileSafe(item && item.name)) ? profileSafe(item.name) : `ひと${index + 1}`, childName:safeText(item && item.childName).slice(0,12), likes:listSafe(item && item.likes), dislikes:listSafe(item && item.dislikes), recentMoods:Array.isArray(item && item.recentMoods) ? item.recentMoods.map(safeText).filter(Boolean).slice(-7) : [], visitDates:Array.isArray(item && item.visitDates) ? item.visitDates.map(value => safeText(value).slice(0,10)).filter(Boolean).slice(-7) : [], createdAt:safeTimestamp(item && item.createdAt) || safeTimestamp(new Date(now).toISOString()), lastSeenAt:safeTimestamp(item && item.lastSeenAt), interactionCount:Math.max(0, Number(item && item.interactionCount) || 0), activePetId:item && item.activePetId === 'pet-2' ? 'pet-2' : 'pet-1',activePetTurnCount:Math.max(0,Math.min(4,Math.floor(Number(item && item.activePetTurnCount)||0))),switchAfterTurn:Math.max(2,Math.min(4,Math.floor(Number(item && item.switchAfterTurn)||2))) })).filter(item => item.id && item.name).slice(0, 5);

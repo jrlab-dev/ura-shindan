@@ -7,7 +7,7 @@
   <meta name="description" content="端末の中で遊べる、ちいさな相棒">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=43">
   <title>ちいさな相棒</title>
 </head>
 <body>
@@ -23,6 +23,43 @@
     </header>
 
     <section class="pet-stage" aria-label="ペット">
+      <div class="room" aria-hidden="true" data-timeofday="day">
+        <div class="room-wall">
+          <div class="room-window" id="trouble-window" tabindex="0" role="button" aria-label="まど">
+            <div class="window-sky"></div>
+            <div class="window-frame"></div>
+            <div class="window-mullion-vertical"></div>
+            <div class="window-mullion-horizontal"></div>
+            <div class="window-cloud" aria-hidden="true"></div>
+            <div class="window-stars" aria-hidden="true"></div>
+            <div class="window-moon" aria-hidden="true"></div>
+          </div>
+          <div class="room-shelf">
+            <div class="shelf-plant" aria-hidden="true"></div>
+            <div class="shelf-book book-1" aria-hidden="true"></div>
+            <div class="shelf-book book-2" aria-hidden="true"></div>
+            <div class="shelf-book book-3" aria-hidden="true"></div>
+            <button id="trouble-ball" class="trouble-target" type="button" aria-label="ボール"></button>
+          </div>
+        </div>
+        <div class="room-floor">
+          <div class="floor-baseboard"></div>
+          <div class="floor-planks">
+            <div class="floor-plank" aria-hidden="true"></div>
+            <div class="floor-plank" aria-hidden="true"></div>
+            <div class="floor-plank" aria-hidden="true"></div>
+            <div class="floor-plank" aria-hidden="true"></div>
+            <div class="floor-plank" aria-hidden="true"></div>
+          </div>
+          <div class="room-rug"></div>
+          <button id="trouble-book" class="trouble-target" type="button" aria-label="おちたほん"></button>
+        </div>
+        <div class="room-light" aria-hidden="true">
+          <div class="light-cord"></div>
+          <div class="light-shade"></div>
+          <div class="light-glow"></div>
+        </div>
+      </div>
       <div id="status-pill" class="status-pill">げんきだよ</div>
       <div id="inner-state" class="inner-state" aria-live="polite"></div>
       <p id="companion-moment" class="companion-moment" role="status" aria-live="polite" hidden></p>
@@ -31,8 +68,8 @@
       <div id="question-candidates" class="question-candidates" role="group" aria-label="答えの候補" hidden></div>
       <div id="two-pet-status" class="two-pet-status" aria-live="polite" hidden></div>
       <div class="pets-row" aria-label="2匹のペット">
-        <div class="pet-slot" data-pet-id="pet-1"><p id="pet-1-name" class="pet-name">ぽこ</p><div id="pet-1-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet" class="pet" data-state="normal" role="img" aria-label="ぽこがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div></div></div></div>
-        <div id="pet-2-slot" class="pet-slot pet-slot-2" data-pet-id="pet-2" hidden><p id="pet-2-name" class="pet-name">ふわ</p><div id="pet-2-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet-2" class="pet pet-2" data-state="normal" role="img" aria-label="ふわがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div></div></div></div>
+        <div class="pet-slot" data-pet-id="pet-1"><p id="pet-1-name" class="pet-name">ぽこ</p><div id="pet-1-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet" class="pet" data-state="normal" role="img" aria-label="ぽこがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div><i class="trouble-leaf" id="trouble-leaf-1" aria-hidden="true"></i></div></div></div>
+        <div id="pet-2-slot" class="pet-slot pet-slot-2" data-pet-id="pet-2" hidden><p id="pet-2-name" class="pet-name">ふわ</p><div id="pet-2-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet-2" class="pet pet-2" data-state="normal" role="img" aria-label="ふわがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div><i class="trouble-leaf" id="trouble-leaf-2" aria-hidden="true"></i></div></div></div>
       </div>
       <div id="puni" class="puni" data-front="false" role="img" aria-label="ぷにがふわふわしている" tabindex="0"><div class="puni-body" aria-hidden="true"><i class="puni-shine"></i><i class="puni-eye puni-eye-left"></i><i class="puni-eye puni-eye-right"></i></div><p class="puni-name" aria-hidden="true">ぷに</p></div>
       <p id="welcome-note" class="welcome-note">さわってみてね</p>
@@ -97,6 +134,8 @@
         <label class="setting-row"><span>音モード</span><select id="sound-mode-select" aria-label="音モード"><option value="auto">自動</option><option value="pet">ペット声だけ</option><option value="text">文字だけ</option></select></label>
         <label class="setting-row"><span>教えた声をこのブラウザに覚える</span><input id="voice-memory-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label><p class="memory-summary">おとなと一緒に使う機能。オフにすると録音・再生を止めます。声は「声の記憶だけ消す」から消せます。このブラウザと同じ公開URLだけに保存されます。</p>
         <label class="setting-row"><span>まねっこ遊びを使う</span><input id="echo-mode-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label><p class="memory-summary">話した声を最大4秒だけ、その場で高くして返します。保存・送信せず、内容は理解しません。</p>
+        <label class="setting-row"><span>困りごとを起こす</span><input id="trouble-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
+        <div class="setting-row" style="pointer-events:none"><span>助けた回数</span><span style="font-size:13px;color:var(--muted)">きょう <span id="trouble-count-today">0</span>回／これまで <span id="trouble-count-total">0</span>回</span></div>
         <div class="voice-test"><button id="voice-test-button" class="small-button" type="button">声をテスト</button><p>ポン音→ペット声→いま主役の声</p><p id="voice-test-status" class="voice-test-status" role="status" aria-live="polite">まだテストしていません</p></div>
         <section class="voice-tuning" aria-label="まねっこ声づくり"><h3>まねっこ声づくり</h3><label>調整する子 <select id="tuning-pet-select"><option value="pet-1">ピンク</option><option value="pet-2">青</option></select></label><p>この文を、少しゆっくり言ってください</p><p class="tuning-phrase">こんにちは。きょうも会えて、うれしいな</p><button id="tuning-record-button" class="small-button" type="button" aria-describedby="tuning-status" disabled>録音する（最大6秒）</button><button id="tuning-stop-button" class="danger-button" type="button" hidden>ここで止める</button><p id="tuning-status" class="memory-summary" role="status" aria-live="polite">上の「教えた声をこのブラウザに覚える」をオンにしてください</p><div id="tuning-controls" hidden><label>高さ <output id="tuning-pitch-value">230%</output><input id="tuning-pitch" type="range" min="55" max="350" value="230"></label><label>加工方式 <select id="tuning-timing-mode"><option value="preserve">おすすめ（高さと速さを別々に変える）</option><option value="fast">軽量（高さと速さが連動）</option></select></label><p id="tuning-timing-note">高さと速さを別々に変えます。ゆっくりでも高い声のままです</p><label>速さ <output id="tuning-speed-value">111%</output><input id="tuning-speed" type="range" min="70" max="140" value="111"></label><label>二重声 <output id="tuning-double-value">0%</output><input id="tuning-double" type="range" min="0" max="36" value="0"></label><label>明るさ <output id="tuning-brightness-value">70</output><input id="tuning-brightness" type="range" min="0" max="100" value="70"></label><button id="tuning-play-button" class="small-button" type="button">加工した声を聞く</button><button id="tuning-reset-button" class="small-button" type="button">おすすめに戻す</button></div></section>
         <label class="setting-row"><span>カメラ確認を使う</span><input id="camera-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
@@ -137,19 +176,21 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="brain.js?v=32" defer></script>
-  <script src="pet-life.js?v=32" defer></script>
-  <script src="story-engine.js?v=32" defer></script>
-  <script src="week-engine.js?v=32" defer></script>
-  <script src="voice-memory.js?v=32" defer></script>
-    <script src="companion-scenes.js?v=32" defer></script>
-    <script src="companion-director.js?v=32" defer></script>
-    <script src="activity-lock.js?v=32" defer></script>
-    <script src="pet-presentations.js?v=32" defer></script>
-    <script src="pet-speech.js?v=32" defer></script>
-    <script src="two-pet-scenes.js?v=32" defer></script>
-    <script src="two-pet-director.js?v=32" defer></script>
-    <script src="speech-arbiter.js?v=32" defer></script>
-    <script src="app.js?v=32" defer></script>
+  <script src="brain.js?v=34" defer></script>
+  <script src="room-background.js?v=34" defer></script>
+  <script src="pet-life.js?v=34" defer></script>
+  <script src="story-engine.js?v=34" defer></script>
+  <script src="week-engine.js?v=34" defer></script>
+  <script src="voice-memory.js?v=34" defer></script>
+    <script src="companion-scenes.js?v=34" defer></script>
+    <script src="companion-director.js?v=34" defer></script>
+    <script src="activity-lock.js?v=34" defer></script>
+    <script src="pet-presentations.js?v=34" defer></script>
+    <script src="pet-speech.js?v=34" defer></script>
+    <script src="two-pet-scenes.js?v=34" defer></script>
+    <script src="two-pet-director.js?v=34" defer></script>
+    <script src="speech-arbiter.js?v=34" defer></script>
+    <script src="trouble-engine.js?v=34" defer></script>
+    <script src="app.js?v=34" defer></script>
 </body>
 </html>
