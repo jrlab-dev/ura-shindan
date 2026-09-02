@@ -14,13 +14,25 @@
   const TwoPetDirector = window.LittleCompanionTwoPetDirector;
   const SpeechArbiter = window.LittleCompanionSpeechArbiter;
   const Trouble = window.LittleCompanionTrouble;
+  const Ritual = window.LittleCompanionRitual;
+  /* 儀式エンジンがあるときだけ、舞台判定（主役・起きている子・全員ねんね）に「寝かしつけで早く眠った子」を反映する */
+  if (Ritual && Life && typeof Life.getStageState === 'function') {
+    const rawGetStageState = Life.getStageState.bind(Life);
+    Life.getStageState = function (data, profileId, value) {
+      const stage = rawGetStageState(data, profileId, value);
+      const at = value instanceof Date ? value : new Date(value || Date.now());
+      const awakePetIds = (stage.awakePetIds || []).filter(id => !petAsleep(id, at));
+      if (awakePetIds.length === (stage.awakePetIds || []).length) return stage;
+      return { activePetId: awakePetIds.includes(stage.activePetId) ? stage.activePetId : awakePetIds[0] || stage.activePetId, awakePetIds, allAsleep: awakePetIds.length === 0, pairAvailable: stage.pairAvailable };
+    };
+  }
   const PetPresentations = window.LittleCompanionPetPresentations;
   const PetSpeech = window.LittleCompanionPetSpeech;
   const PET_PRESENTATIONS = PetPresentations && PetPresentations.PET_PRESENTATIONS || {};
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0 };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0 };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -66,12 +78,17 @@
     else if (next === 'copy-thinking') $('status-pill').textContent = 'んーっと';
     else if (next === 'copy-speaking') $('status-pill').textContent = 'まねっこ中';
     else if (next === 'copy-happy') $('status-pill').textContent = 'できた';
-    else { const sleepingNow = Boolean(Life && Life.isPetSleeping && Life.isPetSleeping(visualPetId(), new Date())); $('status-pill').textContent = sleepingNow || state.data.energy < 30 ? 'すやすや' : 'げんきだよ'; }
+    else { const sleepingNow = petAsleep(visualPetId(), new Date()); $('status-pill').textContent = sleepingNow || state.data.energy < 30 ? 'すやすや' : 'げんきだよ'; }
     if (duration && !['listening', 'talking'].includes(next)) state.replyTimer = setTimeout(() => setState(state.data.energy < 30 ? 'sleepy' : 'normal', 0), duration);
   }
   function bubble(text) { if (state.echoSession && state.echoSession.imitatorPetId) { $('bubble').hidden = true; showPetBubble(state.echoSession.imitatorPetId, text); return; } $('bubble').hidden = false; $('bubble').textContent = text; }
   function activeProfileId() { return state.data && state.data.activeProfileId || 'p-default'; }
-  function activePetId() { if (Life && Life.getStageState) return Life.getStageState(state.data, activeProfileId(), new Date()).activePetId; return Life && Life.getActivePetId ? Life.getActivePetId(state.data, activeProfileId()) : 'pet-1'; } function stageAsleep() { if (!state.data || !Life || !Life.getStageState) return false; return Life.getStageState(state.data, activeProfileId(), new Date()).allAsleep === true; } function petSleepingNow(id) { return Boolean(Life && Life.isPetSleeping && Life.isPetSleeping(id, new Date())); }
+  /* 寝ている判定：時計で寝ている＋寝かしつけで早く眠ったぶん（儀式エンジン）を合わせる。
+     getStageState の呼び出しは app.js の中でこっち向きにする（pet-life.js 自体は変えない） */
+  function petAsleep(petId, now = new Date()) { return Boolean(Life && Life.isPetSleeping && Life.isPetSleeping(petId, now)) || Boolean(Ritual && state.data && Ritual.isTuckedAsleep && Ritual.isTuckedAsleep(state.data, petId, now)); }
+  function ritualAwakePetIds(now = new Date()) { return ['pet-1','pet-2'].filter(id => !petAsleep(id, now)); }
+  function stageAwakePetIds(now = new Date()) { if (!state.data || !Life || !Life.getStageState) return []; return Life.getStageState(state.data, activeProfileId(), now).awakePetIds || []; }
+  function activePetId() { if (Life && Life.getStageState) return Life.getStageState(state.data, activeProfileId(), new Date()).activePetId; return Life && Life.getActivePetId ? Life.getActivePetId(state.data, activeProfileId()) : 'pet-1'; } function stageAsleep() { if (!state.data || !Life || !Life.getStageState) return false; return Life.getStageState(state.data, activeProfileId(), new Date()).allAsleep === true; } function petSleepingNow(id) { return petAsleep(id); }
   function pairRelation() { return Life && Life.getPairRelation ? Life.getPairRelation(state.data, activeProfileId()) : null; }
   function petInfo(id) { return (state.data && state.data.pets || []).find(item => item.id === id) || { id, name:id === 'pet-2' ? 'ふわ' : 'ぽこ' }; }
   function petNode(id) { return id === 'pet-2' ? $('pet-2') : $('pet'); }
@@ -100,7 +117,7 @@
     state.twoPetSession = session; state.twoPetProfileId = profileId;
     return session;
   }
-  function renderTwoPets() { if (!state.data) return; const relation = pairRelation(); const pets = state.data.pets || []; const active = visualPetId(); ['pet-1','pet-2'].forEach(id => { const info = pets.find(item => item.id === id) || petInfo(id); const value = Life && Life.getProfilePetState ? Life.getProfilePetState(state.data, activeProfileId(), id) : null; const label = $(`${id}-name`); if (label) label.textContent = info.name; const node = petNode(id); const slot = node && node.closest('.pet-slot'); const isActive = id === active; const isSleeping = Boolean(Life && Life.isPetSleeping && Life.isPetSleeping(id, new Date())); if (slot) { slot.classList.toggle('is-active-pet', isActive); slot.dataset.depth = isActive ? 'front' : 'back'; if (isSleeping) slot.dataset.asleep = 'true'; else delete slot.dataset.asleep; } if (node) { const presentation=twoPetPresentation(id); node.dataset.presentation=presentation.visual||''; node.dataset.active = String(isActive); node.setAttribute('aria-label', value ? `${info.name}。気分${value.mood}、体力${value.energy}、表情${value.lastExpression}${isActive ? '、いま遊ぶ主役' : '、見守り中'}` : `${info.name}がこちらを見ている`); const isActiveInSession = state.echoSession && (state.echoSession.imitatorPetId === id || id === active); const isCopyState = String(node.dataset.state || '').indexOf('copy-') === 0; if (isSleeping) { node.dataset.state = 'sleepy'; const sleepBubble = $(`${id}-bubble`); if (sleepBubble) { sleepBubble.hidden = true; sleepBubble.textContent = ''; } } else if (!isActiveInSession && !isCopyState && node.dataset.state === 'sleepy') node.dataset.state = 'normal'; } }); const guestSleeping = Boolean(Life && Life.isPetSleeping && Life.isPetSleeping('pet-2', new Date())) && active !== 'pet-2'; const stageNow = Life && Life.getStageState ? Life.getStageState(state.data, activeProfileId(), new Date()) : null; const showSecond = Boolean(relation && relation.phase === 'cohabiting') || Boolean(state.twoPetGuestVisible) || active === 'pet-2' || guestSleeping || (stageNow && stageNow.pairAvailable); $('pet-2-slot').hidden = !showSecond; const allAsleep = stageNow && stageNow.allAsleep; const status = $('two-pet-status'); if (status) { status.hidden = !showSecond; const friendshipStage = relation && relation.friendshipStage || 'together'; const friendshipLabel = friendshipStage === 'not-met' ? 'まだ あってない' : friendshipStage === 'visiting' ? 'あそびにきた' : friendshipStage === 'familiar' ? 'なかよし' : 'ずっといっしょ'; status.textContent = allAsleep ? 'ふたりとも ねんねしているよ' : guestSleeping ? `${petInfo('pet-2').name} は うしろで ねんねしているよ` : relation && relation.phase === 'cohabiting' ? `いまは ${petInfo(active).name} が主役・${friendshipLabel}` : active === 'pet-2' ? `${petInfo(active).name} が主役だよ` : 'ふわが あそびにきたよ'; } const note = $('welcome-note'); if (note) { if (typeof state.welcomeNoteDefault !== 'string') state.welcomeNoteDefault = note.textContent; note.hidden = Boolean(stageNow && stageNow.allAsleep); note.textContent = stageNow && stageNow.allAsleep ? (stageNow.pairAvailable ? 'ふたりとも ねてるよ' : `${petInfo('pet-1').name}は ねてるよ`) : (stageNow && stageNow.pairAvailable && stageNow.activePetId === 'pet-2') ? state.welcomeNoteDefault : state.welcomeNoteDefault; } if (stageNow && stageNow.allAsleep) { const mainBubble = $('bubble'); if (mainBubble) { mainBubble.hidden = true; mainBubble.textContent = ''; } } if ( $('puni')) $('puni').dataset.front = stageAsleep() ? 'true' : 'false'; } function echoTuning(petId) { const presentation = twoPetPresentation(petId); const override = state.data && state.data.echoVoiceOverrides && state.data.echoVoiceOverrides[petId]; return override || { pitchRate:Number(presentation.pitchRate) || (petId === 'pet-2' ? .55 : 2.3), speedRate:Number(presentation.speedRate) || (petId === 'pet-2' ? .85 : 1.11), doubleMix:Number(presentation.doubleMix) || 0, brightness:Number(presentation.brightness) || (petId === 'pet-2' ? 35 : 70), timingMode:'preserve' }; }
+  function renderTwoPets() { if (!state.data) return; const relation = pairRelation(); const pets = state.data.pets || []; const active = visualPetId(); ['pet-1','pet-2'].forEach(id => { const info = pets.find(item => item.id === id) || petInfo(id); const value = Life && Life.getProfilePetState ? Life.getProfilePetState(state.data, activeProfileId(), id) : null; const label = $(`${id}-name`); if (label) label.textContent = info.name; const node = petNode(id); const slot = node && node.closest('.pet-slot'); const isActive = id === active; const isSleeping = petAsleep(id, new Date()); if (slot) { slot.classList.toggle('is-active-pet', isActive); slot.dataset.depth = isActive ? 'front' : 'back'; if (isSleeping) slot.dataset.asleep = 'true'; else delete slot.dataset.asleep; } if (node) { const presentation=twoPetPresentation(id); node.dataset.presentation=presentation.visual||''; node.dataset.active = String(isActive); node.setAttribute('aria-label', value ? `${info.name}。気分${value.mood}、体力${value.energy}、表情${value.lastExpression}${isActive ? '、いま遊ぶ主役' : '、見守り中'}` : `${info.name}がこちらを見ている`); const isActiveInSession = state.echoSession && (state.echoSession.imitatorPetId === id || id === active); const isCopyState = String(node.dataset.state || '').indexOf('copy-') === 0; if (isSleeping) { node.dataset.state = 'sleepy'; const sleepBubble = $(`${id}-bubble`); if (sleepBubble) { sleepBubble.hidden = true; sleepBubble.textContent = ''; } } else if (!isActiveInSession && !isCopyState && node.dataset.state === 'sleepy') node.dataset.state = 'normal'; } }); const guestSleeping = petAsleep('pet-2', new Date()) && active !== 'pet-2'; const stageNow = Life && Life.getStageState ? Life.getStageState(state.data, activeProfileId(), new Date()) : null; const showSecond = Boolean(relation && relation.phase === 'cohabiting') || Boolean(state.twoPetGuestVisible) || active === 'pet-2' || guestSleeping || (stageNow && stageNow.pairAvailable); $('pet-2-slot').hidden = !showSecond; const allAsleep = stageNow && stageNow.allAsleep; const status = $('two-pet-status'); if (status) { status.hidden = !showSecond; const friendshipStage = relation && relation.friendshipStage || 'together'; const friendshipLabel = friendshipStage === 'not-met' ? 'まだ あってない' : friendshipStage === 'visiting' ? 'あそびにきた' : friendshipStage === 'familiar' ? 'なかよし' : 'ずっといっしょ'; status.textContent = allAsleep ? 'ふたりとも ねんねしているよ' : guestSleeping ? `${petInfo('pet-2').name} は うしろで ねんねしているよ` : relation && relation.phase === 'cohabiting' ? `いまは ${petInfo(active).name} が主役・${friendshipLabel}` : active === 'pet-2' ? `${petInfo(active).name} が主役だよ` : 'ふわが あそびにきたよ'; } const note = $('welcome-note'); if (note) { if (typeof state.welcomeNoteDefault !== 'string') state.welcomeNoteDefault = note.textContent; note.hidden = Boolean(stageNow && stageNow.allAsleep); note.textContent = stageNow && stageNow.allAsleep ? (stageNow.pairAvailable ? 'ふたりとも ねてるよ' : `${petInfo('pet-1').name}は ねてるよ`) : (stageNow && stageNow.pairAvailable && stageNow.activePetId === 'pet-2') ? state.welcomeNoteDefault : state.welcomeNoteDefault; } if (stageNow && stageNow.allAsleep) { const mainBubble = $('bubble'); if (mainBubble) { mainBubble.hidden = true; mainBubble.textContent = ''; } } if ( $('puni')) $('puni').dataset.front = stageAsleep() ? 'true' : 'false'; } function echoTuning(petId) { const presentation = twoPetPresentation(petId); const override = state.data && state.data.echoVoiceOverrides && state.data.echoVoiceOverrides[petId]; return override || { pitchRate:Number(presentation.pitchRate) || (petId === 'pet-2' ? .55 : 2.3), speedRate:Number(presentation.speedRate) || (petId === 'pet-2' ? .85 : 1.11), doubleMix:Number(presentation.doubleMix) || 0, brightness:Number(presentation.brightness) || (petId === 'pet-2' ? 35 : 70), timingMode:'preserve' }; }
   function canSwitchActivePet() { const relation = pairRelation(); return Boolean(state.data && relation && ['visiting','cohabiting'].includes(relation.phase) && !document.hidden && !Life.isSafetyPaused(state.data) && !state.echoRecording && !state.tuningBlob && !(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording || state.voice.playback)) && !state.audioNodes.length && !(speechAvailable && window.speechSynthesis.speaking)); }
   function switchActivePet(nextPetId, message = '') { const previous = activePetId(); if (!canSwitchActivePet() || !Life || !Life.setActivePetId || !Life.setActivePetId(state.data, nextPetId, activeProfileId())) return false; setPetState(previous, 'normal'); state.twoPetGuestVisible = pairRelation() && pairRelation().phase === 'visiting'; renderTwoPets(); const next = activePetId(); showPetBubble(next, message || `${petInfo(next).name} が こんどは主役だよ`); setPetState(next, 'listening'); window.setTimeout(() => { if (!state.echoSession) setPetState(next, 'normal'); }, 850); save(); return true; }
   function noteTwoPetCare(action) { const relation = pairRelation(); if (!relation || relation.phase !== 'solo') return; relation.soloCareCount = Math.max(0, Number(relation.soloCareCount) || 0) + 1; relation.soloCareKinds = [...new Set([...(relation.soloCareKinds || []), action])].filter(kind => ['tap','stroke','hold','play','sleep'].includes(kind)).slice(-5); if (action === 'play') relation.sharedToys = [{ toyId:'ball', petIds:['pet-1','pet-2'], firstAt:new Date().toISOString(), lastAt:new Date().toISOString(), playCount:1 }]; }
@@ -299,7 +316,7 @@
     const profileList = $('profile-list'); profileList.replaceChildren(); profiles.forEach(profile => { const row = document.createElement('div'); row.className = 'profile-row'; const label = document.createElement('span'); label.textContent = `${profile.name}${profile.id === state.data.activeProfileId ? '（いまここ）' : ''}`; const actions = document.createElement('span'); const select = document.createElement('button'); select.type = 'button'; select.className = 'small-button'; select.textContent = '選ぶ'; select.dataset.profileSelect = profile.id; actions.appendChild(select); if (profile.id !== 'p-default') { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'small-button'; remove.textContent = '消す'; remove.dataset.profileDelete = profile.id; actions.appendChild(remove); } row.append(label, actions); profileList.appendChild(row); });
     const target = state.voiceTarget; const targetStillExists = target && target.profileId === state.data.activeProfileId && learned.some(item => item.id === target.wordId); const showVoiceRecord = Boolean(state.data.voiceMemoryEnabled && targetStillExists && state.data.bondStory && state.data.bondStory.beat === 'seed' && !Life.isSafetyPaused(state.data)); $('voice-record-panel').hidden = !showVoiceRecord;
     if (Week && state.data.weekProgress) { const day = Week.DAY_THEMES[(state.data.weekProgress.dayIndex || 1) - 1] || Week.DAY_THEMES[0]; $('week-today').hidden = false; $('week-today').textContent = `きょうのテーマ：${day.title}（${state.data.weekProgress.dayIndex}/7）`; }
-    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets(); updateTroublePanel();
+    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets(); updateTroublePanel(); updateRitualPanel();
   }
   function refreshVoices() { if (speechAvailable) speechVoices = window.speechSynthesis.getVoices(); }
   function preferredVoice() {
@@ -604,7 +621,7 @@
     candidates.slice(0, 5).forEach((candidate, index) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = candidate; button.setAttribute('aria-label', `${candidate}を選ぶ`); button.addEventListener('click', () => handleStoryInput(candidate, { fromCandidate:true, category:event.categories ? event.categories[index] : '', alternatives:[candidate] })); box.appendChild(button); }); box.hidden = false;
   }
   function storyPresent(event) { if (!event || !event.text) return; cancelTwoPetMoment('story'); cancelEcho(); const cleanHistory = ['ask-word','confirm-word','classify','stumble','correct-word','preference','recall-use','memory','small-event','resume'].includes(event.kind); if (cleanHistory) { $('recognized-text').textContent = ''; $('recognized-text').hidden = true; } if (event.kind === 'memory') { hideQuestion(); toggleTextEntry(false); $('input-hint').textContent = 'また、さわってみてね'; } bubble(event.text); renderStoryCandidates(event); if (event.kind === 'ask-word' || event.kind === 'correct-word') showTextEntry('ことばを入力するか、声で教えてね'); if (event.kind === 'recall-use') showTextEntry('「おぼえてた」など、返してね'); if (event.kind === 'seed' && event.wordId) { state.seedGlowId = event.wordId; state.voiceTarget = { profileId:event.profileId, wordId:event.wordId, word:event.word }; noteTwoPetAction('talk'); setVoiceRecordStatus('このことばの声も覚えられるよ'); window.setTimeout(() => { state.seedGlowId = ''; updateScreen(); }, 1000); } const listening = ['ask-word','classify','correct-word'].includes(event.kind); const visualState = listening ? 'listening' : event.sound === 'quiet' || event.sound === 'sleepy' ? 'sleepy' : event.sound === 'proud' ? 'happy' : event.sound === 'curious' || event.sound === 'thinking' ? 'thinking' : 'talking'; setState(visualState, 0); playPetSound(event.sound || 'normal'); if (event.kind === 'recall-use') window.setTimeout(() => { playStoredWord(event); }, 260); else speak(event.text, event.sound || 'normal'); setSeen(); updateScreen(); if (event.kind === 'memory') { noteTwoPetAction('talk'); scheduleTwoPetMoment(); } }
-  function startStoryFlow() { if (!Story || !state.data || state.echoSession || companionActive() || twoPetActive() || Life.isSafetyPaused(state.data) || ($('setup-dialog') && $('setup-dialog').open) || state.director || state.game) return false; const event = Story.startTeaching(state.data, {source:'spontaneous',now:new Date()}); if (!event) return false; storyPresent(event); save(); return true; }
+  function startStoryFlow() { if (!Story || !state.data || state.echoSession || companionActive() || twoPetActive() || Life.isSafetyPaused(state.data) || ($('setup-dialog') && $('setup-dialog').open) || state.director || state.game) return false; if (Ritual && Ritual.isDrowsy && Ritual.isDrowsy(state.data, activePetId(), new Date())) return false; const event = Story.startTeaching(state.data, {source:'spontaneous',now:new Date()}); if (!event) return false; storyPresent(event); save(); return true; }
   function scheduleStoryRecall() { window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; if (!state.data || Life.isSafetyPaused(state.data) || ($('setup-dialog') && $('setup-dialog').open)) return; if (!Story.canRecall(state.data, new Date()) && state.data.bondStory && state.data.bondStory.recallReadyAt) { const at = Date.parse(state.data.bondStory.recallReadyAt); if (Number.isFinite(at)) state.storyRecallTimer = window.setTimeout(() => { if (!document.hidden && !state.echoSession && !Life.isSafetyPaused(state.data) && !($('setup-dialog') && $('setup-dialog').open)) maybeStoryRecall(); }, Math.max(0, at - Date.now())); } }
   function maybeStoryRecall() { if (!state.data || state.echoSession || companionActive() || Life.isSafetyPaused(state.data) || state.director || state.game || !Story.canRecall(state.data, new Date())) return false; const event = Story.recall(state.data, new Date()); if (!event) return false; storyPresent(event); return true; }
   function storyNoteUnrelated() { if (!Story || !state.data || !Story.isActive(state.data)) return null; if (state.data.bondStory.beat === 'recall-use') { const reacted = Story.react(state.data, new Date()); if (reacted) storyPresent(reacted); save(); updateScreen(); return reacted; } const event = Story.noteUnrelated(state.data, new Date()); const recalled = event ? null : maybeStoryRecall(); if (event) storyPresent(event); scheduleStoryRecall(); save(); updateScreen(); return event || recalled; }
@@ -625,6 +642,7 @@
   }
   function startConversationTheme(themeId = '') {
     if (!state.data || state.echoSession || companionActive() || twoPetActive() || twoPetIntroductionPending() || state.game || state.director || document.hidden || Life.isSafetyPaused(state.data)) return false;
+    if (Ritual && Ritual.isDrowsy && Ritual.isDrowsy(state.data, activePetId(), new Date())) return false;  /* 寝ぼけている子は「ん…」だけ。質問を始めると儀式が止まる */
     cancelEcho();
     const director = Brain.startTheme(state.data, new Date(), themeId); if (!director || !director.question) return false;
     state.director = director; window.clearTimeout(state.directorTimer); state.directorTimer = window.setTimeout(() => { if (state.director === director) { hideQuestion(); bubble('また、おはなししようね'); setState(state.data.energy < 30 ? 'sleepy' : 'normal', 0); } }, 30000);
@@ -639,7 +657,7 @@
     Life.applyAction(state.data, 'talk'); if (!companionAction('talk')) answer(reply.text, { id:reply.id, soundKind:reply.soundKind || (reply.safety ? 'danger' : 'normal'), forcePetSound:true });
   }
   function handleMessage(value, options = {}) {
-    if (stageAsleep()) return; if (twoPetActive()) cancelTwoPetMoment('conversation');
+    if (stageAsleep()) return; if (Ritual && Ritual.isDrowsy && Ritual.isDrowsy(state.data, activePetId(), new Date())) { $('message-input').value = ''; bubble(Ritual.phrases.drowsy); setState('sleepy', 1200); return; } if (twoPetActive()) cancelTwoPetMoment('conversation');
     const text = clean(value); const alternatives = Array.isArray(options.alternatives) ? options.alternatives : text ? [text] : [];
     noteInteraction(); if (state.recognizing) stopRecognition();
     if (text && !options.fromCandidate) { $('recognized-text').textContent = `「${text}」って、きこえたよ`; $('recognized-text').hidden = false; }
@@ -654,6 +672,9 @@
     $('message-input').value = '';
   }
   function performTouch(kind) {
+    if (stageAsleep()) return; performTouchCore(kind); if (kind === 'stroke' || kind === 'tap') tryRitualWake();
+  }
+  function performTouchCore(kind) {
     if (stageAsleep()) return; if (twoPetActive()) { noteTwoPetAction(kind); return; }
     const reply = Brain.touchReply(kind, state.data.lastReplies); Life.applyAction(state.data, kind); noteTwoPetCare(kind); noteTwoPetAction(kind); state.data.lastReplies = [...state.data.lastReplies, reply.id].slice(-12); noteInteraction(); if (companionAction(kind)) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble(reply.text); setState(kind === 'hold' || kind === 'stroke' ? 'happy' : 'happy'); playPetSound(kind === 'hold' ? 'normal' : 'happy'); speak(reply.text, kind === 'hold' ? 'normal' : 'happy'); } setSeen(); updateScreen();
   }
@@ -665,7 +686,7 @@
   function care(action) {
     if (stageAsleep()) return; if (action === 'pet' || action === 'stroke') { performTouch('stroke'); return; }
     if (action === 'play') { if (twoPetActive()) { noteTwoPetAction('play'); return; } openPlayMenu(); return; }
-    if (action === 'sleep') { if (twoPetActive()) { noteTwoPetAction('sleep'); return; } Life.applyAction(state.data, 'sleep'); noteTwoPetCare('sleep'); noteTwoPetAction('sleep'); noteInteraction(); if (companionAction('sleep')) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble('おやすみ。すやすや'); setState('sleepy', 2500); playPetSound('sleepy'); speak('おやすみ。すやすや', 'sleepy'); } setSeen(); updateScreen(); }
+    if (action === 'sleep') { if (tryRitualTuckIn()) return; if (twoPetActive()) { noteTwoPetAction('sleep'); return; } Life.applyAction(state.data, 'sleep'); noteTwoPetCare('sleep'); noteTwoPetAction('sleep'); noteInteraction(); if (companionAction('sleep')) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble('おやすみ。すやすや'); setState('sleepy', 2500); playPetSound('sleepy'); speak('おやすみ。すやすや', 'sleepy'); } setSeen(); updateScreen(); }
   }
   function moveGameTarget() { const board = $('game-board'); const target = $('game-target'); const maxX = Math.max(10, board.clientWidth - 78); const maxY = Math.max(10, board.clientHeight - 78); target.style.left = `${10 + Math.floor(Math.random() * maxX)}px`; target.style.top = `${10 + Math.floor(Math.random() * maxY)}px`; }
   function finishMiniGame(reason = 'done') { if (!state.game) return; const score = state.game.score; const gameName = state.game.name || 'ひかりをつかまえる'; const endText = state.game.end || 'いっしょにできたね'; const soundKind = state.game.sound || (score >= 8 ? 'happy' : 'play'); window.clearInterval(state.game.timer); state.game = null; $('game-panel').hidden = true; Life.applyGameResult(state.data, score, new Date()); if (Week) { Week.capturePlay(state.data, gameName, score, new Date()); if (state.data.weekProgress && state.data.weekProgress.dailyBeat === 'activity') Week.advanceBeat(state.data, 'callback'); } const text = endText; stopPetAudio(); if (!companionAction('play')) { bubble(reason === 'time' ? `${text}。またあそぼう` : text); setState(score >= 8 ? 'happy' : 'normal'); playPetSound(soundKind); speak(text, soundKind); } setSeen(); updateScreen(); }
@@ -772,10 +793,11 @@
     }
     state.troubleNextAt = 0;
     const now = new Date();
-    const stage = Life.getStageState(state.data, activeProfileId(), now);
-    const kind = Trouble.pickTrouble(state.data, { activePetId: stage.activePetId, awakePetIds: stage.awakePetIds, quiet: Life.isQuietTime(now), allAsleep: stage.allAsleep, enabled: trouble.enabled !== false, exclude: troubleMissingPartKinds(stage.activePetId) }, now);
+    const ritualAwake = stageAwakePetIds(now).filter(id => !(Ritual && Ritual.isDrowsy(state.data, id, now)));
+    const stageActive = ritualAwake.includes(activePetId()) ? activePetId() : ritualAwake[0] || '';
+    const kind = Trouble.pickTrouble(state.data, { activePetId: stageActive, awakePetIds: ritualAwake, quiet: Life.isQuietTime(now), allAsleep: ritualAwake.length === 0, enabled: trouble.enabled !== false, exclude: troubleMissingPartKinds(stageActive) }, now);
     if (!kind) return;
-    const petId = kind === 'book' && stage.awakePetIds.includes('pet-2') ? 'pet-2' : stage.activePetId;
+    const petId = kind === 'book' && ritualAwake.includes('pet-2') ? 'pet-2' : stageActive;
     beginTrouble(kind, petId);
   }
   function applyTroubleAttributes() {
@@ -860,7 +882,131 @@
     Trouble.troubleDailyReset(state.data, new Date());
     if (troubleData() && troubleData().active) { state.troubleHiccupTaps = 0; applyTroubleAttributes(); startTroubleReminder(); }
   }
-  function welcomeOnOpen(previousSeen, firstToday) { if (stageAsleep()) { setState('sleepy', 0); return; } const now = new Date(); const gap = Date.parse(previousSeen || '') && now.getTime() - Date.parse(previousSeen) >= 86400000; const activePetIsSleeping = petSleepingNow(activePetId()); const helpedKind = firstToday && Trouble ? Trouble.helpedYesterday(state.data, now) : null; const message = helpedKind && Trouble.phrases[helpedKind] ? Trouble.phrases[helpedKind].nextDay : activePetIsSleeping ? 'ねむねむ。おかえり' : gap ? 'あえた。うれしい' : firstToday ? (now.getHours() < 12 ? 'おはよ。きょうもあえた' : 'こんにちは。あえたね') : 'おかえり。ここだよ'; bubble(message); if (activePetIsSleeping) setState('sleepy', 0); else { setState('happy'); speak(message, 'happy'); } }
+  /* --- 朝と夜の儀式（ritual-engine.js が無くても落ちない。部品が無くても落ちない） --- */
+  /* 受け口の阻止条件＝troubleBlocked() から isQuietTime を除いたもの。
+     さらに「直前の既存の反応の効果音・読み上げ」は除く（なでるの反応が必ず音を鳴らすため、それで儀式が止まらないように） */
+  function ritualAcceptBlocked() {
+    if (!Ritual) return true;
+    const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
+    const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
+    const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
+    return Boolean(!state.data || document.hidden || state.data.soundMode === 'text' || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
+  }
+  function ritualTick(now = new Date()) {
+    if (!Ritual || !state.data) return;
+    const changed = Ritual.ritualDailyReset(state.data, now);
+    const autoWoken = Ritual.autoWake(state.data, now);
+    if (changed || autoWoken.length) save();
+    applyRitualAttributes();
+    scheduleRitualYawns();
+    if (autoWoken.length && !document.hidden) { const active = activePetId(); if (autoWoken.includes(active) && !petAsleep(active)) { showPetBubble(active, Ritual.phrases.autoWake); setPetState(active, 'sleepy'); } }
+  }
+  function applyRitualAttributes() {
+    if (!Ritual || !state.data) return;
+    const now = new Date();
+    const stage = document.querySelector('.pet-stage');
+    ['pet-1','pet-2'].forEach(id => {
+      const node = petNode(id);
+      if (!node) return;
+      if (node.dataset.ritual !== 'yawn') { if (Ritual.isDrowsy(state.data, id, now)) node.dataset.ritual = 'drowsy'; else delete node.dataset.ritual; }
+      const mood = Ritual.morningMood(state.data, id, now);
+      if (mood) node.dataset.ritualMood = mood; else delete node.dataset.ritualMood;
+    });
+    if (stage && !state.ritualMealBusy) {
+      if (Ritual.mealReady(state.data, { awakePetIds: ritualAwakePetIds(now) }, now)) stage.dataset.meal = 'ready'; else delete stage.dataset.meal;
+    }
+  }
+  function addRitualBond(points) { state.data.bond = Life.clamp((Number(state.data.bond) || 0) + points); state.data.bondStage = Math.max(Number(state.data.bondStage) || 0, Life.bondStage(state.data.bond)); Life.syncLegacyToActivePet(state.data); }
+  /* なでる／体タップの既存の反応のあとに呼ぶ。1回（前夜に③無しは2回）で起きる */
+  function tryRitualWake(petId = activePetId()) {
+    if (!Ritual || !state.data) return false;
+    if (!Ritual.isDrowsy(state.data, petId, new Date())) return false;
+    if (ritualAcceptBlocked()) return false;
+    const result = Ritual.wake(state.data, petId, new Date());
+    if (!result.done) { showPetBubble(petId, result.phrase); save(); return false; }
+    setPetState(petId, 'happy');
+    bubble(result.phrase); showPetBubble(petId, result.phrase);
+    playPetSound('happy'); speak(result.phrase, 'happy');
+    addRitualBond(1);
+    const mood = Ritual.morningMood(state.data, petId, new Date());
+    if (mood === 'tired') state.data.energy = Life.clamp(state.data.energy - 10);
+    if (mood === 'hungry') state.data.mood = Life.clamp(state.data.mood - 10);
+    applyRitualAttributes();
+    /* 起こした直後の一言を2秒後、きのう助けてくれたねを4秒後に回す */
+    const opening = Ritual.openingPhrase(state.data, petId, new Date());
+    const helpedKind = Trouble ? Trouble.helpedYesterday(state.data, new Date()) : null;
+    if (opening) window.setTimeout(() => { if (activePetId() === petId && !petAsleep(petId)) { bubble(opening); showPetBubble(petId, opening); } }, 2000);
+    if (helpedKind && Trouble.phrases[helpedKind]) window.setTimeout(() => { if (activePetId() === petId && !petAsleep(petId)) { const text = Trouble.phrases[helpedKind].nextDay; bubble(text); showPetBubble(petId, text); } }, 4000);
+    save(); updateScreen();
+    return true;
+  }
+  /* #ritual-bowl クリック → eating 2秒 → eaten 1.5秒 → 消える */
+  function tryRitualFeed() {
+    if (!Ritual || !state.data) return false;
+    const now = new Date();
+    const awake = ritualAwakePetIds(now);
+    if (!Ritual.mealReady(state.data, { awakePetIds: awake }, now)) return false;
+    if (ritualAcceptBlocked()) return false;
+    const petIds = Ritual.feed(state.data, awake, now);
+    save();
+    const stage = document.querySelector('.pet-stage');
+    const token = ++state.ritualMealToken;
+    state.ritualMealBusy = true;
+    if (stage) stage.dataset.meal = 'eating';
+    const speaker = petIds.includes(activePetId()) ? activePetId() : petIds[0];
+    if (speaker) { showPetBubble(speaker, Ritual.phrases.meal); setPetState(speaker, 'happy'); bubble(Ritual.phrases.meal); }
+    window.setTimeout(() => { if (token !== state.ritualMealToken) return; if (stage) stage.dataset.meal = 'eaten'; playPetSound('happy'); petIds.forEach(id => setPetState(id, 'happy')); }, 2000);
+    window.setTimeout(() => { if (token !== state.ritualMealToken) return; state.ritualMealBusy = false; if (stage) delete stage.dataset.meal; if (petIds.length) addRitualBond(petIds.length); clearPetBubbles(); save(); updateScreen(); }, 3500);
+    return true;
+  }
+  /* action==='sleep' の先頭で呼ぶ。窓の中なら儀式（幕1.5秒→一言→その場で眠る） */
+  function tryRitualTuckIn() {
+    if (!Ritual || !state.data) return false;
+    const petId = activePetId();
+    if (!Ritual.canTuckIn(state.data, petId, new Date())) return false;
+    if (ritualAcceptBlocked()) return false;
+    const entry = Ritual.tuckIn(state.data, petId, new Date());
+    if (!entry) return false;
+    save();
+    const dim = $('ritual-dim');
+    if (dim) { dim.dataset.dim = 'on'; window.setTimeout(() => { delete dim.dataset.dim; }, 1500); }
+    window.setTimeout(() => {
+      const text = Ritual.withName(Ritual.phrases.tuckIn, state.data.childName);
+      bubble(text); showPetBubble(petId, text);
+      speak(text, 'sleepy'); playPetSound('sleepy');
+      setPetState(petId, 'sleepy');
+      addRitualBond(1);
+      save(); renderTwoPets(); applyRitualAttributes(); updateScreen();
+    }, 1500);
+    return true;
+  }
+  /* あくび：③の窓の中で3分に1回、音なし・言葉なし */
+  function scheduleRitualYawns() {
+    window.clearInterval(state.ritualYawnTimer); state.ritualYawnTimer = null;
+    if (!Ritual || !state.data || !state.data.ritual || state.data.ritual.enabled === false) return;
+    state.ritualYawnTimer = window.setInterval(() => {
+      if (!state.data || document.hidden || state.echoSession || state.game) return;
+      const now = new Date();
+      ['pet-1','pet-2'].forEach(id => {
+        if (petAsleep(id, now) || !Ritual.yawnDue(state.data, id, now)) return;
+        const node = petNode(id);
+        if (!node || node.dataset.ritual === 'yawn') return;
+        Ritual.noteYawn(state.data, id, now); save();
+        node.dataset.ritual = 'yawn';
+        window.setTimeout(() => { const n = petNode(id); if (n && n.dataset.ritual === 'yawn') { delete n.dataset.ritual; applyRitualAttributes(); } }, 1500);
+      });
+    }, 15000);
+  }
+  function updateRitualPanel() {
+    if (!Ritual || !state.data || !state.data.ritual) return;
+    applyRitualAttributes();
+    const toggle = $('ritual-toggle'); if (toggle) toggle.checked = state.data.ritual.enabled !== false;
+    const todayRow = $('ritual-today');
+    if (todayRow) { const summary = Ritual.todaySummary(state.data); todayRow.textContent = `起こした ${summary.woke}／ごはん ${summary.meal ? '○' : '－'}／寝かしつけ ${summary.tucked}`; }
+    const streakRow = $('ritual-streak');
+    if (streakRow) streakRow.textContent = `ぜんぶできた日 ${Math.max(0, Number(state.data.ritual.streak) || 0)}`;
+  }
+  function welcomeOnOpen(previousSeen, firstToday) { if (stageAsleep()) { setState('sleepy', 0); return; } if (Ritual && Ritual.isDrowsy && Ritual.isDrowsy(state.data, activePetId(), new Date())) { bubble(Ritual.phrases.drowsy); setState('sleepy', 1500); return; } const now = new Date(); const gap = Date.parse(previousSeen || '') && now.getTime() - Date.parse(previousSeen) >= 86400000; const activePetIsSleeping = petSleepingNow(activePetId()); const helpedKind = firstToday && Trouble ? Trouble.helpedYesterday(state.data, now) : null; const message = helpedKind && Trouble.phrases[helpedKind] ? Trouble.phrases[helpedKind].nextDay : activePetIsSleeping ? 'ねむねむ。おかえり' : gap ? 'あえた。うれしい' : firstToday ? (now.getHours() < 12 ? 'おはよ。きょうもあえた' : 'こんにちは。あえたね') : 'おかえり。ここだよ'; bubble(message); if (activePetIsSleeping) setState('sleepy', 0); else { setState('happy'); speak(message, 'happy'); } }
   function updateLookDirection() {
     if (!state.data || document.hidden) return;
     ['pet-1', 'pet-2'].forEach(petId => {
@@ -954,14 +1100,16 @@
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
     if (!state.data) { state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); $('setup-dialog').showModal(); }
     state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
-    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad();
+    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick();
     updateScreen(); if (savedData) { welcomeOnOpen(previousSeen, firstToday); const resumedStory = Story.resume(state.data); if (resumedStory) storyPresent(resumedStory); else if (!Story.isActive(state.data)) weekStartDay(); } setSeen();
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
     document.querySelectorAll('.care-button').forEach(button => button.addEventListener('click', () => care(button.dataset.action)));
     let pointerStart = null; let holdTimer = null; let holdTriggered = false;
-    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { noteTroubleHiccupTap(petId); if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handleTroublePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') handleTroublePuniPoke(event); }); puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
+    ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { noteTroubleHiccupTap(petId); if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } tryRitualWake(petId); return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handleTroublePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') handleTroublePuniPoke(event); }); puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
     [['trouble-book','book',''],['trouble-ball','ball',''],['trouble-window','window',''],['trouble-leaf-1','leaf','pet-1'],['trouble-leaf-2','leaf','pet-2']].forEach(([id, kind, petId]) => { const part = $(id); if (!part) return; part.addEventListener('click', () => tryResolveTroubleTarget(kind, petId)); if (part.tagName !== 'BUTTON') part.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); tryResolveTroubleTarget(kind, petId); } }); });
     { const troubleToggle = $('trouble-toggle'); if (troubleToggle) troubleToggle.addEventListener('change', () => { if (!state.data || !state.data.trouble) return; state.data.trouble.enabled = troubleToggle.checked; save(); updateTroublePanel(); scheduleTrouble(); }); }
+    { const ritualBowl = $('ritual-bowl'); if (ritualBowl) ritualBowl.addEventListener('click', () => { tryRitualFeed(); }); }
+    { const ritualToggle = $('ritual-toggle'); if (ritualToggle) ritualToggle.addEventListener('change', () => { if (!state.data || !state.data.ritual) return; state.data.ritual.enabled = ritualToggle.checked; save(); ritualTick(); renderTwoPets(); updateScreen(); }); }
     $('talk-button').addEventListener('click', () => { cancelTwoPetMoment('conversation'); cancelEcho(); state.recognizing ? stopRecognition() : startRecognition(); });
     $('teach-word-button').addEventListener('click', () => { if (!state.data || !Story || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('teaching'); cancelCompanionMoment(); cancelEcho(); hideQuestion(); const event = Story.startTeaching(state.data, {source:'manual',now:new Date()}); if (event) { state.storyDraft = null; storyPresent(event); save(); updateScreen(); } else showToast('いまのことばを教え終わってから、つぎを教えてね'); });
     $('echo-button').addEventListener('click', runEcho); $('echo-press-button').addEventListener('click', runEcho); $('echo-stop-button').addEventListener('click', () => finishEcho('stop'));
@@ -985,10 +1133,11 @@
     $('forget-cancel').addEventListener('click', () => { $('forget-confirm-box').hidden = true; });
     $('learned-words').addEventListener('click', async event => { const id = event.target && event.target.dataset.forgetWord; if (!id) return; await deleteWordWithLedger(activeProfileId(), id); });
     $('voice-record-button').addEventListener('click', () => { cancelEcho(); recordWordVoice(); }); $('voice-clear-button').addEventListener('click', () => { cancelEcho(); $('voice-clear-confirm-box').hidden = false; $('forget-confirm-box').hidden = true; }); $('voice-clear-cancel').addEventListener('click', () => { $('voice-clear-confirm-box').hidden = true; }); $('voice-clear-confirm').addEventListener('click', async () => { cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('voice-memory-status').textContent = '消せません。もう一度ためしてね'; return; } $('voice-clear-confirm-box').hidden = true; await refreshVoiceCount(); showToast('声の記憶を消しました'); });
-    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); scheduleTrouble(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
+    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); scheduleTrouble(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); ritualTick(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
     if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleTrouble(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); });
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
+    window.setInterval(() => { if (state.data && !document.hidden) ritualTick(); }, 60000);
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
   function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2200); }

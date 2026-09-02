@@ -26,8 +26,34 @@
       wordMemoryV2:{stories:[bondStory],requestDate:'',requestProfileId:'',deletionLedger:[]},
       pets:defaultPets('ぽこ'), profilePetStates:[defaultProfilePetState('p-default','pet-1'),defaultProfilePetState('p-default','pet-2')],
       pairRelations:[defaultPairRelation('p-default')], ownPreference:'round', moments:[], bondStage:0,lastSeenAt:'',lastReplies:[],
-      trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true}
+      trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true},
+      ritual:defaultRitual(today(now))
     };
+  }
+  function defaultRitual(date) {
+    return { date, morning:{'pet-1':{woke:false,at:'',tries:0,autoAt:''},'pet-2':{woke:false,at:'',tries:0,autoAt:''}}, meal:{done:false,at:''}, night:{'pet-1':{tucked:false,at:''},'pet-2':{tucked:false,at:''}}, yesterday:null, log:[], streak:0, yawns:{'pet-1':'','pet-2':''}, enabled:true };
+  }
+  function normalizeRitual(raw, now) {
+    const ritual = defaultRitual(/^\d{4}-\d{2}-\d{2}$/.test(String(raw && raw.date || '')) ? String(raw.date) : today(now));
+    ['pet-1','pet-2'].forEach(id => {
+      const morning = raw && raw.morning && typeof raw.morning === 'object' && raw.morning[id] && typeof raw.morning[id] === 'object' ? raw.morning[id] : {};
+      ritual.morning[id] = { woke:morning.woke === true, at:safeTimestamp(morning.at), tries:Math.max(0, Math.min(99, Math.floor(Number(morning.tries) || 0))), autoAt:safeTimestamp(morning.autoAt) };
+      const night = raw && raw.night && typeof raw.night === 'object' && raw.night[id] && typeof raw.night[id] === 'object' ? raw.night[id] : {};
+      ritual.night[id] = { tucked:night.tucked === true, at:safeTimestamp(night.at) };
+      ritual.yawns[id] = safeTimestamp(raw && raw.yawns && typeof raw.yawns === 'object' && raw.yawns[id]);
+    });
+    const meal = raw && raw.meal && typeof raw.meal === 'object' ? raw.meal : {};
+    ritual.meal = { done:meal.done === true, at:safeTimestamp(meal.at) };
+    const yesterday = raw && raw.yesterday && typeof raw.yesterday === 'object' ? raw.yesterday : null;
+    if (yesterday && /^\d{4}-\d{2}-\d{2}$/.test(String(yesterday.date || ''))) {
+      const morning = {}; const night = {};
+      ['pet-1','pet-2'].forEach(id => { morning[id] = yesterday.morning && typeof yesterday.morning === 'object' && yesterday.morning[id] === true; night[id] = yesterday.night && typeof yesterday.night === 'object' && yesterday.night[id] === true; });
+      ritual.yesterday = { date:String(yesterday.date), morning, meal:yesterday.meal === true, night, all:yesterday.all === true };
+    }
+    ritual.log = Array.isArray(raw && raw.log) ? raw.log.map(item => ({ date:safeText(item && item.date).slice(0, 10), woke:Math.max(0, Math.min(2, Math.floor(Number(item && item.woke) || 0))), meal:item && item.meal === true, tucked:Math.max(0, Math.min(2, Math.floor(Number(item && item.tucked) || 0))), all:item && item.all === true })).filter(item => /^\d{4}-\d{2}-\d{2}$/.test(item.date)).slice(-30) : [];
+    ritual.streak = Math.max(0, Math.floor(Number(raw && raw.streak) || 0));
+    ritual.enabled = !(raw && raw.enabled === false);
+    return ritual;
   }
   function listSafe(values) { return Array.isArray(values) ? values.map(safeText).filter(value => value && !privateLike(value)).slice(-5) : []; }
   function defaultWordStory(profileId = 'p-default') { return { profileId, chapter:'find', beat:'idle', pendingWordId:'', lastBeatAt:'', unrelatedActions:0, completedAt:'', lastCompletedAt:'', recallReadyAt:'', eventDates:{}, preferenceShown:false }; }
@@ -132,6 +158,7 @@
       helpTotal: Math.max(0, Math.floor(Number(oldTrouble.helpTotal) || 0)),
       enabled: oldTrouble.enabled !== false
     };
+    data.ritual = normalizeRitual(old.ritual && typeof old.ritual === 'object' ? old.ritual : {}, now);
     const profileSafe = value => safeText(value).slice(0, 8);
     const hadProfiles = Array.isArray(old.profiles) && old.profiles.length > 0; const rawProfiles = hadProfiles ? old.profiles : [];
     data.profiles = rawProfiles.map((item, index) => ({ id:safeText(item && item.id).slice(0, 30) || `p-${index + 1}`, name:profileSafe(item && item.name) && !privateLike(profileSafe(item && item.name)) ? profileSafe(item.name) : `ひと${index + 1}`, childName:safeText(item && item.childName).slice(0,12), likes:listSafe(item && item.likes), dislikes:listSafe(item && item.dislikes), recentMoods:Array.isArray(item && item.recentMoods) ? item.recentMoods.map(safeText).filter(Boolean).slice(-7) : [], visitDates:Array.isArray(item && item.visitDates) ? item.visitDates.map(value => safeText(value).slice(0,10)).filter(Boolean).slice(-7) : [], createdAt:safeTimestamp(item && item.createdAt) || safeTimestamp(new Date(now).toISOString()), lastSeenAt:safeTimestamp(item && item.lastSeenAt), interactionCount:Math.max(0, Number(item && item.interactionCount) || 0), activePetId:item && item.activePetId === 'pet-2' ? 'pet-2' : 'pet-1',activePetTurnCount:Math.max(0,Math.min(4,Math.floor(Number(item && item.activePetTurnCount)||0))),switchAfterTurn:Math.max(2,Math.min(4,Math.floor(Number(item && item.switchAfterTurn)||2))) })).filter(item => item.id && item.name).slice(0, 5);

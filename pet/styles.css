@@ -211,3 +211,34 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 
 @media (prefers-reduced-motion:reduce){.pet[data-trouble],.pet-stage[data-trouble="window"] .room-window .window-mullion-horizontal,.pet[data-trouble="leaf"] .ear{animation:none!important}.pet[data-trouble="puni"]{transform:translateX(0)}.pet[data-trouble="book"]{transform:rotate(0)}.pet[data-trouble="window"]{transform:translateY(0)}.pet[data-trouble="leaf"] .eye{transform:translateY(0)}}
 
+/* 朝と夜の儀式の部品（状態は属性で渡す。エンジンが付けてCSSが見る） */
+#ritual-bowl{display:none;position:absolute;right:8px;bottom:56px;width:48px;height:48px;border:0;padding:0;margin:0;background:transparent;font:inherit;pointer-events:none;cursor:pointer;transform-origin:50% 100%}
+.pet-stage[data-meal] #ritual-bowl{display:block;pointer-events:auto}
+#ritual-bowl:focus-visible{outline:3px solid rgba(128,106,196,.4);outline-offset:2px}
+#ritual-bowl::before{content:"";position:absolute;left:2px;right:2px;bottom:8px;height:24px;background:linear-gradient(180deg,#fffdf7,#f1e6d4);border:3px solid #cbb99f;border-top:0;border-radius:4px 4px 22px 22px;box-shadow:inset 0 -7px 0 rgba(139,115,85,.14)}
+#ritual-bowl::after{content:"";position:absolute;left:7px;right:7px;bottom:29px;height:14px;border-radius:50% 50% 8px 8px/70% 70% 12px 12px;background:#f0b46b;box-shadow:inset 0 -3px 0 rgba(166,65,105,.18);transition:opacity .3s}
+.pet-stage[data-meal="eaten"] #ritual-bowl::after{opacity:0}
+.pet-stage[data-meal="eating"] #ritual-bowl{animation:bowl-sway .32s ease-in-out infinite}
+@keyframes bowl-sway{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+
+/* 寝ぼけ：目が半分・体が1.2秒周期でゆれる */
+.pet[data-ritual="drowsy"] .eye{height:12px;top:10px}
+#pet[data-ritual="drowsy"],#pet-2[data-ritual="drowsy"]{animation:ritual-drowse 1.2s ease-in-out infinite}
+@keyframes ritual-drowse{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* あくび：口が丸く開く（属性は1.5秒で外れる） */
+.pet[data-ritual="yawn"] .mouth{width:24px;height:22px;margin-left:-12px;top:48px;border:3px solid var(--mouth-color);border-top:0;border-radius:50%;background:#493a5a;animation:ritual-yawn 1.5s ease-in-out 1;transform-origin:center}
+@keyframes ritual-yawn{0%{transform:scale(.3)}40%,70%{transform:scale(1)}100%{transform:scale(.3)}}
+
+/* 翌朝の機嫌（10分間の既定の顔。:where で弱くして、data-state の表情を優先させる） */
+.pet:where([data-ritual-mood="tired"]) .eye{height:12px;top:10px}
+.pet:where([data-ritual-mood="good"]) .eye::before{content:"";position:absolute;top:5px;right:3px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:-7px 5px 0 -1px #fff;z-index:1}
+#pet:where([data-ritual-mood="hungry"]),#pet-2:where([data-ritual-mood="hungry"]){animation:ritual-lean 4s ease-in-out infinite}
+@keyframes ritual-lean{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
+
+/* 明かりを消す幕 */
+#ritual-dim{position:absolute;inset:0;z-index:9;background:#000;opacity:0;pointer-events:none;transition:opacity 1.5s ease}
+#ritual-dim[data-dim="on"]{opacity:.6;transition:opacity .12s ease}
+
+@media (prefers-reduced-motion:reduce){#ritual-bowl,#pet[data-ritual="drowsy"],#pet-2[data-ritual="drowsy"],#pet[data-ritual="yawn"] .mouth,#pet-2[data-ritual="yawn"] .mouth,#pet[data-ritual-mood="hungry"],#pet-2[data-ritual-mood="hungry"]{animation:none!important}}
+
