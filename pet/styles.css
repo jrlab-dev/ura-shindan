@@ -242,3 +242,24 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 
 @media (prefers-reduced-motion:reduce){#ritual-bowl,#pet[data-ritual="drowsy"],#pet-2[data-ritual="drowsy"],#pet[data-ritual="yawn"] .mouth,#pet-2[data-ritual="yawn"] .mouth,#pet[data-ritual-mood="hungry"],#pet-2[data-ritual-mood="hungry"]{animation:none!important}}
 
+/* 拗ねの見た目（data-sulk。既存の行は触らず、いちばん下に足して順位を作る）。
+   順位＝data-state ＞ data-sulk ＞ data-ritual-mood。data-state の表情・眠り・寝ぼけの間は :where(:not(...)) で data-sulk を外す */
+/* ぬるっと切り替えるための遷移（base の .face の transform .5s ease はそのまま残す） */
+.pet .face{transition:transform .5s ease,opacity .4s ease}
+.pet .ear{transition:transform .4s ease}
+.pet .pet-body{transition:transform .4s ease}
+@keyframes sulk-breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03,.97)}}
+/* away：顔を隠す／耳を外へ倒す／体を6度むこうへ傾ける／浮遊を止めてゆっくりの呼吸。影はそのまま */
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .face{opacity:0}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .ear-left{transform:translateY(3px) rotate(-80deg);transform-origin:50% 88%}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .ear-right{transform:translateY(3px) scaleX(-1) rotate(-80deg);transform-origin:50% 88%}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .pet-body{transform:rotate(6deg);transform-origin:50% 100%}
+/* 浮遊を止めて呼吸へ。pet-2 の float-blue（:not 連打で強い）と ritual-lean（#pet）に勝てるよう id で書く。
+   困りごとの揺れ・一時の反応（body-react など）の間は data-trouble / その data-state に譲る */
+#pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])),#pet-2[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])){animation:sulk-breath 7s ease-in-out infinite}
+/* half：戻る瞬間の3秒だけ。横顔（傾き3度・うっすら顔） */
+.pet[data-sulk="half"] .face{opacity:.55}
+.pet[data-sulk="half"] .pet-body{transform:rotate(3deg);transform-origin:50% 100%}
+/* reduced motion では傾きだけ（アニメも遷移も無し） */
+@media (prefers-reduced-motion:reduce){#pet[data-sulk="away"],#pet-2[data-sulk="away"]{animation:none!important}.pet[data-sulk] .face,.pet[data-sulk] .ear,.pet[data-sulk] .pet-body{transition:none!important}}
+

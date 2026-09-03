@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:8, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
+      version:9, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -27,8 +27,21 @@
       pets:defaultPets('ぽこ'), profilePetStates:[defaultProfilePetState('p-default','pet-1'),defaultProfilePetState('p-default','pet-2')],
       pairRelations:[defaultPairRelation('p-default')], ownPreference:'round', moments:[], bondStage:0,lastSeenAt:'',lastReplies:[],
       trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true},
-      ritual:defaultRitual(today(now))
+      ritual:defaultRitual(today(now)),
+      sulk:defaultSulk()
     };
+  }
+  function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
+  const sulkDate = value => { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '')); if (!match) return ''; const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])); return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? String(value) : ''; };
+  function normalizeSulk(raw) {
+    const sulk = defaultSulk();
+    const source = raw && typeof raw === 'object' ? raw : {};
+    sulk.enabled = source.enabled !== false;
+    sulk.level = Number(source.level) === 1 ? 1 : 0;
+    sulk.sinceDate = sulkDate(source.sinceDate);
+    sulk.lastVisitDate = sulkDate(source.lastVisitDate);
+    sulk.talkCount = Math.max(0, Math.floor(Number(source.talkCount) || 0));
+    return sulk;
   }
   function defaultRitual(date) {
     return { date, morning:{'pet-1':{woke:false,at:'',tries:0,autoAt:''},'pet-2':{woke:false,at:'',tries:0,autoAt:''}}, meal:{done:false,at:''}, night:{'pet-1':{tucked:false,at:''},'pet-2':{tucked:false,at:''}}, yesterday:null, log:[], streak:0, yawns:{'pet-1':'','pet-2':''}, enabled:true };
@@ -159,6 +172,7 @@
       enabled: oldTrouble.enabled !== false
     };
     data.ritual = normalizeRitual(old.ritual && typeof old.ritual === 'object' ? old.ritual : {}, now);
+    data.sulk = normalizeSulk(old.sulk && typeof old.sulk === 'object' ? old.sulk : {});
     const profileSafe = value => safeText(value).slice(0, 8);
     const hadProfiles = Array.isArray(old.profiles) && old.profiles.length > 0; const rawProfiles = hadProfiles ? old.profiles : [];
     data.profiles = rawProfiles.map((item, index) => ({ id:safeText(item && item.id).slice(0, 30) || `p-${index + 1}`, name:profileSafe(item && item.name) && !privateLike(profileSafe(item && item.name)) ? profileSafe(item.name) : `ひと${index + 1}`, childName:safeText(item && item.childName).slice(0,12), likes:listSafe(item && item.likes), dislikes:listSafe(item && item.dislikes), recentMoods:Array.isArray(item && item.recentMoods) ? item.recentMoods.map(safeText).filter(Boolean).slice(-7) : [], visitDates:Array.isArray(item && item.visitDates) ? item.visitDates.map(value => safeText(value).slice(0,10)).filter(Boolean).slice(-7) : [], createdAt:safeTimestamp(item && item.createdAt) || safeTimestamp(new Date(now).toISOString()), lastSeenAt:safeTimestamp(item && item.lastSeenAt), interactionCount:Math.max(0, Number(item && item.interactionCount) || 0), activePetId:item && item.activePetId === 'pet-2' ? 'pet-2' : 'pet-1',activePetTurnCount:Math.max(0,Math.min(4,Math.floor(Number(item && item.activePetTurnCount)||0))),switchAfterTurn:Math.max(2,Math.min(4,Math.floor(Number(item && item.switchAfterTurn)||2))) })).filter(item => item.id && item.name).slice(0, 5);
@@ -181,7 +195,7 @@
     normalizeV6Structures(data, old, now);
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
-    delete data.soundEnabled; data.version = 8; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    delete data.soundEnabled; data.version = 9; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }
