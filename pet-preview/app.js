@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'little-companion-v1';
+  const STORAGE_KEY = 'little-companion-preview';
   const Brain = window.LittleCompanionBrain;
   const Life = window.LittleCompanionLife;
   const Story = window.LittleCompanionStory;
