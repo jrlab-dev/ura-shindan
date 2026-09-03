@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:9, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
+      version:10, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -28,10 +28,12 @@
       pairRelations:[defaultPairRelation('p-default')], ownPreference:'round', moments:[], bondStage:0,lastSeenAt:'',lastReplies:[],
       trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true},
       ritual:defaultRitual(today(now)),
-      sulk:defaultSulk()
+      sulk:defaultSulk(),
+      growth:defaultGrowth()
     };
   }
   function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
+  function defaultGrowth() { return { enabled:true, stage:0, weekStartDate:'', weekStartHelpTotal:0, unlockedAt:[] }; }
   const sulkDate = value => { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '')); if (!match) return ''; const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])); return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? String(value) : ''; };
   function normalizeSulk(raw) {
     const sulk = defaultSulk();
@@ -195,7 +197,7 @@
     normalizeV6Structures(data, old, now);
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
-    delete data.soundEnabled; data.version = 9; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.version = 10; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }

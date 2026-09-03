@@ -7,7 +7,7 @@
   <meta name="description" content="端末の中で遊べる、ちいさな相棒">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=45">
+  <link rel="stylesheet" href="styles.css?v=46">
   <title>ちいさな相棒</title>
 </head>
 <body>
@@ -141,6 +141,8 @@
         <label class="setting-row"><span>しばらく来ないと すねる</span><input id="sulk-toggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
         <p class="memory-summary">いまのようす：<span id="sulk-status">ふつう</span></p>
         <div class="setting-row" style="pointer-events:none"><span>助けた回数</span><span style="font-size:13px;color:var(--muted)">きょう <span id="trouble-count-today">0</span>回／これまで <span id="trouble-count-total">0</span>回</span></div>
+        <label class="setting-row"><span>助けるとすこしずつ育つ</span><input id="growth-toggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
+        <p class="memory-summary">いまのようす：<span id="growth-stage-label">段階 0/4</span></p>
         <div class="voice-test"><button id="voice-test-button" class="small-button" type="button">声をテスト</button><p>ポン音→ペット声→いま主役の声</p><p id="voice-test-status" class="voice-test-status" role="status" aria-live="polite">まだテストしていません</p></div>
         <section class="voice-tuning" aria-label="まねっこ声づくり"><h3>まねっこ声づくり</h3><label>調整する子 <select id="tuning-pet-select"><option value="pet-1">ピンク</option><option value="pet-2">青</option></select></label><p>この文を、少しゆっくり言ってください</p><p class="tuning-phrase">こんにちは。きょうも会えて、うれしいな</p><button id="tuning-record-button" class="small-button" type="button" aria-describedby="tuning-status" disabled>録音する（最大6秒）</button><button id="tuning-stop-button" class="danger-button" type="button" hidden>ここで止める</button><p id="tuning-status" class="memory-summary" role="status" aria-live="polite">上の「教えた声をこのブラウザに覚える」をオンにしてください</p><div id="tuning-controls" hidden><label>高さ <output id="tuning-pitch-value">230%</output><input id="tuning-pitch" type="range" min="55" max="350" value="230"></label><label>加工方式 <select id="tuning-timing-mode"><option value="preserve">おすすめ（高さと速さを別々に変える）</option><option value="fast">軽量（高さと速さが連動）</option></select></label><p id="tuning-timing-note">高さと速さを別々に変えます。ゆっくりでも高い声のままです</p><label>速さ <output id="tuning-speed-value">111%</output><input id="tuning-speed" type="range" min="70" max="140" value="111"></label><label>二重声 <output id="tuning-double-value">0%</output><input id="tuning-double" type="range" min="0" max="36" value="0"></label><label>明るさ <output id="tuning-brightness-value">70</output><input id="tuning-brightness" type="range" min="0" max="100" value="70"></label><button id="tuning-play-button" class="small-button" type="button">加工した声を聞く</button><button id="tuning-reset-button" class="small-button" type="button">おすすめに戻す</button></div></section>
         <label class="setting-row"><span>カメラ確認を使う</span><input id="camera-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
@@ -181,23 +183,24 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="brain.js?v=37" defer></script>
-  <script src="room-background.js?v=37" defer></script>
-  <script src="pet-life.js?v=37" defer></script>
-  <script src="story-engine.js?v=37" defer></script>
-  <script src="week-engine.js?v=37" defer></script>
-  <script src="voice-memory.js?v=37" defer></script>
-    <script src="companion-scenes.js?v=37" defer></script>
-    <script src="companion-director.js?v=37" defer></script>
-    <script src="activity-lock.js?v=37" defer></script>
-    <script src="pet-presentations.js?v=37" defer></script>
-    <script src="pet-speech.js?v=37" defer></script>
-    <script src="two-pet-scenes.js?v=37" defer></script>
-    <script src="two-pet-director.js?v=37" defer></script>
-    <script src="speech-arbiter.js?v=37" defer></script>
-    <script src="trouble-engine.js?v=37" defer></script>
-    <script src="ritual-engine.js?v=37" defer></script>
-    <script src="sulk-engine.js?v=37" defer></script>
-    <script src="app.js?v=37" defer></script>
+  <script src="brain.js?v=38" defer></script>
+  <script src="room-background.js?v=38" defer></script>
+  <script src="pet-life.js?v=38" defer></script>
+  <script src="story-engine.js?v=38" defer></script>
+  <script src="week-engine.js?v=38" defer></script>
+  <script src="voice-memory.js?v=38" defer></script>
+    <script src="companion-scenes.js?v=38" defer></script>
+    <script src="companion-director.js?v=38" defer></script>
+    <script src="activity-lock.js?v=38" defer></script>
+    <script src="pet-presentations.js?v=38" defer></script>
+    <script src="pet-speech.js?v=38" defer></script>
+    <script src="two-pet-scenes.js?v=38" defer></script>
+    <script src="two-pet-director.js?v=38" defer></script>
+    <script src="speech-arbiter.js?v=38" defer></script>
+    <script src="trouble-engine.js?v=38" defer></script>
+    <script src="ritual-engine.js?v=38" defer></script>
+    <script src="sulk-engine.js?v=38" defer></script>
+    <script src="growth-engine.js?v=38" defer></script>
+    <script src="app.js?v=38" defer></script>
 </body>
 </html>

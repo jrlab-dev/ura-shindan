@@ -16,6 +16,7 @@
   const Trouble = window.LittleCompanionTrouble;
   const Ritual = window.LittleCompanionRitual;
   const Sulk = window.LittleCompanionSulk;
+  const Growth = window.LittleCompanionGrowth;
   /* 儀式エンジンがあるときだけ、舞台判定（主役・起きている子・全員ねんね）に「寝かしつけで早く眠った子」を反映する */
   if (Ritual && Life && typeof Life.getStageState === 'function') {
     const rawGetStageState = Life.getStageState.bind(Life);
@@ -318,7 +319,7 @@
     const profileList = $('profile-list'); profileList.replaceChildren(); profiles.forEach(profile => { const row = document.createElement('div'); row.className = 'profile-row'; const label = document.createElement('span'); label.textContent = `${profile.name}${profile.id === state.data.activeProfileId ? '（いまここ）' : ''}`; const actions = document.createElement('span'); const select = document.createElement('button'); select.type = 'button'; select.className = 'small-button'; select.textContent = '選ぶ'; select.dataset.profileSelect = profile.id; actions.appendChild(select); if (profile.id !== 'p-default') { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'small-button'; remove.textContent = '消す'; remove.dataset.profileDelete = profile.id; actions.appendChild(remove); } row.append(label, actions); profileList.appendChild(row); });
     const target = state.voiceTarget; const targetStillExists = target && target.profileId === state.data.activeProfileId && learned.some(item => item.id === target.wordId); const showVoiceRecord = Boolean(state.data.voiceMemoryEnabled && targetStillExists && state.data.bondStory && state.data.bondStory.beat === 'seed' && !Life.isSafetyPaused(state.data)); $('voice-record-panel').hidden = !showVoiceRecord;
     if (Week && state.data.weekProgress) { const day = Week.DAY_THEMES[(state.data.weekProgress.dayIndex || 1) - 1] || Week.DAY_THEMES[0]; $('week-today').hidden = false; $('week-today').textContent = `きょうのテーマ：${day.title}（${state.data.weekProgress.dayIndex}/7）`; }
-    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets(); updateTroublePanel(); updateRitualPanel(); updateSulkPanel();
+    pet.dataset.urge = state.data.urge || 'curious'; $('status-pill').dataset.urge = state.data.urge || 'curious'; { const sleepingNode = petNode(visualPetId()); if (sleepingNode && sleepingNode.dataset.state === 'sleepy') $('status-pill').textContent = 'すやすや'; } $('inner-state').textContent = ({ curious:'きょうみしんしん', playful:'あそびたい', quiet:'しずかにふわふわ', sleepy:'ねむねむ', proud:'えっへん' }[state.data.urge] || 'きょうみしんしん'); if (state.data.energy < 30 && !['listening', 'thinking', 'talking', 'copy-calibrating', 'copy-ready', 'copy-live', 'copy-listening', 'copy-thinking', 'copy-speaking', 'copy-happy'].includes(pet.dataset.state)) setState('sleepy', 0); renderTwoPets(); updateTroublePanel(); updateRitualPanel(); updateSulkPanel(); updateGrowthPanel();
   }
   function refreshVoices() { if (speechAvailable) speechVoices = window.speechSynthesis.getVoices(); }
   function preferredVoice() {
@@ -582,8 +583,9 @@
   function playPetSound(kind = 'normal') {
     if (!state.data || state.data.soundMode === 'text') return false;
     const context = unlockAudio(); if (!context) return false;
+    const proud = kind === 'happy' && Growth && Growth.getStage(state.data) >= 2 && Math.random() < 1 / 3; /* 段階2から、うれしい音に3回に1回だけ「えっへん（proud）」が混ざる（設計書 段階の中身2） */
     const patterns = { happy:[660,880,1040], normal:[520,620], call:[760,520,760], thinking:[440,540], sleepy:[360,280], sad:[420,330], play:[700,820,700,920], danger:[300], curious:[580,760,680], proud:[520,780,980], quiet:[300,360], shy:[410,460], puni:[380,260,330] };
-    try { stopPetAudio(); const frequencies = patterns[kind] || patterns.normal; const now = context.currentTime; frequencies.forEach((frequency, index) => { const oscillator=context.createOscillator(); const gain=context.createGain(); const start=now + index*.12; oscillator.type='triangle'; oscillator.frequency.value=frequency; gain.gain.setValueAtTime(.001,start); gain.gain.exponentialRampToValueAtTime(.13,start+.015); gain.gain.exponentialRampToValueAtTime(.001,start+.1); oscillator.connect(gain); gain.connect(context.destination); oscillator.start(start); oscillator.stop(start+.12); state.audioNodes.push(oscillator); }); state.audioTimer=window.setTimeout(stopPetAudio, frequencies.length*120+300); return true; } catch (_) { return false; }
+    try { stopPetAudio(); const frequencies = patterns[proud ? 'proud' : kind] || patterns.normal; const now = context.currentTime; frequencies.forEach((frequency, index) => { const oscillator=context.createOscillator(); const gain=context.createGain(); const start=now + index*.12; oscillator.type='triangle'; oscillator.frequency.value=frequency; gain.gain.setValueAtTime(.001,start); gain.gain.exponentialRampToValueAtTime(.13,start+.015); gain.gain.exponentialRampToValueAtTime(.001,start+.1); oscillator.connect(gain); gain.connect(context.destination); oscillator.start(start); oscillator.stop(start+.12); state.audioNodes.push(oscillator); }); state.audioTimer=window.setTimeout(stopPetAudio, frequencies.length*120+300); return true; } catch (_) { return false; }
   }
   function clearSpeechWatchdog() { window.clearTimeout(state.speechWatchdog); state.speechWatchdog = null; }
   function armSpeechWatchdog(kind = 'normal', status = '音声が返ってこないため、ペット声に切り替えます') { clearSpeechWatchdog(); state.speechWatchdog = window.setTimeout(() => { playPetSound(kind); setVoiceStatus(status); setState(state.data.energy < 30 ? 'sleepy' : 'normal', 0); }, 8000); }
@@ -1056,6 +1058,31 @@
     updateSulkPanel();
     return entered;
   }
+  /* --- 週ごとの成長（growth-engine.js が無くても落ちない。部品が無くても落ちない） --- */
+  /* 起動時に1回だけ判定。段階4に届いたその瞬間だけ「せいちょうしたみたい」＋既存のうれしい反応（hopの重ね方はCSS側[data-growth="4"]が担う） */
+  function growthOnOpen() {
+    if (!Growth || !state.data) return;
+    const result = Growth.onOpen(state.data, new Date());
+    save();
+    refreshGrowthVisual();
+    if (result.justReachedMax) {
+      bubble(Growth.phrases.levelUp);
+      setState('happy');
+      playPetSound('happy');
+    }
+  }
+  /* data-growth の付け外し。JS は属性を付けるだけで、見た目は CSS 側が持つ（設計書「見た目」） */
+  function refreshGrowthVisual() {
+    if (!Growth || !state.data) return;
+    const stage = Growth.getStage(state.data);
+    ['pet-1', 'pet-2'].forEach(id => { const node = petNode(id); if (!node) return; if (stage > 0) node.dataset.growth = String(stage); else delete node.dataset.growth; });
+  }
+  function updateGrowthPanel() {
+    if (!Growth || !state.data || !state.data.growth) return;
+    const toggle = $('growth-toggle'); if (toggle) toggle.checked = state.data.growth.enabled !== false;
+    const label = $('growth-stage-label'); if (!label) return;
+    label.textContent = `段階 ${Growth.getStage(state.data)}/4`;
+  }
   /* 世話の各受け口の「あと」に呼ぶ。戻った瞬間の進行（half3秒→おかえり）はここで行う */
   function noteSulkCare() {
     if (!Sulk || !state.data) return false;
@@ -1199,7 +1226,7 @@
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
     if (!state.data) { state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); $('setup-dialog').showModal(); }
     state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
-    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen();
+    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); growthOnOpen();
     updateScreen(); if (savedData) { welcomeOnOpen(previousSeen, firstToday); const resumedStory = Story.resume(state.data); if (resumedStory) storyPresent(resumedStory); else if (!Story.isActive(state.data) && !sulkingNow()) weekStartDay(); } setSeen();
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
     document.querySelectorAll('.care-button').forEach(button => button.addEventListener('click', () => care(button.dataset.action)));
@@ -1210,6 +1237,7 @@
     { const ritualBowl = $('ritual-bowl'); if (ritualBowl) ritualBowl.addEventListener('click', () => { tryRitualFeed(); }); }
     { const ritualToggle = $('ritual-toggle'); if (ritualToggle) ritualToggle.addEventListener('change', () => { if (!state.data || !state.data.ritual) return; state.data.ritual.enabled = ritualToggle.checked; save(); ritualTick(); renderTwoPets(); updateScreen(); }); }
     { const sulkToggle = $('sulk-toggle'); if (sulkToggle) sulkToggle.addEventListener('change', () => { if (!state.data || !state.data.sulk || !Sulk) return; Sulk.setEnabled(state.data, sulkToggle.checked, new Date()); save(); refreshSulkVisual(); updateSulkPanel(); renderTwoPets(); updateScreen(); }); }
+    { const growthToggle = $('growth-toggle'); if (growthToggle) growthToggle.addEventListener('change', () => { if (!state.data || !state.data.growth || !Growth) return; Growth.setEnabled(state.data, growthToggle.checked); save(); updateGrowthPanel(); updateScreen(); }); }
     $('talk-button').addEventListener('click', () => { cancelTwoPetMoment('conversation'); cancelEcho(); state.recognizing ? stopRecognition() : startRecognition(); });
     $('teach-word-button').addEventListener('click', () => { if (!state.data || !Story || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('teaching'); cancelCompanionMoment(); cancelEcho(); hideQuestion(); const event = Story.startTeaching(state.data, {source:'manual',now:new Date()}); if (event) { state.storyDraft = null; storyPresent(event); save(); updateScreen(); } else showToast('いまのことばを教え終わってから、つぎを教えてね'); });
     $('echo-button').addEventListener('click', runEcho); $('echo-press-button').addEventListener('click', runEcho); $('echo-stop-button').addEventListener('click', () => finishEcho('stop'));

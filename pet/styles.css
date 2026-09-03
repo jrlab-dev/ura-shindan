@@ -263,3 +263,15 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 /* reduced motion では傾きだけ（アニメも遷移も無し） */
 @media (prefers-reduced-motion:reduce){#pet[data-sulk="away"],#pet-2[data-sulk="away"]{animation:none!important}.pet[data-sulk] .face,.pet[data-sulk] .ear,.pet[data-sulk] .pet-body{transition:none!important}}
 
+/* 成長の見た目（data-growth。既存の行は触らず、いちばん下に足す。段階×data-state の掛け算で書く） */
+/* 段階1：うれしい反応のとき、耳もいっしょにぴょこっと（既存 wobble を耳に重ねるだけ。新規keyframe無し） */
+.pet[data-growth="1"][data-state="happy"] .ear{animation:wobble .38s ease-in-out 3}
+/* 段階3：うれしい反応のとき、hop に重ねて左右にごきげんにゆれる（新規アニメはこの1個だけ）。
+   回転のあいだも hop と同じ浮き高さをなぞるので、hop の動きを打ち消さない。
+   ★一回転(360deg)は230×260pxの体には大きすぎ、画面幅390pxで左端の子（主役）が画面外へはみ出す実害を
+   スクショで確認したため、既存の wobble・sulk の傾き幅（10〜16度）に合わせて振れ幅を抑えた */
+@keyframes growth-spin{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-20px) rotate(-16deg)}75%{transform:translateY(-20px) rotate(16deg)}100%{transform:translateY(0) rotate(0)}}
+.pet[data-growth="3"][data-state="happy"]{animation:hop .65s ease-in-out 2, growth-spin .5s ease-in-out 1}
+/* reduced motion：段階3の新規回転だけ確実に止める（耳の wobble など他は既存の reduced-motion 規則に従う） */
+@media (prefers-reduced-motion:reduce){.pet[data-growth="3"][data-state="happy"]{animation:none!important}}
+
