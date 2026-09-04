@@ -11,10 +11,10 @@
   const PREFERENCES = ['round','softSound','light','rain','warm'];
   const SMALL_EVENTS = [
     { id:'shadow', text:'あれ？ ぼくのかげ、うごいた？', sound:'curious' },
-    { id:'sneeze', text:'くしゅん……えへへ、いまのは ないしょ', sound:'play' },
-    { id:'follow-finger', text:'ゆびを目でおってたら、ちょっと おくれちゃった', sound:'curious' },
+    { id:'sneeze', text:'くしゅん……えへへ、ないしょ', sound:'play' },
+    { id:'follow-finger', text:'ゆびをおって、おくれちゃった', sound:'curious' },
     { id:'own-preference', text:'ぼく、まるいもの ちょっとすき', sound:'proud' },
-    { id:'remember-pause', text:'おしえてもらったことば……あれ？ もうすこしで思い出せそう', sound:'thinking' },
+    { id:'remember-pause', text:'ことば……もうすぐ思い出せそう', sound:'thinking' },
     { id:'quiet-float', text:'いま、ちょっと ふわふわしてる', sound:'sleepy' }
   ];
   const clean = value => String(value || '').replace(/[<>]/g, '').replace(/[\u0000-\u001f]/g, '').trim();

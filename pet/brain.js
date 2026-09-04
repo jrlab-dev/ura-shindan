@@ -95,6 +95,7 @@
     if (memory && Array.isArray(memory.likes) && memory.likes.length) list.push({ id:'mono-like', text:`${memory.likes[0]}、すきって覚えてるよ`, style:'talkative' });
     const traits = memory && memory.traits || {}; const dominant = Object.keys({ playful:0, calm:0, talkative:0 }).sort((a,b) => (traits[b] || 0) - (traits[a] || 0))[0];
     if (dominant === 'playful') list.push({ id:'mono-play', text:'つぎはなにしてあそぶ？', style:'playful' }); if (dominant === 'calm') list.push({ id:'mono-calm', text:'ふわふわ、いいきもち', style:'calm' }); if (dominant === 'talkative') list.push({ id:'mono-talk', text:'おはなし、もっとしたい', style:'talkative' });
+    if (memory && memory.childName) list.push({ id:'mono-name', text:`${memory.childName}、あそぼ`, style:'playful' }, { id:'mono-name-here', text:`${memory.childName}、きたね`, style:'calm' });
     return list;
   }
   function spontaneousPick(memory, date, recent = [], random = Math.random) { const all = spontaneousCandidates(memory, date); const fresh = all.filter(item => !recent.includes(item.id)); if (!fresh.length) return null; const traits = memory && memory.traits || {}; const dominant = Object.keys({ playful:0, calm:0, talkative:0 }).sort((a,b) => (traits[b] || 0) - (traits[a] || 0))[0]; const styled = fresh.filter(item => item.style === dominant); const pool = styled.length ? styled : fresh; return pool[Math.floor(random() * pool.length)]; }
