@@ -8,6 +8,9 @@
   const MEAL_WINDOW = { from: 7, to: 19 };
   const CLOCK_SLEEP = { 'pet-1': { sleep: 22 * 60, wake: 8 * 60 }, 'pet-2': { sleep: 20 * 60 + 30, wake: 5 * 60 + 30 } };
   const PET_IDS = ['pet-1', 'pet-2'];
+  /* ごはんの好き嫌い（v1）。食べ物は data-food 属性と同じ文字列で持つ */
+  const FOODS = ['apple', 'onigiri'];
+  const FOOD_LABELS = { apple: 'りんご', onigiri: 'おにぎり' };
   const phrases = {
     drowsy: 'ん…',
     wake: 'おはよう',
@@ -28,6 +31,15 @@
   const hoursOf = now => { const date = toDate(now); return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600; };
   const stamp = now => new Date(timeOf(now)).toISOString();
   const inWindow = (from, to, now) => { const hours = hoursOf(now); return hours >= from && hours < to; };
+  const isDate = value => { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '')); if (!match) return false; const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])); return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]); };
+  /* カレンダーの日付の差（時刻では数えない）。端末のローカル日付で数える（growth-engine と同じ） */
+  function dayDiff(from, to) {
+    const a = String(from || '').split('-').map(Number);
+    const b = String(to || '').split('-').map(Number);
+    if (a.length !== 3 || b.length !== 3 || a.some(Number.isNaN) || b.some(Number.isNaN)) return NaN;
+    return Math.round((new Date(b[0], b[1] - 1, b[2]).getTime() - new Date(a[0], a[1] - 1, a[2]).getTime()) / 86400000);
+  }
+  function foodLabel(id) { return FOODS.includes(id) ? FOOD_LABELS[id] : ''; }
   const clockSleeping = (petId, now) => { const config = CLOCK_SLEEP[petId]; if (!config) return false; const minutes = minutesOf(now); return config.sleep < config.wake ? (minutes >= config.sleep && minutes < config.wake) : (minutes >= config.sleep || minutes < config.wake); };
   function withName(base, childName) {
     const name = String(childName || '').trim().slice(0, 12);
@@ -38,7 +50,7 @@
     return {
       date,
       morning: { 'pet-1': { woke: false, at: '', tries: 0 }, 'pet-2': { woke: false, at: '', tries: 0 } },
-      meal: { done: false, at: '' },
+      meal: { done: false, at: '', food: '', hit: false },
       night: { 'pet-1': { tucked: false, at: '' }, 'pet-2': { tucked: false, at: '' } },
       yesterday: null,
       log: [],
@@ -129,13 +141,37 @@
     const awake = Array.isArray(context.awakePetIds) ? context.awakePetIds.filter(id => PET_IDS.includes(id) && !isDrowsy(data, id, now)) : [];
     return awake.length > 0;
   }
-  /* ごはんをあげる。返り値＝なかよしを足す petId 一覧 */
-  function feed(data, awakePetIds, now) {
+  /* ごはんをあげる。返り値＝なかよしを足す petId 一覧。第4引数（好き嫌いの食べ物）は省略可 */
+  function feed(data, awakePetIds, now, food) {
     const ritual = ritualOf(data);
     if (!ritual) return [];
     if (ritual.meal && typeof ritual.meal === 'object' && ritual.meal.done) return [];
-    ritual.meal = { done: true, at: stamp(now) };
+    const chosen = FOODS.includes(food) ? food : '';
+    const hit = chosen !== '' && Boolean(data && data.mealPref) && chosen === data.mealPref.favorite;
+    ritual.meal = { done: true, at: stamp(now), food: chosen, hit };
+    if (hit) data.mealPref.hits = Math.max(0, Math.floor(Number(data.mealPref.hits) || 0)) + 1;
     return (Array.isArray(awakePetIds) ? awakePetIds : []).filter(id => PET_IDS.includes(id) && !isDrowsy(data, id, now));
+  }
+  /* 今週の好きなもの。開いたときだけ判定（成長と同じ）。初回はランダムに決め、7日で もう一方へ。
+     時計が過去へ戻っていたら何もしない */
+  function mealPrefOnOpen(data, now) {
+    if (!data || typeof data !== 'object') return { changed: false, favorite: '' };
+    if (!data.mealPref || typeof data.mealPref !== 'object') data.mealPref = { favorite: FOODS[0], weekStartDate: '', hits: 0 };
+    const pref = data.mealPref;
+    const date = today(now);
+    if (!isDate(pref.weekStartDate)) {
+      pref.favorite = FOODS[Math.floor(Math.random() * FOODS.length)];
+      pref.weekStartDate = date;
+      return { changed: true, favorite: pref.favorite };
+    }
+    const gap = dayDiff(pref.weekStartDate, date);
+    if (!Number.isFinite(gap) || gap < 0) return { changed: false, favorite: pref.favorite };
+    if (gap >= 7) {
+      pref.favorite = pref.favorite === FOODS[0] ? FOODS[1] : FOODS[0];
+      pref.weekStartDate = date;
+      return { changed: true, favorite: pref.favorite };
+    }
+    return { changed: false, favorite: pref.favorite };
   }
   /* 寝かしつけの窓の中か */
   function canTuckIn(data, petId, now) {
@@ -227,5 +263,5 @@
       tucked: PET_IDS.filter(id => nightOf(ritual, id).tucked === true).length
     };
   }
-  return { WINDOWS, MEAL_WINDOW, phrases, withName, ritualDailyReset, isDrowsy, wake, autoWake, mealReady, feed, canTuckIn, tuckIn, isTuckedAsleep, yawnDue, noteYawn, morningMood, openingPhrase, todaySummary };
+  return { WINDOWS, MEAL_WINDOW, FOODS, foodLabel, phrases, withName, ritualDailyReset, isDrowsy, wake, autoWake, mealReady, feed, mealPrefOnOpen, canTuckIn, tuckIn, isTuckedAsleep, yawnDue, noteYawn, morningMood, openingPhrase, todaySummary };
 }));

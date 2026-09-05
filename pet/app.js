@@ -964,24 +964,33 @@
     save(); updateScreen();
     return true;
   }
-  /* #ritual-bowl クリック → eating 2秒 → eaten 1.5秒 → 消える */
-  function tryRitualFeed() {
+  /* .ritual-food クリック → 当たり：eating 2秒（+2／匹）・外れ：「んー……」→0.8秒「もぐもぐ」eating 2.6秒（+1／匹）→ eaten 1.5秒 → 消える */
+  function tryRitualFeed(food) {
     if (!Ritual || !state.data) return false;
+    if (!Array.isArray(Ritual.FOODS) || !Ritual.FOODS.includes(food)) return false;
     const now = new Date();
     const awake = ritualAwakePetIds(now);
     if (!Ritual.mealReady(state.data, { awakePetIds: awake }, now)) return false;
     if (ritualAcceptBlocked()) return false;
-    const petIds = Ritual.feed(state.data, awake, now);
+    const petIds = Ritual.feed(state.data, awake, now, food);
     save();
     noteSulkCare();
     const stage = document.querySelector('.pet-stage');
+    const bowl = $('ritual-bowl');
+    const hit = Boolean(petIds.length) && state.data.ritual.meal && state.data.ritual.meal.hit === true;
     const token = ++state.ritualMealToken;
     state.ritualMealBusy = true;
-    if (stage) stage.dataset.meal = 'eating';
+    if (stage) { stage.dataset.meal = 'eating'; if (hit) stage.dataset.mealHit = 'true'; }
+    if (bowl) bowl.dataset.food = food;
+    const eatMs = hit ? 2000 : 2600;
     const speaker = petIds.includes(activePetId()) ? activePetId() : petIds[0];
-    if (speaker) { showPetBubble(speaker, Ritual.phrases.meal); setPetState(speaker, 'happy'); bubble(Ritual.phrases.meal); }
-    window.setTimeout(() => { if (token !== state.ritualMealToken) return; if (stage) stage.dataset.meal = 'eaten'; playPetSound('happy'); petIds.forEach(id => setPetState(id, 'happy')); }, 2000);
-    window.setTimeout(() => { if (token !== state.ritualMealToken) return; state.ritualMealBusy = false; if (stage) delete stage.dataset.meal; if (petIds.length) addRitualBond(petIds.length); clearPetBubbles(); save(); updateScreen(); }, 3500);
+    if (speaker) {
+      const first = hit ? 'これ だいすき！' : 'んー……';
+      showPetBubble(speaker, first); setPetState(speaker, 'happy'); bubble(first);
+      if (!hit) window.setTimeout(() => { if (token !== state.ritualMealToken) return; showPetBubble(speaker, Ritual.phrases.meal); setPetState(speaker, 'happy'); bubble(Ritual.phrases.meal); }, 800);
+    }
+    window.setTimeout(() => { if (token !== state.ritualMealToken) return; if (stage) stage.dataset.meal = 'eaten'; playPetSound('happy'); petIds.forEach(id => setPetState(id, 'happy')); }, eatMs);
+    window.setTimeout(() => { if (token !== state.ritualMealToken) return; state.ritualMealBusy = false; if (stage) { delete stage.dataset.meal; delete stage.dataset.mealHit; } if (bowl) delete bowl.dataset.food; if (petIds.length) addRitualBond(petIds.length * (hit ? 2 : 1)); clearPetBubbles(); save(); updateScreen(); }, eatMs + 1500);
     return true;
   }
   /* action==='sleep' の先頭で呼ぶ。窓の中なら儀式（幕1.5秒→一言→その場で眠る） */
@@ -1031,6 +1040,10 @@
     if (todayRow) { const summary = Ritual.todaySummary(state.data); todayRow.textContent = `起こした ${summary.woke}／ごはん ${summary.meal ? '○' : '－'}／寝かしつけ ${summary.tucked}`; }
     const streakRow = $('ritual-streak');
     if (streakRow) streakRow.textContent = `ぜんぶできた日 ${Math.max(0, Number(state.data.ritual.streak) || 0)}`;
+    const prefFavorite = $('meal-pref-favorite');
+    if (prefFavorite && Ritual.foodLabel) prefFavorite.textContent = Ritual.foodLabel(state.data.mealPref && state.data.mealPref.favorite);
+    const prefHits = $('meal-pref-hits');
+    if (prefHits) prefHits.textContent = String(Math.max(0, Math.floor(Number(state.data.mealPref && state.data.mealPref.hits) || 0)));
   }
   /* --- 拗ねる・戻る（sulk-engine.js が無くても落ちない。部品が無くても落ちない） --- */
   function sulkingNow() { return Boolean(Sulk && state.data && Sulk.isSulking(state.data, new Date())); }
@@ -1239,7 +1252,7 @@
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
     if (!state.data) { state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); $('setup-dialog').showModal(); }
     state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
-    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); growthOnOpen(); puniWakeCheck();
+    Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); growthOnOpen(); puniWakeCheck(); { if (Ritual && state.data && Ritual.mealPrefOnOpen) { const pref = Ritual.mealPrefOnOpen(state.data, new Date()); if (pref.changed) save(); } }
     updateScreen(); if (savedData) { welcomeOnOpen(previousSeen, firstToday); const resumedStory = Story.resume(state.data); if (resumedStory) storyPresent(resumedStory); else if (!Story.isActive(state.data) && !sulkingNow()) weekStartDay(); } setSeen();
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
     document.querySelectorAll('.care-button').forEach(button => button.addEventListener('click', () => care(button.dataset.action)));
@@ -1247,7 +1260,7 @@
     ['pet-1','pet-2'].forEach(petId => { const node = petNode(petId); node.addEventListener('pointerdown', event => { noteTroubleHiccupTap(petId); if (node.dataset.state === 'sleepy') { handleSleepyPetTouch(node); return; } if (petId !== activePetId()) { if (state.game || state.echoSession || state.director || companionActive() || twoPetActive() || state.recognizing || stageAsleep()) return; if (node.dataset.attention === 'true') { const slot = node.closest('.pet-slot'); if (slot) delete slot.dataset.attention; node.dataset.attention = 'false'; window.clearTimeout(state.attentionTimer); if (Life && Life.setActivePetId) { Life.setActivePetId(state.data, petId, activeProfileId()); save(); updateScreen(); playPetSound('happy'); } } else { const slot = node.closest('.pet-slot'); if (slot) slot.dataset.attention = 'true'; node.dataset.attention = 'true'; playPetSound('curious'); state.attentionTimer = window.setTimeout(() => { const n = petNode(petId); const s = n && n.closest('.pet-slot'); if (n) n.dataset.attention = 'false'; if (s) delete s.dataset.attention; }, 3000); } tryRitualWake(petId); return; } pointerStart = { x:event.clientX, y:event.clientY, time:Date.now() }; holdTriggered = false; try { node.setPointerCapture(event.pointerId); } catch (_) {} holdTimer = window.setTimeout(() => { if (pointerStart) { holdTriggered = true; performTouch('hold'); } }, 650); }); node.addEventListener('pointermove', event => { if (!pointerStart) return; const movedX = event.clientX - pointerStart.x; const movedY = event.clientY - pointerStart.y; if (Math.hypot(movedX, movedY) >= 20 && !holdTriggered) { window.clearTimeout(holdTimer); holdTimer = null; } }); node.addEventListener('pointerup', event => { if (!pointerStart) return; window.clearTimeout(holdTimer); const touch = { durationMs:Date.now() - pointerStart.time, deltaX:event.clientX - pointerStart.x, deltaY:event.clientY - pointerStart.y }; if (!holdTriggered) performTouch(Life.classifyTouch(touch)); pointerStart = null; }); node.addEventListener('pointercancel', () => { window.clearTimeout(holdTimer); pointerStart = null; }); }); { const puni = $('puni'); if (puni) { puni.addEventListener('pointerdown', handleTroublePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') handleTroublePuniPoke(event); }); puni.addEventListener('pointerdown', handlePuniPoke); puni.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handlePuniPoke(); } }); } }
     [['trouble-book','book',''],['trouble-ball','ball',''],['trouble-window','window',''],['trouble-leaf-1','leaf','pet-1'],['trouble-leaf-2','leaf','pet-2']].forEach(([id, kind, petId]) => { const part = $(id); if (!part) return; part.addEventListener('click', () => tryResolveTroubleTarget(kind, petId)); if (part.tagName !== 'BUTTON') part.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); tryResolveTroubleTarget(kind, petId); } }); });
     { const troubleToggle = $('trouble-toggle'); if (troubleToggle) troubleToggle.addEventListener('change', () => { if (!state.data || !state.data.trouble) return; state.data.trouble.enabled = troubleToggle.checked; save(); updateTroublePanel(); scheduleTrouble(); }); }
-    { const ritualBowl = $('ritual-bowl'); if (ritualBowl) ritualBowl.addEventListener('click', () => { tryRitualFeed(); }); }
+    { const ritualMenu = $('ritual-menu'); if (ritualMenu) ritualMenu.querySelectorAll('.ritual-food').forEach(button => button.addEventListener('click', () => { tryRitualFeed(button.dataset.food); })); }
     { const ritualToggle = $('ritual-toggle'); if (ritualToggle) ritualToggle.addEventListener('change', () => { if (!state.data || !state.data.ritual) return; state.data.ritual.enabled = ritualToggle.checked; save(); ritualTick(); renderTwoPets(); updateScreen(); }); }
     { const sulkToggle = $('sulk-toggle'); if (sulkToggle) sulkToggle.addEventListener('change', () => { if (!state.data || !state.data.sulk || !Sulk) return; Sulk.setEnabled(state.data, sulkToggle.checked, new Date()); save(); refreshSulkVisual(); updateSulkPanel(); renderTwoPets(); updateScreen(); }); }
     { const growthToggle = $('growth-toggle'); if (growthToggle) growthToggle.addEventListener('change', () => { if (!state.data || !state.data.growth || !Growth) return; Growth.setEnabled(state.data, growthToggle.checked); save(); updateGrowthPanel(); updateScreen(); }); }

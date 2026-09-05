@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:11, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
+      version:12, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -30,7 +30,8 @@
       ritual:defaultRitual(today(now)),
       sulk:defaultSulk(),
       growth:defaultGrowth(),
-      puniAsleep:false
+      puniAsleep:false,
+      mealPref:{ favorite:'apple', weekStartDate:'', hits:0 }
     };
   }
   function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
@@ -47,7 +48,7 @@
     return sulk;
   }
   function defaultRitual(date) {
-    return { date, morning:{'pet-1':{woke:false,at:'',tries:0,autoAt:''},'pet-2':{woke:false,at:'',tries:0,autoAt:''}}, meal:{done:false,at:''}, night:{'pet-1':{tucked:false,at:''},'pet-2':{tucked:false,at:''}}, yesterday:null, log:[], streak:0, yawns:{'pet-1':'','pet-2':''}, enabled:true };
+    return { date, morning:{'pet-1':{woke:false,at:'',tries:0,autoAt:''},'pet-2':{woke:false,at:'',tries:0,autoAt:''}}, meal:{done:false,at:'',food:'',hit:false}, night:{'pet-1':{tucked:false,at:''},'pet-2':{tucked:false,at:''}}, yesterday:null, log:[], streak:0, yawns:{'pet-1':'','pet-2':''}, enabled:true };
   }
   function normalizeRitual(raw, now) {
     const ritual = defaultRitual(/^\d{4}-\d{2}-\d{2}$/.test(String(raw && raw.date || '')) ? String(raw.date) : today(now));
@@ -59,7 +60,7 @@
       ritual.yawns[id] = safeTimestamp(raw && raw.yawns && typeof raw.yawns === 'object' && raw.yawns[id]);
     });
     const meal = raw && raw.meal && typeof raw.meal === 'object' ? raw.meal : {};
-    ritual.meal = { done:meal.done === true, at:safeTimestamp(meal.at) };
+    ritual.meal = { done:meal.done === true, at:safeTimestamp(meal.at), food:['apple','onigiri'].includes(meal.food) ? meal.food : '', hit:meal.hit === true };
     const yesterday = raw && raw.yesterday && typeof raw.yesterday === 'object' ? raw.yesterday : null;
     if (yesterday && /^\d{4}-\d{2}-\d{2}$/.test(String(yesterday.date || ''))) {
       const morning = {}; const night = {};
@@ -198,7 +199,7 @@
     normalizeV6Structures(data, old, now);
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
-    delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.puniAsleep = data.puniAsleep === true; data.version = 11; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.puniAsleep = data.puniAsleep === true; if (!data.mealPref || typeof data.mealPref !== 'object') data.mealPref = { favorite:'apple', weekStartDate:'', hits:0 }; data.mealPref = { favorite:data.mealPref.favorite === 'onigiri' ? 'onigiri' : 'apple', weekStartDate:typeof data.mealPref.weekStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.mealPref.weekStartDate) ? data.mealPref.weekStartDate : '', hits:Math.max(0, Math.floor(Number(data.mealPref.hits) || 0)) }; data.version = 12; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }
