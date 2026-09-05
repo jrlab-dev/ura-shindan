@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:10, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
+      version:11, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -29,7 +29,8 @@
       trouble:{active:null,daily:{date:today(now),count:0,kinds:[]},helpLog:[],helpTotal:0,enabled:true},
       ritual:defaultRitual(today(now)),
       sulk:defaultSulk(),
-      growth:defaultGrowth()
+      growth:defaultGrowth(),
+      puniAsleep:false
     };
   }
   function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
@@ -197,7 +198,7 @@
     normalizeV6Structures(data, old, now);
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
-    delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.version = 10; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.puniAsleep = data.puniAsleep === true; data.version = 11; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }

@@ -14,12 +14,12 @@
     { id:'partner', title:'相棒の日', call:'いままでの思い出、ひとつ見よう', activity:'思い出を振り返る' }
   ];
   const DAILY_ACTIVITIES = [
-    {name:'ひかりをつかまえる',title:'ひかりをつかまえる',intro:'きらりを、ひとつおしてみよう',end:'きらり、みつかったね',sound:'play'},
-    {name:'ゆっくりひかり',title:'ゆっくりひかり',intro:'ゆっくり、ひかりを追ってみよう',end:'ゆっくりできたね',sound:'quiet'},
-    {name:'いろを見つける',title:'いろを見つける',intro:'すきないろを探そう',end:'いろ、きれいだったね',sound:'curious'},
-    {name:'しずかな星',title:'しずかな星',intro:'しずかな星をひとつ見つけよう',end:'星がきらりしたね',sound:'sleepy'},
-    {name:'ゆびを追いかける',title:'ゆびを追いかける',intro:'ゆびで、きらりを追ってみよう',end:'追いかけっこ、たのしかったね',sound:'play'},
-    {name:'ふたつのきらり',title:'ふたつのきらり',intro:'ふたつのきらりを見つけよう',end:'ふたつとも、みつけたね',sound:'happy'},
+    {name:'ぷにをつかまえる',title:'ぷにをつかまえる',intro:'ぷにを、そっとつかまえよう',end:'ぷに、つかまえたね',sound:'play'},
+    {name:'ゆっくりぷに',title:'ゆっくりぷに',intro:'ゆっくり、ぷにを追ってみよう',end:'ゆっくりできたね',sound:'quiet'},
+    {name:'ぷにをさがす',title:'ぷにをさがす',intro:'どこかな、ぷにをさがそう',end:'ぷに、みつけたね',sound:'curious'},
+    {name:'しずかなぷに',title:'しずかなぷに',intro:'しずかに、ぷにをつかまえよう',end:'ぷにが、とろんとしたね',sound:'sleepy'},
+    {name:'ぷにを追いかける',title:'ぷにを追いかける',intro:'ゆびで、ぷにを追ってみよう',end:'追いかけっこ、たのしかったね',sound:'play'},
+    {name:'ぷにがいっぱい',title:'ぷにがいっぱい',intro:'ぷにを、いっぱいつかまえよう',end:'いっぱい、つかまえたね',sound:'happy'},
     {name:'相棒のお祝い',title:'相棒のお祝い',intro:'7日分のお祝いをしよう',end:'お祝い、うれしいね',sound:'proud'}
   ];
   const SPONTANEOUS_EVENTS = [

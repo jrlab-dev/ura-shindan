@@ -7,7 +7,7 @@
   <meta name="description" content="端末の中で遊べる、ちいさな相棒">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=46">
+  <link rel="stylesheet" href="styles.css?v=48">
   <title>ちいさな相棒</title>
 </head>
 <body>
@@ -73,7 +73,7 @@
         <div class="pet-slot" data-pet-id="pet-1"><p id="pet-1-name" class="pet-name">ぽこ</p><div id="pet-1-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet" class="pet" data-state="normal" role="img" aria-label="ぽこがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div><i class="trouble-leaf" id="trouble-leaf-1" aria-hidden="true"></i></div></div></div>
         <div id="pet-2-slot" class="pet-slot pet-slot-2" data-pet-id="pet-2" hidden><p id="pet-2-name" class="pet-name">ふわ</p><div id="pet-2-bubble" class="pet-bubble" role="status" aria-live="polite" hidden></div><div id="pet-2" class="pet pet-2" data-state="normal" role="img" aria-label="ふわがこちらを見ている"><div class="pet-shadow" aria-hidden="true"></div><div class="pet-body"><div class="ear ear-left"></div><div class="ear ear-right"></div><div class="face"><div class="eye eye-left"><i></i></div><div class="eye eye-right"><i></i></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div><div class="mouth"></div></div><div class="belly" aria-hidden="true"></div><div class="paw paw-left" aria-hidden="true"></div><div class="paw paw-right" aria-hidden="true"></div><i class="trouble-leaf" id="trouble-leaf-2" aria-hidden="true"></i></div></div></div>
       </div>
-      <div id="puni" class="puni" data-front="false" role="img" aria-label="ぷにがふわふわしている" tabindex="0"><div class="puni-body" aria-hidden="true"><i class="puni-shine"></i><i class="puni-eye puni-eye-left"></i><i class="puni-eye puni-eye-right"></i></div><p class="puni-name" aria-hidden="true">ぷに</p></div>
+      <div id="puni" class="puni" data-front="false" role="img" aria-label="ぷにがふわふわしている" tabindex="0"><div class="puni-body" aria-hidden="true"><i class="puni-shine"></i><i class="puni-eye puni-eye-left"></i><i class="puni-eye puni-eye-right"></i><span class="puni-mouth"></span></div><p class="puni-name" aria-hidden="true">ぷに</p></div>
       <p id="welcome-note" class="welcome-note">さわってみてね</p>
       <p id="today-memory" class="today-memory" hidden></p>
       <p id="week-today" class="today-memory" hidden></p>
@@ -120,7 +120,7 @@
   </dialog>
 
   <dialog id="play-menu-dialog" class="dialog play-menu-dialog" aria-labelledby="play-menu-title">
-    <form method="dialog"><div class="dialog-head"><h2 id="play-menu-title">あそびをえらぶ</h2><button id="play-menu-close" class="close-button" value="close" aria-label="閉じる">×</button></div><div class="play-cards"><button id="play-light-button" class="play-card" type="button"><strong>ひかりをつかまえる</strong><span>ひかりをタップする遊び</span></button><button id="play-echo-button" class="play-card" type="button"><strong>まねっこ</strong><span>ことばを、その場でまねする遊び</span></button></div></form>
+    <form method="dialog"><div class="dialog-head"><h2 id="play-menu-title">あそびをえらぶ</h2><button id="play-menu-close" class="close-button" value="close" aria-label="閉じる">×</button></div><div class="play-cards"><button id="play-light-button" class="play-card" type="button"><strong>ぷにをつかまえる</strong><span>ぷにをタップする遊び</span></button><button id="play-echo-button" class="play-card" type="button"><strong>まねっこ</strong><span>ことばを、その場でまねする遊び</span></button></div></form>
   </dialog>
   <dialog id="echo-pet-dialog" class="dialog play-menu-dialog" aria-labelledby="echo-pet-title">
     <form method="dialog"><div class="dialog-head"><h2 id="echo-pet-title">まねする子をえらぶ</h2><button id="echo-pet-back" class="close-button" type="button" aria-label="あそび選びへ戻る">‹</button></div><p id="echo-pet-note" class="memory-summary"></p><div class="play-cards"><button id="echo-pet-1-button" class="play-card pink-card" type="button"><strong id="echo-pet-1-name">ピンク</strong><span>たかくて はやい こえ</span></button><button id="echo-pet-2-button" class="play-card blue-card" type="button"><strong id="echo-pet-2-name">青</strong><span>ひくくて ゆっくりな こえ</span></button></div></form>
@@ -173,34 +173,34 @@
     </form>
   </dialog>
 
-  <section id="game-panel" class="game-panel" hidden aria-label="ひかりをつかまえる">
+  <section id="game-panel" class="game-panel" hidden aria-label="ぷにをつかまえる">
     <div class="game-card">
-      <div class="game-head"><h2 id="game-title">ひかりをつかまえる</h2><span id="game-time">15</span></div>
-      <p id="game-status" role="status" aria-live="polite">ひかりをおしてね</p>
+      <div class="game-head"><h2 id="game-title">ぷにをつかまえる</h2><span id="game-time">15</span></div>
+      <p id="game-status" role="status" aria-live="polite">ぷにをおしてね</p>
       <div id="game-board" class="game-board"><button id="game-target" class="game-target" type="button" aria-label="ぷにをつかまえる"><span class="puni-body"><span class="puni-shine"></span><span class="puni-eye puni-eye-left"></span><span class="puni-eye puni-eye-right"></span></span></button></div>
       <div class="game-foot"><strong>つかまえた <span id="game-score">0</span></strong><button id="game-end" class="small-button" type="button">おわる</button></div>
     </div>
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="brain.js?v=38" defer></script>
-  <script src="room-background.js?v=38" defer></script>
-  <script src="pet-life.js?v=38" defer></script>
-  <script src="story-engine.js?v=38" defer></script>
-  <script src="week-engine.js?v=38" defer></script>
-  <script src="voice-memory.js?v=38" defer></script>
-    <script src="companion-scenes.js?v=38" defer></script>
-    <script src="companion-director.js?v=38" defer></script>
-    <script src="activity-lock.js?v=38" defer></script>
-    <script src="pet-presentations.js?v=38" defer></script>
-    <script src="pet-speech.js?v=38" defer></script>
-    <script src="two-pet-scenes.js?v=38" defer></script>
-    <script src="two-pet-director.js?v=38" defer></script>
-    <script src="speech-arbiter.js?v=38" defer></script>
-    <script src="trouble-engine.js?v=38" defer></script>
-    <script src="ritual-engine.js?v=38" defer></script>
-    <script src="sulk-engine.js?v=38" defer></script>
-    <script src="growth-engine.js?v=38" defer></script>
-    <script src="app.js?v=38" defer></script>
+  <script src="brain.js?v=48" defer></script>
+  <script src="room-background.js?v=48" defer></script>
+  <script src="pet-life.js?v=48" defer></script>
+  <script src="story-engine.js?v=48" defer></script>
+  <script src="week-engine.js?v=48" defer></script>
+  <script src="voice-memory.js?v=48" defer></script>
+    <script src="companion-scenes.js?v=48" defer></script>
+    <script src="companion-director.js?v=48" defer></script>
+    <script src="activity-lock.js?v=48" defer></script>
+    <script src="pet-presentations.js?v=48" defer></script>
+    <script src="pet-speech.js?v=48" defer></script>
+    <script src="two-pet-scenes.js?v=48" defer></script>
+    <script src="two-pet-director.js?v=48" defer></script>
+    <script src="speech-arbiter.js?v=48" defer></script>
+    <script src="trouble-engine.js?v=48" defer></script>
+    <script src="ritual-engine.js?v=48" defer></script>
+    <script src="sulk-engine.js?v=48" defer></script>
+    <script src="growth-engine.js?v=48" defer></script>
+    <script src="app.js?v=48" defer></script>
 </body>
 </html>
