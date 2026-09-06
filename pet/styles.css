@@ -224,7 +224,7 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 @keyframes bowl-sway{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
 /* ごはんの好き嫌い：ready の間だけ器の左に2つの小皿（絵文字で出す）。器は見せたまま押せない */
 .ritual-menu{display:none;position:absolute;right:80px;bottom:56px;gap:8px;z-index:1}
-.pet-stage[data-meal="ready"] #ritual-menu{display:flex}
+.pet-stage[data-meal="ready"] #ritual-menu{display:flex;pointer-events:auto}
 .ritual-food{display:grid;place-items:center;min-width:44px;min-height:44px;width:44px;height:44px;border:3px solid #cbb99f;border-radius:4px 4px 14px 14px;background:linear-gradient(180deg,#fffdf7,#f1e6d4);padding:0;margin:0;font-size:22px;line-height:1;cursor:pointer}
 .ritual-food:focus-visible{outline:3px solid rgba(128,106,196,.4);outline-offset:2px}
 .pet-stage[data-meal="ready"] #ritual-bowl{pointer-events:none}

@@ -17,6 +17,7 @@
   const Ritual = window.LittleCompanionRitual;
   const Sulk = window.LittleCompanionSulk;
   const Growth = window.LittleCompanionGrowth;
+  const Relay = window.LittleCompanionEchoRelay;
   /* 儀式エンジンがあるときだけ、舞台判定（主役・起きている子・全員ねんね）に「寝かしつけで早く眠った子」を反映する */
   if (Ritual && Life && typeof Life.getStageState === 'function') {
     const rawGetStageState = Life.getStageState.bind(Life);
@@ -34,7 +35,7 @@
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false, echoRelayStop:false };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -61,7 +62,7 @@
     if (days > 0) { state.data.energy = clamp(state.data.energy - 5 * days); state.data.mood = clamp(state.data.mood - 2 * days); Life.decayAttention(state.data, Date.now() - last); }
   }
   function setSeen() { state.data.lastSeenAt = new Date().toISOString(); save(); }
-  function visualPetId() { return state.echoSession && state.echoSession.imitatorPetId || activePetId(); }
+  function visualPetId() { return state.echoSession && (state.echoSession.relayPetId || state.echoSession.imitatorPetId) || activePetId(); }
   function setState(next, duration = 1800) {
     if (state.echoSession && !String(next).startsWith('copy-')) return;
     clearTimeout(state.replyTimer);
@@ -84,7 +85,7 @@
     else { const sleepingNow = petAsleep(visualPetId(), new Date()); $('status-pill').textContent = sleepingNow || state.data.energy < 30 ? 'すやすや' : 'げんきだよ'; }
     if (duration && !['listening', 'talking'].includes(next)) state.replyTimer = setTimeout(() => setState(state.data.energy < 30 ? 'sleepy' : 'normal', 0), duration);
   }
-  function bubble(text) { if (state.echoSession && state.echoSession.imitatorPetId) { $('bubble').hidden = true; showPetBubble(state.echoSession.imitatorPetId, text); return; } $('bubble').hidden = false; $('bubble').textContent = text; }
+  function bubble(text) { const echoSpeaker = state.echoSession && (state.echoSession.relayPetId || state.echoSession.imitatorPetId); if (echoSpeaker) { $('bubble').hidden = true; showPetBubble(echoSpeaker, text); return; } $('bubble').hidden = false; $('bubble').textContent = text; }
   function activeProfileId() { return state.data && state.data.activeProfileId || 'p-default'; }
   /* 寝ている判定：時計で寝ている＋寝かしつけで早く眠ったぶん（儀式エンジン）を合わせる。
      getStageState の呼び出しは app.js の中でこっち向きにする（pet-life.js 自体は変えない） */
@@ -508,17 +509,89 @@
     echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); setState(echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); return true;
   }
   function echoSucceeded(token) { if (!state.echoSession || state.echoSession.token !== token) return; state.echoRecording = false; state.echoSession.phase = state.echoSession.inputMode === 'live' ? 'live' : 'ready'; state.echoSession.rounds += 1; state.echoSession.consecutiveFailures = 0; state.echoSession.lastActionAt = Date.now(); Life.recordEchoRound(state.data, new Date()); const changed = switchEchoImitator(state.echoSession); const companionHandled = companionAction('echo'); const reaction = companionHandled ? '' : echoReaction(); if (companionHandled && $('companion-moment').textContent) bubble($('companion-moment').textContent); save(); const reason = Life.echoShouldEnd(state.echoSession, Date.now()); if (reason === 'satisfied') finishEcho('satisfied'); else { if (!companionHandled && !changed) bubble(state.echoSession.inputMode === 'press' ? `${reaction}　もういっこ？ 「はなす」をおしてね` : `${reaction}　もういっこ、きくよ`); setState(state.echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); } }
+  /* まねっこリレー（設計書 まねっこリレーv1）。音のもとは1回だけ受け取り、echo-relay.js の並びに沿って
+     同じ音に声の設定だけを掛け替えて順に鳴らす。相手がいない・文字モードのときは今までどおり1回だけ鳴る。
+     echoSucceeded・echoFailure はここでは呼ばない（呼び側の今までの流れで、リレー全体で1回だけ呼ぶ） */
+  const ECHO_RELAY_HOPS = 4;
+  const ECHO_RELAY_MAX_MS = 6000;
+  const ECHO_RELAY_GAP_MS = 420;
+  async function playEchoRelay(token, source) {
+    const echoSession = state.echoSession;
+    const play = liveEchoApi('playProcessed');
+    if (!echoSession || echoSession.token !== token || !source || !play) return { ok:false, hops:0, durationMs:0 };
+    const partnerPetId = echoSession.imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1';
+    const partnerSlot = petNode(partnerPetId) && petNode(partnerPetId).closest('.pet-slot');
+    /* リレーの条件（設計書「やらない場合」）。1つでも欠けたら plan を作らない＝今までどおり1回だけ */
+    let plan = null;
+    if (state.data && state.data.soundMode !== 'text' && !petSleepingNow(partnerPetId) && partnerSlot && !partnerSlot.hidden && Relay && typeof Relay.relayPlan === 'function') {
+      try { plan = Relay.relayPlan({ startPetId:echoSession.imitatorPetId, tunings:{ 'pet-1':echoTuning('pet-1'), 'pet-2':echoTuning('pet-2') }, hops:ECHO_RELAY_HOPS }); } catch (_) { plan = null; }
+    }
+    const relaying = Boolean(plan && plan.length > 1);
+    const otherPetId = petId => petId === 'pet-1' ? 'pet-2' : 'pet-1';
+    const listenerPetId = relaying ? otherPetId(echoSession.imitatorPetId) : '';
+    const listenerStateBefore = listenerPetId && petNode(listenerPetId) ? petNode(listenerPetId).dataset.state : '';
+    const stopRelay = () => { state.echoRelayStop = true; };
+    /* 続ける条件。まねっこが続いている・触られていない・相手（次に鳴る子）が寝ていない */
+    const relayAlive = () => Boolean(state.echoSession && state.echoSession.token === token && !state.echoRelayStop && !petSleepingNow(partnerPetId));
+    const relayStartedAt = Date.now();
+    /* 6秒の上限のために次の1回の長さを見積もる。音のもとの長さが分かればそれを、分からなければ直前の鳴った長さから逆算する */
+    let sourceMs = source.pcm16 && Number(source.sampleRate) > 0 ? Math.round(source.pcm16.length / source.sampleRate * 1000) : 0;
+    let playedMs = 0; let playedPitch = 1;
+    let hops = 0; let ok = false; let durationMs = 0;
+    if (relaying) { state.echoRelayStop = false; echoSession.relayPetId = echoSession.imitatorPetId; document.addEventListener('pointerdown', stopRelay, true); }
+    try {
+      for (let index = 0, total = relaying ? plan.length : 1; index < total; index += 1) {
+        if (index > 0) {
+          if (!relayAlive()) break;
+          const nextPitch = Number(plan[index].tuning.pitchRate) || 1;
+          const estimateMs = Math.round((sourceMs || playedMs * playedPitch) / nextPitch) + ECHO_RELAY_GAP_MS;
+          if (Date.now() - relayStartedAt + estimateMs > ECHO_RELAY_MAX_MS) break;  /* リレー全体は6秒まで。入りきらなければそこで打ち切る */
+          await wait(ECHO_RELAY_GAP_MS);
+          if (!relayAlive()) break;
+        }
+        const step = relaying ? plan[index] : { petId:echoSession.imitatorPetId, tuning:null };
+        if (relaying) {
+          /* 鳴っている子を画面に出す。imitatorPetId は書き換えない（次に子どもがしゃべるときの担当が変わるため） */
+          state.echoSession.relayPetId = step.petId;
+          setState('copy-speaking', 0);
+          /* 鳴っていない側の子を笑わせる（既存の data-state="happy" を使い回す。CSSは足さない） */
+          const listener = otherPetId(step.petId);
+          if (petNode(listener)) setPetState(listener, 'happy');
+        }
+        /* 1回目は今までどおり、まねる子自身の声。2回目以降は掛け合わせた声。音のもと（blob・pcm16）は毎回同じものを使い回す */
+        const tuning = index === 0 ? echoTuning(state.echoSession.imitatorPetId) : step.tuning;
+        let result = { ok:false };
+        try { result = await play(Object.assign({}, source, { tuning })) || { ok:false }; } catch (_) {}
+        if (index === 0) ok = Boolean(result && result.ok);
+        if (!result || !result.ok) break;  /* 1回目の失敗は今までどおりの失敗。途中からの失敗は、鳴ったぶんで正常終了 */
+        hops += 1; durationMs = Number(result.durationMs) || 0; playedMs = durationMs; playedPitch = Number(tuning.pitchRate) || 1;
+        /* 次もあるときは、再生後に自動で再開される聞き取りをここで止め直す（リレーの間はマイクを開け直さない） */
+        if (relaying && index + 1 < total) { const pause = liveEchoApi('pauseLiveEchoDetection'); if (pause) pause(); }
+      }
+    } catch (_) {
+      /* 途中で変わったときも、1回でも鳴ったぶんは正常終了として呼び側に返す */
+    } finally {
+      if (relaying) {
+        document.removeEventListener('pointerdown', stopRelay, true);
+        /* リレーが終わったら笑い顔を元に戻す（鳴らす側の表情は呼び側の今までの流れで変わる） */
+        if (listenerPetId && petNode(listenerPetId)) setPetState(listenerPetId, listenerStateBefore || 'normal');
+        if (state.echoSession && state.echoSession.token === token) delete state.echoSession.relayPetId;
+        state.echoRelayStop = false;
+        updateScreen();
+      }
+    }
+    return { ok, hops, durationMs };
+  }
   async function playLiveEcho(utterance, token) {
     if (!state.echoSession || state.echoSession.token !== token || state.echoSession.inputMode !== 'live' || state.echoSession.phase !== 'live' || !utterance) return;
     const pause = liveEchoApi('pauseLiveEchoDetection'); if (pause) pause(); state.echoRecording = 'speaking'; state.echoSession.phase = 'thinking'; setState('copy-thinking', 0); bubble('んーっと…'); updateScreen();
     await wait(350 + Math.floor(Math.random() * 301));
     if (!state.echoSession || state.echoSession.token !== token) return;
     state.echoSession.phase = 'speaking'; setState('copy-speaking', 0); updateScreen();
-    let result = { ok:false };
-    try { const play = liveEchoApi('playProcessed'); if (play) result = await play({ pcm16:utterance.pcm16, sampleRate:utterance.sampleRate, tuning:echoTuning(state.echoSession.imitatorPetId) }); } catch (_) {}
+    const played = await playEchoRelay(token, { pcm16:utterance.pcm16, sampleRate:utterance.sampleRate });
     if (!state.echoSession || state.echoSession.token !== token) return;
-    if (!result || !result.ok) { echoFailure(token); return; }
-    await wait(Math.max(0, Number(result.durationMs) || 0) + 350);
+    if (!played || !played.ok) { echoFailure(token); return; }
+    await wait(Math.max(0, Number(played.durationMs) || 0) + 350);
     if (!state.echoSession || state.echoSession.token !== token) return;
     const resume = liveEchoApi('resumeLiveEchoDetection'); if (resume) resume(); state.echoRecording = false; echoSucceeded(token);
   }
@@ -571,7 +644,7 @@
     let blob = state.echoBlob;
     state.echoBlob = null;
     state.echoSession.phase = 'speaking'; setState('copy-speaking', 0); updateScreen();
-    const played = await state.voice.playProcessed({ blob, tuning:echoTuning(state.echoSession.imitatorPetId) });
+    const played = await playEchoRelay(token, { blob });
     blob = null;
     if (!state.echoSession || token !== state.echoSession.token || !played.ok || !canStartEcho(state.echoSession.source)) { if (state.echoSession && token === state.echoSession.token) echoFailure(token); return; }
     await wait(Math.max(600, played.durationMs + 600 + Math.floor(Math.random() * 501)));
