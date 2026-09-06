@@ -4,7 +4,7 @@
   else root.LittleCompanionRitual = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  const WINDOWS = { 'pet-1': { wakeFrom: 8, wakeTo: 12, tuckFrom: 19, tuckTo: 22 }, 'pet-2': { wakeFrom: 7, wakeTo: 12, tuckFrom: 19, tuckTo: 20.5 } };
+  const WINDOWS = { 'pet-1': { wakeFrom: 8, wakeTo: 12, tuckFrom: 21, tuckTo: 22 }, 'pet-2': { wakeFrom: 7, wakeTo: 12, tuckFrom: 19.5, tuckTo: 20.5 } };
   const MEAL_WINDOW = { from: 7, to: 19 };
   const CLOCK_SLEEP = { 'pet-1': { sleep: 22 * 60, wake: 8 * 60 }, 'pet-2': { sleep: 20 * 60 + 30, wake: 5 * 60 + 30 } };
   const PET_IDS = ['pet-1', 'pet-2'];

@@ -680,7 +680,7 @@
     }
     if (!text) { bubble('きこえなかった。文字でもいいよ'); playPetSound('sad'); setState('sad'); return; }
     setState('thinking', 700); bubble('んーっと…');
-    const interruptToken = state.manualInterruptToken; setTimeout(() => { if (interruptToken !== state.manualInterruptToken || state.echoSession) return; const reply = getReply(text); if (reply.safety) pauseForSafety(); if (Week && reply.memoryHit && reply.memoryHit.value && !reply.safety) Week.captureFact(state.data, reply.memoryHit.value, reply.memoryHit.type || 'word', 'conversation', new Date()); Life.applyAction(state.data, 'talk'); if (!companionAction('talk')) answer(reply.text, { id: reply.id, soundKind: reply.safety ? 'danger' : 'normal' }); }, 500);
+    const interruptToken = state.manualInterruptToken; setTimeout(() => { if (interruptToken !== state.manualInterruptToken || state.echoSession) return; const reply = getReply(text); if (reply.safety) pauseForSafety(); if (Week && reply.memoryHit && reply.memoryHit.value && !reply.safety) Week.captureFact(state.data, reply.memoryHit.value, reply.memoryHit.type || 'word', 'conversation', new Date()); Life.applyAction(state.data, 'talk'); if (!(reply.intent === 'goodnight' && !reply.safety && tryRitualTuckIn()) && !companionAction('talk')) answer(reply.text, { id: reply.id, soundKind: reply.safety ? 'danger' : 'normal' }); }, 500);
     $('message-input').value = '';
   }
   function performTouch(kind) {
@@ -995,11 +995,11 @@
     window.setTimeout(() => { if (token !== state.ritualMealToken) return; state.ritualMealBusy = false; if (stage) { delete stage.dataset.meal; delete stage.dataset.mealHit; } if (bowl) delete bowl.dataset.food; if (petIds.length) addRitualBond(petIds.length * (hit ? 2 : 1)); clearPetBubbles(); save(); updateScreen(); }, eatMs + 1500);
     return true;
   }
-  /* action==='sleep' の先頭で呼ぶ。窓の中なら儀式（幕1.5秒→一言→その場で眠る） */
+  /* action==='sleep' の先頭で呼ぶ。窓の中の子（寝かしつけv2＝ぽこ→ふわの順に調べる）なら儀式（幕1.5秒→一言→その場で眠る） */
   function tryRitualTuckIn() {
     if (!Ritual || !state.data) return false;
-    const petId = activePetId();
-    if (!Ritual.canTuckIn(state.data, petId, new Date())) return false;
+    const petId = ['pet-1', 'pet-2'].find(id => Ritual.canTuckIn(state.data, id, new Date()));
+    if (!petId) return false;
     if (ritualAcceptBlocked()) return false;
     const entry = Ritual.tuckIn(state.data, petId, new Date());
     if (!entry) return false;
