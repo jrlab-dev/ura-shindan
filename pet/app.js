@@ -513,8 +513,10 @@
      同じ音に声の設定だけを掛け替えて順に鳴らす。相手がいない・文字モードのときは今までどおり1回だけ鳴る。
      echoSucceeded・echoFailure はここでは呼ばない（呼び側の今までの流れで、リレー全体で1回だけ呼ぶ） */
   const ECHO_RELAY_HOPS = 4;
-  const ECHO_RELAY_MAX_MS = 6000;
-  const ECHO_RELAY_GAP_MS = 420;
+  /* 全体の安全網。ふつうは4回ぶん鳴り切るので当たらない（1回が最長でも約5秒・4回で約22秒） */
+  const ECHO_RELAY_MAX_MS = 25000;
+  /* 1回ぶんの間。今までの1回だけのまねっこは「鳴った長さ＋600〜1100ミリ秒」待っていたので、それ以上にする */
+  const ECHO_RELAY_GAP_MS = 700;
   async function playEchoRelay(token, source) {
     const echoSession = state.echoSession;
     const play = liveEchoApi('playProcessed');
@@ -535,19 +537,19 @@
     const relayAlive = () => Boolean(state.echoSession && state.echoSession.token === token && !state.echoRelayStop && !petSleepingNow(partnerPetId));
     const relayStartedAt = Date.now();
     /* 6秒の上限のために次の1回の長さを見積もる。音のもとの長さが分かればそれを、分からなければ直前の鳴った長さから逆算する */
-    let sourceMs = source.pcm16 && Number(source.sampleRate) > 0 ? Math.round(source.pcm16.length / source.sampleRate * 1000) : 0;
-    let playedMs = 0; let playedPitch = 1;
+    let playedMs = 0;
     let hops = 0; let ok = false; let durationMs = 0;
     if (relaying) { state.echoRelayStop = false; echoSession.relayPetId = echoSession.imitatorPetId; document.addEventListener('pointerdown', stopRelay, true); }
     try {
       for (let index = 0, total = relaying ? plan.length : 1; index < total; index += 1) {
         if (index > 0) {
           if (!relayAlive()) break;
-          const nextPitch = Number(plan[index].tuning.pitchRate) || 1;
-          const estimateMs = Math.round((sourceMs || playedMs * playedPitch) / nextPitch) + ECHO_RELAY_GAP_MS;
-          if (Date.now() - relayStartedAt + estimateMs > ECHO_RELAY_MAX_MS) break;  /* リレー全体は6秒まで。入りきらなければそこで打ち切る */
-          await wait(ECHO_RELAY_GAP_MS);
+          /* ★前の子の音が鳴り終わるまで待つ。playProcessed は「鳴らし始めた時点」で戻り、
+             次の playProcessed は先頭で stopPlayback() を呼ぶ。ここで待たないと前の子の声が
+             間（700ミリ秒）だけで打ち切られる（2026-09-06の実機報告「1人の持ち時間が短すぎる」の原因） */
+          await wait(playedMs + ECHO_RELAY_GAP_MS);
           if (!relayAlive()) break;
+          if (Date.now() - relayStartedAt > ECHO_RELAY_MAX_MS) break;  /* 安全網。ふつうは当たらない */
         }
         const step = relaying ? plan[index] : { petId:echoSession.imitatorPetId, tuning:null };
         if (relaying) {
@@ -564,7 +566,7 @@
         try { result = await play(Object.assign({}, source, { tuning })) || { ok:false }; } catch (_) {}
         if (index === 0) ok = Boolean(result && result.ok);
         if (!result || !result.ok) break;  /* 1回目の失敗は今までどおりの失敗。途中からの失敗は、鳴ったぶんで正常終了 */
-        hops += 1; durationMs = Number(result.durationMs) || 0; playedMs = durationMs; playedPitch = Number(tuning.pitchRate) || 1;
+        hops += 1; durationMs = Number(result.durationMs) || 0; playedMs = durationMs;
         /* 次もあるときは、再生後に自動で再開される聞き取りをここで止め直す（リレーの間はマイクを開け直さない） */
         if (relaying && index + 1 < total) { const pause = liveEchoApi('pauseLiveEchoDetection'); if (pause) pause(); }
       }
