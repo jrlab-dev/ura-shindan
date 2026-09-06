@@ -525,7 +525,7 @@
     const partnerSlot = petNode(partnerPetId) && petNode(partnerPetId).closest('.pet-slot');
     /* リレーの条件（設計書「やらない場合」）。1つでも欠けたら plan を作らない＝今までどおり1回だけ */
     let plan = null;
-    if (state.data && state.data.soundMode !== 'text' && !petSleepingNow(partnerPetId) && partnerSlot && !partnerSlot.hidden && Relay && typeof Relay.relayPlan === 'function') {
+    if (echoSession.relayMode === true && state.data && state.data.soundMode !== 'text' && !petSleepingNow(partnerPetId) && partnerSlot && !partnerSlot.hidden && Relay && typeof Relay.relayPlan === 'function') {
       try { plan = Relay.relayPlan({ startPetId:echoSession.imitatorPetId, tunings:{ 'pet-1':echoTuning('pet-1'), 'pet-2':echoTuning('pet-2') }, hops:ECHO_RELAY_HOPS }); } catch (_) { plan = null; }
     }
     const relaying = Boolean(plan && plan.length > 1);
@@ -603,11 +603,14 @@
     if (source === 'manual') interruptForManualEcho();
     const petInvited = source === 'spontaneous' || source === 'companion';
     prepareEchoAudio(); const token = ++state.echoToken; const liveStart = source === 'manual' && liveEchoApi('startLiveEchoSession');
+    /* 'both'＝2ひきで交互（リレー）。'pet-1'/'pet-2'＝その子だけ（今までどおり・リレーしない）。
+       指定なし（画面の「まねっこ」ボタン・ペットからの誘い）＝リレー */
+    const pickedOne = selectedPetId === 'pet-1' || selectedPetId === 'pet-2';
     let imitatorPetId = selectedPetId === 'pet-2' ? 'pet-2' : selectedPetId === 'pet-1' ? 'pet-1' : activePetId();
     if (petSleepingNow(imitatorPetId)) imitatorPetId = imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1';
     if (petSleepingNow(imitatorPetId)) return;
     const relation = pairRelation(); const temporaryGuest = imitatorPetId === 'pet-2' && Boolean(relation && relation.phase === 'solo');
-    state.echoSession = { token, source, imitatorPetId, manualSelection:Boolean(selectedPetId), temporaryGuest, inputMode:liveStart ? 'live' : 'press', startedAt:Date.now(), lastActionAt:Date.now(), lastVoiceAt:0, rounds:0, targetRounds:3 + Math.floor(Math.random() * 8), switchAtRound:2 + Math.floor(Math.random() * 3), consecutiveFailures:0, liveFallback:false, phase:liveStart ? 'calibrating' : 'ready' };
+    state.echoSession = { token, source, imitatorPetId, manualSelection:pickedOne, relayMode:!pickedOne, temporaryGuest, inputMode:liveStart ? 'live' : 'press', startedAt:Date.now(), lastActionAt:Date.now(), lastVoiceAt:0, rounds:0, targetRounds:3 + Math.floor(Math.random() * 8), switchAtRound:2 + Math.floor(Math.random() * 3), consecutiveFailures:0, liveFallback:false, phase:liveStart ? 'calibrating' : 'ready' };
     if (temporaryGuest) state.twoPetGuestVisible = true;
     renderTwoPets();
     Life.recordEchoSession(state.data, new Date()); save(); const sulkTalkWord = noteSulkTalk(); if (sulkTalkWord) showPetBubble(imitatorPetId, sulkTalkWord); setState(liveStart ? 'copy-calibrating' : (petInvited ? 'copy-invite' : 'copy-ready'), 0); bubble(liveStart ? 'マイク準備中・しずかに1秒まってね' : (petInvited ? '「はなす」をおして、なにか はなして' : 'この端末では「はなす」をおしてね')); if (petInvited) playPetSound('curious'); updateScreen(); armEchoEndChecks();
@@ -774,7 +777,7 @@
   function handlePuniPoke() { if ($('puni') && $('puni').dataset.puniSleep === 'true') return; const puni = $('puni'); if (!puni) return; window.clearTimeout(handlePuniPoke.timer); puni.dataset.poke = 'true'; playPetSound('puni'); handlePuniPoke.timer = window.setTimeout(() => { const p = $('puni'); if (p) delete p.dataset.poke; }, 600); puni.dataset.spot = String(nextPuniSpot(puni.dataset.spot)); schedulePuniWander(); }
   function handleSleepyPetTouch(petNode) { if (!petNode || petNode.dataset.state !== 'sleepy') return; petNode.dataset.doze = 'true'; window.clearTimeout(handleSleepyPetTouch.timer); handleSleepyPetTouch.timer = window.setTimeout(() => { if (petNode && petNode.dataset.state === 'sleepy') delete petNode.dataset.doze; }, 2000); }
   function openPlayMenu() { if (stageAsleep()) return; if (!state.data || state.echoSession || state.game || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('play-menu'); cancelCompanionMoment(); $('play-menu-dialog').showModal(); }
-  function openEchoPetMenu() { $('play-menu-dialog').close(); ['pet-1','pet-2'].forEach((id, index) => { const sleeping = petSleepingNow(id); const button = $(`echo-pet-${index + 1}-button`); const label = $(`echo-pet-${index + 1}-name`); if (button) button.disabled = sleeping; if (label) label.textContent = `${petInfo(id).name}${sleeping ? '（ねてるよ）' : ''}`; }); $('echo-pet-note').textContent=state.data.echoModeEnabled===true?'まねする子をえらんでね':'おとなと設定してね'; $('echo-pet-dialog').showModal(); }
+  function openEchoPetMenu() { $('play-menu-dialog').close(); ['pet-1','pet-2'].forEach((id, index) => { const sleeping = petSleepingNow(id); const button = $(`echo-pet-${index + 1}-button`); const label = $(`echo-pet-${index + 1}-name`); if (button) button.disabled = sleeping; if (label) label.textContent = `${petInfo(id).name}${sleeping ? '（ねてるよ）' : ''}`; }); const bothButton = $('echo-pet-both-button'); if (bothButton) bothButton.disabled = petSleepingNow('pet-1') || petSleepingNow('pet-2'); $('echo-pet-note').textContent=state.data.echoModeEnabled===true?'まねする子をえらんでね':'おとなと設定してね'; $('echo-pet-dialog').showModal(); }
   function startManualEcho(petId) { $('echo-pet-dialog').close(); if (state.data.echoModeEnabled!==true) { showToast('おとなと設定してね'); return; } startEchoSession('manual',petId); }
   function care(action) {
     if (action === 'sleep' && stageAsleep() && state.data && !state.data.puniAsleep) { puniYawnThenSleep(); return; }
@@ -1345,7 +1348,7 @@
     $('teach-word-button').addEventListener('click', () => { if (!state.data || !Story || Life.isSafetyPaused(state.data)) return; cancelTwoPetMoment('teaching'); cancelCompanionMoment(); cancelEcho(); hideQuestion(); const event = Story.startTeaching(state.data, {source:'manual',now:new Date()}); if (event) { state.storyDraft = null; storyPresent(event); save(); updateScreen(); } else showToast('いまのことばを教え終わってから、つぎを教えてね'); });
     $('echo-button').addEventListener('click', runEcho); $('echo-press-button').addEventListener('click', runEcho); $('echo-stop-button').addEventListener('click', () => finishEcho('stop'));
     $('voice-test-button').addEventListener('click', testVoice);
-    $('play-light-button').addEventListener('click', () => { $('play-menu-dialog').close(); startMiniGame(); }); $('play-echo-button').addEventListener('click', openEchoPetMenu); $('play-menu-close').addEventListener('click', () => $('play-menu-dialog').close()); $('echo-pet-back').addEventListener('click', () => { $('echo-pet-dialog').close(); $('play-menu-dialog').showModal(); }); $('echo-pet-1-button').addEventListener('click', () => startManualEcho('pet-1')); $('echo-pet-2-button').addEventListener('click', () => startManualEcho('pet-2'));
+    $('play-light-button').addEventListener('click', () => { $('play-menu-dialog').close(); startMiniGame(); }); $('play-echo-button').addEventListener('click', openEchoPetMenu); $('play-menu-close').addEventListener('click', () => $('play-menu-dialog').close()); $('echo-pet-back').addEventListener('click', () => { $('echo-pet-dialog').close(); $('play-menu-dialog').showModal(); }); $('echo-pet-1-button').addEventListener('click', () => startManualEcho('pet-1')); $('echo-pet-2-button').addEventListener('click', () => startManualEcho('pet-2')); { const both = $('echo-pet-both-button'); if (both) both.addEventListener('click', () => startManualEcho('both')); }
     $('tuning-record-button').addEventListener('click', recordTuning); $('tuning-stop-button').addEventListener('click', () => { if (state.voice && state.voice.finishTemporaryRecording()) { $('tuning-stop-button').disabled = true; $('tuning-status').textContent = '録音を止めています'; } }); $('tuning-play-button').addEventListener('click', playTuning); $('tuning-reset-button').addEventListener('click', () => { const petId=selectedTuningPetId(); if(state.data.echoVoiceOverrides)delete state.data.echoVoiceOverrides[petId]; save(); loadTuning(petId); }); $('tuning-pet-select').addEventListener('change', () => loadTuning()); ['tuning-pitch','tuning-speed','tuning-double','tuning-brightness','tuning-timing-mode'].forEach(id => $(id).addEventListener(id === 'tuning-timing-mode' ? 'change' : 'input', saveTuning));
     $('game-target').addEventListener('click', scoreGameTarget); $('game-end').addEventListener('click', () => finishMiniGame('end'));
     $('keyboard-toggle').addEventListener('click', () => toggleTextEntry($('text-entry').hidden));
