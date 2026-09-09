@@ -287,3 +287,43 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 /* reduced motion：段階3の新規回転だけ確実に止める（耳の wobble など他は既存の reduced-motion 規則に従う） */
 @media (prefers-reduced-motion:reduce){.pet[data-growth="3"][data-state="happy"]{animation:none!important}}
 
+/* 壁の写真立て（発注書W・設計書 写真立てv1）。既存の行は触らず、いちばん下に足す。
+   位置と大きさはこの変数1か所で決める（実機で準也さんが数字を合わせるため。初期値は窓と重ならない壁の右上の仮置き） */
+.room-photo-frame{
+  --frame-right:18%;
+  --frame-top:8%;
+  --frame-width:104px;
+  --frame-photo:40px;
+  --frame-gap:6px;
+  position:absolute;
+  top:var(--frame-top);
+  right:var(--frame-right);
+  width:var(--frame-width);
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--frame-gap);
+  align-content:flex-start;
+  padding:7px;
+  background:linear-gradient(180deg,#d9c9bc,#c2afa0);
+  border-radius:6px;
+  box-shadow:0 2px 8px rgba(128,106,196,.2), inset 0 0 0 2px rgba(255,255,255,.35);
+}
+/* 額の中の1枚。押すと大きく見られる（はがす画面へ） */
+.wall-photo{display:grid;place-items:center;width:var(--frame-photo);height:var(--frame-photo);border:0;padding:2px;background:#fff;border-radius:2px;box-shadow:0 1px 3px rgba(80,60,120,.3);cursor:pointer}
+.wall-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.wall-photo:focus-visible{outline:3px solid rgba(128,106,196,.45);outline-offset:2px}
+/* 撮り直し・保存の確認に使う撮影画面（game-panel と同じ作り） */
+.photo-session{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:15px;background:rgba(35,25,55,.35)}
+.photo-session[hidden]{display:none !important}
+.photo-card{width:min(100%,520px);padding:22px;border-radius:25px;background:#fff;box-shadow:0 20px 70px rgba(45,30,80,.3)}
+.photo-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.photo-head h2{margin:0;font-size:20px}
+.photo-card>p{text-align:center;color:var(--muted);margin:10px 0}
+.photo-view-slot{position:relative;min-height:200px;margin:10px 0;border-radius:20px;background:linear-gradient(145deg,#f7f2ff,#eafaf5);overflow:hidden;display:grid;place-items:center}
+.photo-view-slot video{width:100%;max-height:240px;object-fit:cover;background:#ddd}
+.photo-view-slot img{display:block;width:100%;max-height:240px;object-fit:contain}
+.photo-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.photo-actions .primary-button{min-width:150px}
+/* 額をタップしたときの大きな見せ方・はがすボタン */
+.photo-view-body{display:grid;place-items:center;margin:10px 0}
+.photo-view-body img{display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#f7f3ff}
+.photo-peel{width:100%;margin-top:10px}
+
