@@ -327,3 +327,131 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 .photo-view-body img{display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#f7f3ff}
 .photo-peel{width:100%;margin-top:10px}
 
+/* 世代交代の見た目（発注書Y・設計書 世代交代v1 の5章。既存の行は触らず、いちばん下に足す）。
+   段＝data-life（baby/child/big/adult）、おとなの型＝data-adult（amaenbo/oshaberi/genki）、
+   旅立ち＝data-away、色＝CSS変数 --pet-hue（0〜360の数）。
+   :where() で属性を0点に落として「.pet .部品 の既定値より上・data-state / data-sulk の表情より下」の順位に置く
+   （sulk ブロックと同じ流儀。表情・眠り・困りごとの間は既存どおりそちらが勝つ） */
+/* 段が変わるとき、ぬるっと切り替わる（0.6秒程度。transform は sulk と同じ .4s、
+   .eye の height/transform は既定の .2s を踏襲して上書きしない） */
+.pet .pet-body{transition:transform .4s ease,left .6s ease,right .6s ease,height .6s ease,border-radius .6s ease}
+.pet .ear{transition:transform .4s ease,width .6s ease,height .6s ease,top .6s ease,left .6s ease,right .6s ease}
+.pet .face{transition:transform .5s ease,opacity .4s ease,left .6s ease,right .6s ease,top .6s ease,height .6s ease}
+.pet .eye{transition:height .2s,transform .2s,width .6s ease}
+.pet .cheek{transition:width .6s ease,height .6s ease,top .6s ease}
+.pet .belly{transition:width .6s ease,height .6s ease,bottom .6s ease,margin-left .6s ease}
+.pet .paw{transition:width .6s ease,height .6s ease,bottom .6s ease,left .6s ease,right .6s ease}
+
+/* 姿6体。部品は足さず、既にある .pet-body/.ear/.face/.eye/.cheek/.mouth/.belly/.paw の寸法と丸みだけを変える */
+/* あかちゃん：体は小さく丸く。目は大きく。耳は小さく下へ垂れる */
+.pet:where([data-life="baby"]) .pet-body{left:42px;right:42px;height:126px;border-radius:50% 50% 48% 48%}
+.pet:where([data-life="baby"]) .face{left:10px;right:10px;top:22px;height:74px}
+.pet:where([data-life="baby"]) .eye{width:30px;height:40px}
+.pet:where([data-life="baby"]) .eye-left{left:12px}
+.pet:where([data-life="baby"]) .eye-right{right:12px}
+.pet:where([data-life="baby"]) .cheek{top:44px;width:20px;height:10px}
+.pet:where([data-life="baby"]) .mouth{top:58px;width:14px;height:9px;margin-left:-7px}
+.pet:where([data-life="baby"]) .ear{width:34px;height:40px;top:-8px;border-radius:70% 50% 55% 55%}
+.pet:where([data-life="baby"]) .ear-left{left:2px;transform:rotate(-64deg)}
+.pet:where([data-life="baby"]) .ear-right{right:2px;transform:scaleX(-1) rotate(-64deg)}
+.pet:where([data-life="baby"]) .belly{width:60px;height:44px;bottom:16px;margin-left:-30px}
+.pet:where([data-life="baby"]) .paw{width:34px;height:26px;bottom:6px}
+.pet:where([data-life="baby"]) .paw-left{left:4px}
+.pet:where([data-life="baby"]) .paw-right{right:4px}
+/* こども：今の見た目に一番近い（ほぼ既定のまま。あかちゃんとの差で成長が見える） */
+.pet:where([data-life="child"]) .pet-body{left:24px;right:24px;height:192px;border-radius:49% 49% 45% 45%}
+.pet:where([data-life="child"]) .face{left:28px;right:28px;top:38px;height:86px}
+.pet:where([data-life="child"]) .eye{width:23px;height:30px}
+.pet:where([data-life="child"]) .cheek{top:48px;width:24px;height:13px}
+.pet:where([data-life="child"]) .ear{width:56px;height:66px;top:-24px}
+.pet:where([data-life="child"]) .belly{width:82px;height:60px}
+.pet:where([data-life="child"]) .paw{width:46px;height:35px}
+/* おおきいこども：体を縦に伸ばす。耳を立てる */
+.pet:where([data-life="big"]) .pet-body{left:26px;right:26px;height:224px;border-radius:44% 44% 40% 40%}
+.pet:where([data-life="big"]) .face{left:22px;right:22px;top:34px;height:92px}
+.pet:where([data-life="big"]) .eye{width:20px;height:26px}
+.pet:where([data-life="big"]) .cheek{top:52px;width:22px;height:11px}
+.pet:where([data-life="big"]) .mouth{top:56px;width:22px;height:12px;margin-left:-11px}
+.pet:where([data-life="big"]) .ear{width:44px;height:84px;top:-34px;border-radius:55% 40% 50% 50%}
+.pet:where([data-life="big"]) .ear-left{left:12px;transform:rotate(-12deg)}
+.pet:where([data-life="big"]) .ear-right{right:12px;transform:scaleX(-1) rotate(-12deg)}
+.pet:where([data-life="big"]) .belly{width:72px;height:64px;bottom:24px;margin-left:-36px}
+.pet:where([data-life="big"]) .paw{width:42px;height:34px;bottom:6px}
+.pet:where([data-life="big"]) .paw-left{left:8px}
+.pet:where([data-life="big"]) .paw-right{right:8px}
+/* おとな・あまえんぼ：ふんわり丸く。たれ耳。ほおが大きい */
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .pet-body{left:16px;right:16px;height:196px;border-radius:52% 52% 50% 50%}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .face{left:24px;right:24px;top:34px;height:88px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye{width:25px;height:29px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye-left{left:18px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye-right{right:18px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .cheek{top:44px;width:34px;height:16px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .mouth{top:56px;width:18px;height:11px;margin-left:-9px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear{width:64px;height:68px;top:-14px;border-radius:60% 60% 45% 45%}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear-left{left:0;transform:rotate(-62deg)}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear-right{right:0;transform:scaleX(-1) rotate(-62deg)}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .belly{width:96px;height:66px;bottom:22px;margin-left:-48px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw{width:52px;height:38px;bottom:5px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw-left{left:5px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw-right{right:5px}
+/* おとな・おしゃべり：口が大きい。耳を前へ向ける */
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .pet-body{left:22px;right:22px;height:208px;border-radius:46% 46% 44% 44%}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .face{left:26px;right:26px;top:36px;height:86px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .eye{width:21px;height:24px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .eye-left{left:12px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .eye-right{right:12px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .cheek{top:48px;width:22px;height:12px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .mouth{top:50px;width:34px;height:20px;margin-left:-17px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear{width:54px;height:62px;top:-20px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear-left{left:8px;transform:rotate(-14deg)}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear-right{right:8px;transform:scaleX(-1) rotate(-14deg)}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .belly{width:80px;height:58px;bottom:26px;margin-left:-40px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw{width:46px;height:34px;bottom:6px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw-left{left:7px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw-right{right:7px}
+/* おとな・げんき：すらっと細く。耳をとがらせる */
+.pet:where([data-life="adult"][data-adult="genki"]) .pet-body{left:34px;right:34px;height:236px;border-radius:42% 42% 38% 38%}
+.pet:where([data-life="adult"][data-adult="genki"]) .face{left:18px;right:18px;top:40px;height:84px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye{width:18px;height:27px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye-left{left:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye-right{right:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .cheek{top:50px;width:18px;height:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .mouth{top:54px;width:18px;height:11px;margin-left:-9px}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear{width:36px;height:92px;top:-40px;border-radius:38% 28% 42% 42%}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-left{left:16px;transform:rotate(-6deg)}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-right{right:16px;transform:scaleX(-1) rotate(-6deg)}
+.pet:where([data-life="adult"][data-adult="genki"]) .belly{width:60px;height:70px;bottom:20px;margin-left:-30px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw{width:38px;height:30px;bottom:7px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw-left{left:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw-right{right:10px}
+
+/* 色（--pet-hue が 0〜360の数で入っているときだけ体の色が変わる。
+   入っていないときは今のピンク・青に見えるよう、id ごとに今の色の色相を既定値に敷く
+   （pet-1=340 ピンク相当 / pet-2=205 青相当。data-life が無いときはこの規則自体が効かないので一日中今までどおり） */
+#pet:where([data-life]) .pet-body{background:linear-gradient(140deg,hsl(var(--pet-hue,340) 81% 86%),hsl(var(--pet-hue,340) 69% 75%) 65%,hsl(var(--pet-hue,340) 47% 60%));outline-color:hsl(var(--pet-hue,340) 44% 45% / .2)}
+#pet:where([data-life]) .ear{background:hsl(var(--pet-hue,340) 66% 75%)}
+#pet:where([data-life]) .ear::after{background:hsl(var(--pet-hue,340) 81% 86%)}
+#pet:where([data-life]) .cheek{background:hsl(var(--pet-hue,340) 66% 75%)}
+#pet:where([data-life]) .paw{background:hsl(var(--pet-hue,340) 69% 75%)}
+#pet:where([data-life]) .mouth{--mouth-color:hsl(var(--pet-hue,340) 44% 45%)}
+#pet-2:where([data-life]) .pet-body{background:linear-gradient(140deg,hsl(var(--pet-hue,205) 82% 85%),hsl(var(--pet-hue,205) 71% 69%) 65%,hsl(var(--pet-hue,205) 52% 55%));outline-color:hsl(var(--pet-hue,205) 54% 40% / .28)}
+#pet-2:where([data-life]) .ear{background:hsl(var(--pet-hue,205) 68% 68%)}
+#pet-2:where([data-life]) .ear::after{background:hsl(var(--pet-hue,205) 82% 85%)}
+#pet-2:where([data-life]) .cheek{background:hsl(var(--pet-hue,205) 68% 68%)}
+#pet-2:where([data-life]) .paw{background:hsl(var(--pet-hue,205) 71% 69%)}
+#pet-2:where([data-life]) .mouth{--mouth-color:hsl(var(--pet-hue,205) 54% 40%)}
+
+/* 旅立ち（data-away="true"]）：うすくして、小さくして、さわれないようにする。
+   縮みは .pet-body にかける（.pet の浮遊アニメが transform を持っているため。耳・顔・手足は体の中にあるのでいっしょに縮む） */
+.pet[data-away="true"]{opacity:.4;pointer-events:none;transition:opacity .6s ease}
+.pet[data-away="true"] .pet-body{transform:scale(.72);transform-origin:50% 100%}
+
+/* 名前を聞く箱（#name-edit-box と同じ .inline-edit の見た目。pet-stage の中でも崩れないよう、
+   dialog の中の input と同じ指定を借りる。新しい色は作らない） */
+#newborn-box{width:min(100%,340px);margin:12px auto 0}
+#newborn-box label{display:block;margin-bottom:8px;font-size:14px;font-weight:700}
+#newborn-box input{width:100%;min-height:48px;border:2px solid #e5dcf5;border-radius:13px;padding:0 13px;background:#fff;color:var(--ink)}
+
+/* reduced-motion：段の切り替えの遅移だけ確実に止める（既存の288行と同じ配慮） */
+@media (prefers-reduced-motion:reduce){.pet .pet-body,.pet .ear,.pet .face,.pet .eye,.pet .cheek,.pet .belly,.pet .paw{transition:none!important}}
+
