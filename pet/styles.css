@@ -431,19 +431,19 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 .pet:where([data-life="adult"][data-adult="genki"])[data-state="talking"] .mouth,.pet:where([data-life="adult"][data-adult="genki"])[data-state="copy-speaking"] .mouth{animation:none}
 .pet:where([data-life="adult"][data-adult="genki"])[data-state="talking"] .cat-open,.pet:where([data-life="adult"][data-adult="genki"])[data-state="copy-speaking"] .cat-open{animation:cat-open-blink .3s steps(1,end) infinite}
 @keyframes cat-open-blink{0%,49%{opacity:0}50%,100%{opacity:1}}
-.pet:where([data-life="adult"][data-adult="genki"]) .ear{width:100px;height:70px;top:-34px;border-radius:0;clip-path:polygon(50% 0,64% 14%,100% 100%,0 100%,36% 14%);transform-origin:50% 100%}
-.pet:where([data-life="adult"][data-adult="genki"]) .ear::after{clip-path:polygon(50% 0,64% 14%,100% 100%,0 100%,36% 14%);inset:11px 17px;border-radius:0}
-.pet:where([data-life="adult"][data-adult="genki"]) .ear-left{left:-11px;transform:rotate(-30deg)}
-.pet:where([data-life="adult"][data-adult="genki"]) .ear-right{right:-11px;transform:scaleX(-1) rotate(-30deg)}
-/* 猫耳の揺れ：体に隠れる付け根を軸に固定し、先端側だけを小さく揺らす */
-@keyframes cat-ear-left-wiggle{from{transform:rotate(-30deg)}to{transform:rotate(-17deg)}}
-@keyframes cat-ear-right-wiggle{from{transform:scaleX(-1) rotate(-30deg)}to{transform:scaleX(-1) rotate(-17deg)}}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear{width:96px;height:71px;top:-33px;border-radius:0;clip-path:polygon(50% 0,56% 2%,100% 100%,0 100%,44% 2%);transform-origin:50% 100%}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear::after{clip-path:polygon(50% 0,56% 2%,100% 100%,0 100%,44% 2%);inset:11px 14px;border-radius:0}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-left{left:5px;transform:rotate(-32deg)}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-right{right:5px;transform:scaleX(-1) rotate(-32deg)}
+/* 猫耳（2026-09-13 準也さんが猫耳エディタで確定）：体側の下中央を軸に、先端を10度・0.9秒で揺らす */
+@keyframes cat-ear-left-wiggle{from{transform:rotate(-32deg)}to{transform:rotate(-22deg)}}
+@keyframes cat-ear-right-wiggle{from{transform:scaleX(-1) rotate(-32deg)}to{transform:scaleX(-1) rotate(-22deg)}}
 .pet:where([data-life="adult"][data-adult="genki"]):is([data-state="ear-react"],[data-state="reply-wait-slow"],[data-state="listening"],[data-state="copy-listening"],[data-state="copy-live"],[data-state="copy-invite"],[data-state="copy-ready"]) .ear-left,
 .pet:where([data-life="adult"][data-adult="genki"])[data-attention="true"] .ear-left,
-.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-left{animation-name:cat-ear-left-wiggle}
+.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-left{animation-name:cat-ear-left-wiggle;animation-duration:.9s}
 .pet:where([data-life="adult"][data-adult="genki"]):is([data-state="ear-react"],[data-state="reply-wait-slow"],[data-state="listening"],[data-state="copy-listening"],[data-state="copy-live"],[data-state="copy-invite"],[data-state="copy-ready"]) .ear-right,
 .pet:where([data-life="adult"][data-adult="genki"])[data-attention="true"] .ear-right,
-.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-right{animation-name:cat-ear-right-wiggle}
+.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-right{animation-name:cat-ear-right-wiggle;animation-duration:.9s}
 .pet:where([data-life="adult"][data-adult="genki"]) .belly{width:60px;height:70px;bottom:20px;margin-left:-30px}
 .pet:where([data-life="adult"][data-adult="genki"]) .paw{width:38px;height:30px;bottom:7px}
 .pet:where([data-life="adult"][data-adult="genki"]) .paw-left{left:10px}
