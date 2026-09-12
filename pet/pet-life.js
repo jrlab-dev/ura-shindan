@@ -13,7 +13,7 @@
     const stamp = safeTimestamp(new Date(now || Date.now()).toISOString());
     const bondStory = defaultWordStory('p-default');
     return {
-      version:13, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
+      version:14, petName:'ぽこ', childName:'', soundMode:'pet', voiceMemoryEnabled:false, echoModeEnabled:true,
       voiceTuning:{pitchRate:1.42,speedRate:1,doubleMix:.18,brightness:60,timingMode:'preserve'}, echoVoiceOverrides:{}, speechInputEnabled:true, cameraEnabled:false,
       bond:10, energy:80, mood:70, curiosity:50, likes:[], dislikes:[], careCount:{tap:0,stroke:0,hold:0,play:0,sleep:0,talk:0},
       traits:{playful:50,calm:50,talkative:50}, urge:'curious', attention:50, surpriseSeed:17, socialMood:'curious',
@@ -38,7 +38,7 @@
   function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
   function defaultGrowth() { return { enabled:true, stage:0, weekStartDate:'', weekStartHelpTotal:0, unlockedAt:[] }; }
   /* 世代交代（設計書13章）。generation-engine.js の defaultGeneration と同じ形。pet-life は他のエンジンを読まず単独で動かすので同形を手元に持ち、一致は generation-engine.test.js で固定する */
-  function defaultGeneration() { return { generation:1, lifeStage:'baby', adultType:'', stageStartDate:'', stageStartCare:0, childrenBorn:0, away:false, parents:[], hue:340 }; }
+  function defaultGeneration() { return { generation:1, lifeStage:'baby', adultType:'', stageStartDate:'', stageStartCare:0, childrenBorn:0, away:false, parents:[], hue:340, highVoiceColor:'pink' }; }
   /* おとなの型（設計書6章）。generation-engine.js の adultTypeOf と同じ規則（同点は calm 優先・壊れたらあまえんぼ） */
   function adultTypeFromTraits(traits) {
     const source = traits && typeof traits === 'object' ? traits : null;
@@ -56,6 +56,14 @@
   }
   const wrapHue = value => ((Math.round(value) % 360) + 360) % 360;
   const hueOr340 = value => { const num = value === undefined || value === null ? NaN : Number(value); return Number.isFinite(num) ? wrapHue(num) : 340; };
+  function legacyHighVoiceColor(source, generationNumber) {
+    if (generationNumber === 1) return 'pink';
+    if (source && (source.highVoiceColor === 'white' || source.highVoiceColor === 'pink')) return source.highVoiceColor;
+    let hash = 2166136261;
+    const text = `${generationNumber}:${source && source.stageStartDate || ''}:${source && source.petName || ''}`;
+    for (let i = 0; i < text.length; i++) { hash ^= text.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+    return (hash >>> 0) % 2 === 0 ? 'white' : 'pink';
+  }
   function normalizeGeneration(raw) {
     const source = raw && typeof raw === 'object' ? raw : {};
     const gen = defaultGeneration();
@@ -67,6 +75,7 @@
     gen.childrenBorn = Math.max(0, Math.min(2, Math.floor(Number(source.childrenBorn) || 0)));
     gen.away = source.away === true;
     gen.hue = hueOr340(source.hue);
+    gen.highVoiceColor = legacyHighVoiceColor(source, gen.generation);
     gen.parents = Array.isArray(source.parents) ? source.parents.map(item => ({ name:safeText(item && item.name).slice(0,12), hue:hueOr340(item && item.hue), adultType:['amaenbo','oshaberi','genki'].includes(item && item.adultType) ? item.adultType : 'amaenbo', departedAt:safeTimestamp(item && item.departedAt) })).slice(-2) : [];
     return gen;
   }
@@ -234,10 +243,10 @@
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
     delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.puniAsleep = data.puniAsleep === true; if (!data.mealPref || typeof data.mealPref !== 'object') data.mealPref = { favorite:'apple', weekStartDate:'', hits:0 }; data.mealPref = { favorite:data.mealPref.favorite === 'onigiri' ? 'onigiri' : 'apple', weekStartDate:typeof data.mealPref.weekStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.mealPref.weekStartDate) ? data.mealPref.weekStartDate : '', hits:Math.max(0, Math.floor(Number(data.mealPref.hits) || 0)) };
-    /* v12 → v13：世代交代（設計書12章）。すでに遊んでいる子は「おとな」として引き継ぐ（最初からにしない）。
-       型は今の traits から決め、段の計測を今日から始める。旧 growth は消さずそのまま残す */
+    /* v12以前 → v13：世代交代（設計書12章）。すでに遊んでいる子は「おとな」として引き継ぐ（最初からにしない）。
+       型は今の traits から決め、段の計測を今日から始める。旧 growth は消さずそのまま残す。v14は白い子の色を追加 */
     data.generation = old.generation && typeof old.generation === 'object' ? normalizeGeneration(old.generation) : { ...defaultGeneration(), lifeStage:'adult', adultType:adultTypeFromTraits(data.traits), stageStartDate:today(now), stageStartCare:careGenerationTotal(data.careCount) };
-    data.version = 13; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
+    data.version = 14; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;
   }
   function bondStage(bond) { return clamp(bond) >= 70 ? 2 : clamp(bond) >= 30 ? 1 : 0; }

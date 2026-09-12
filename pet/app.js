@@ -1394,20 +1394,20 @@
     const input = $('newborn-input');
     if (input) { input.value = ''; input.focus(); }
   }
-  /* data-life / data-adult / data-away の付け外しと --pet-hue。JS は属性を付けるだけで、見た目は CSS 側（担当Y）が持つ */
+  /* data-life / data-adult / data-away / data-white の付け外し。高い声の子だけ2代目以降にピンクか白、低い声の子は青のまま */
   function refreshGenerationVisual() {
     if (!Generation || !state.data) return;
     const gen = state.data.generation;
     if (!gen || typeof gen !== 'object') return;
     const stage = Generation.STAGES.includes(gen.lifeStage) ? gen.lifeStage : 'baby';
     const away = gen.away === true;
-    const hue = Math.max(0, Math.min(360, Math.round(Number(gen.hue) || 0)));
     ['pet-1', 'pet-2'].forEach(id => {
       const node = petNode(id); if (!node) return;
       node.dataset.life = stage;
       if (stage === 'adult' && Generation.ADULT_TYPES.includes(gen.adultType)) node.dataset.adult = gen.adultType; else delete node.dataset.adult;
       if (away) node.dataset.away = 'true'; else delete node.dataset.away;
-      node.style.setProperty('--pet-hue', String(hue));
+      if (id === 'pet-1' && Number(gen.generation) >= 2 && gen.highVoiceColor === 'white') node.dataset.white = 'true'; else delete node.dataset.white;
+      node.style.setProperty('--pet-hue', id === 'pet-2' ? '205' : '340');
     });
   }
   function updateGenerationPanel() {

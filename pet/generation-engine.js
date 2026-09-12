@@ -35,7 +35,7 @@
     if (a.length !== 3 || b.length !== 3 || a.some(Number.isNaN) || b.some(Number.isNaN)) return NaN;
     return Math.round((new Date(b[0], b[1] - 1, b[2]).getTime() - new Date(a[0], a[1] - 1, a[2]).getTime()) / 86400000);
   }
-  function defaultGeneration() { return { generation:1, lifeStage:'baby', adultType:'', stageStartDate:'', stageStartCare:0, childrenBorn:0, away:false, parents:[], hue:340, childNames:[], lastVisitDate:'', petName:'' }; }
+  function defaultGeneration() { return { generation:1, lifeStage:'baby', adultType:'', stageStartDate:'', stageStartCare:0, childrenBorn:0, away:false, parents:[], hue:340, highVoiceColor:'pink', childNames:[], lastVisitDate:'', petName:'' }; }
   function generationOf(data) { return data && data.generation && typeof data.generation === 'object' ? data.generation : null; }
   function ensure(data) {
     if (!data || typeof data !== 'object') return null;
@@ -46,6 +46,9 @@
     if (typeof gen.lastVisitDate !== 'string' || !isDate(gen.lastVisitDate)) gen.lastVisitDate = '';
     if (typeof gen.petName !== 'string') gen.petName = '';
     if (!Array.isArray(gen.parents)) gen.parents = [];
+    const generationNumber = Math.max(1, Math.floor(Number(gen.generation) || 0));
+    if (generationNumber === 1) gen.highVoiceColor = 'pink';
+    else if (gen.highVoiceColor !== 'white' && gen.highVoiceColor !== 'pink') gen.highVoiceColor = legacyHighVoiceColor(gen, generationNumber);
     return gen;
   }
   /* 世話の累計（careCount の中身は引数の data から読むだけ。壊れた値は0に丸める） */
@@ -73,6 +76,15 @@
   /* null/undefined を Number で 0 にしないための読み（無い値は NaN にして既定へ落とす） */
   const numOf = value => value === undefined || value === null ? NaN : Number(value);
   const wrapHue = value => ((Math.round(value) % 360) + 360) % 360;
+  /* 生まれた瞬間に一度だけ使う50%の二択。結果は highVoiceColor として保存する */
+  function chooseHighVoiceColor(randomValue) { return Number(randomValue) >= 0 && Number(randomValue) < 0.5 ? 'white' : 'pink'; }
+  /* v13の2代目以降に色が無い場合だけ使う。移行のたびに色を引き直さないための安定した二択 */
+  function legacyHighVoiceColor(source, generationNumber) {
+    let hash = 2166136261;
+    const text = `${generationNumber}:${source && source.stageStartDate || ''}:${source && source.petName || ''}`;
+    for (let i = 0; i < text.length; i++) { hash ^= text.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+    return (hash >>> 0) % 2 === 0 ? 'white' : 'pink';
+  }
   const hueOf = side => { const value = numOf(side && side.hue); return Number.isFinite(value) ? wrapHue(value) : 340; };
   const traitOf = (side, key) => { const value = numOf(side && side.traits && side.traits[key]); return Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 50; };
   /* 親2人から子の性質を作る（設計書7章）。色は中間から±15、性格は半分だけ受け継いで残りは50へ戻す */
@@ -135,7 +147,7 @@
   /* 開いた。今の段の条件（日数と世話）がそろっていれば1回で1段だけ進める（飛び級しない）。
      世話が足りなくても cap を過ぎれば進む。詰ませない（設計書2章）。
      進まなかったら stageStartDate は動かさない（growth-engine と違い、足りない日数を引き継ぐ） */
-  function onOpen(data, now) {
+  function onOpen(data, now, random = Math.random) {
     const gen = ensure(data);
     if (!gen) return { advanced:false, lifeStage:'baby', adultType:'', bornChild:0, departed:false, newGeneration:false, returned:false, parentsVisiting:false, soonAdult:false, wantsChild:false, needCare:0 };
     const date = today(now);
@@ -166,6 +178,7 @@
         gen.generation = generationNumOf(gen) + 1;
         gen.hue = inherit(pair[0], pair[1], gen.generation + ':' + date).hue; /* 親2人ぶんの中間からずらす。片方しか無ければその1人と今の色（設計書7章） */
         gen.petName = childNamesOf(gen)[0] || petNameOf(gen); /* 1人めの名前。無ければ元の名前のまま */
+        gen.highVoiceColor = chooseHighVoiceColor(typeof random === 'function' ? random() : Math.random());
         gen.lifeStage = 'baby'; gen.adultType = ''; gen.childrenBorn = 0; gen.away = false;
         gen.childNames = []; gen.lastVisitDate = '';
         newGeneration = true;
@@ -178,5 +191,5 @@
     }
     return result(data, gen, date, { advanced, bornChild, departed, returned, newGeneration });
   }
-  return { STAGES, ADULT_TYPES, RULES, phrases, defaultGeneration, careTotalOf, ensure, adultTypeOf, inherit, setChildName, onOpen };
+  return { STAGES, ADULT_TYPES, RULES, phrases, defaultGeneration, careTotalOf, ensure, adultTypeOf, inherit, chooseHighVoiceColor, setChildName, onOpen };
 }));
