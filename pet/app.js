@@ -1141,12 +1141,13 @@
   /* --- 朝と夜の儀式（ritual-engine.js が無くても落ちない。部品が無くても落ちない） --- */
   /* 受け口の阻止条件＝troubleBlocked() から isQuietTime を除いたもの。
      さらに「直前の既存の反応の効果音・読み上げ」は除く（なでるの反応が必ず音を鳴らすため、それで儀式が止まらないように） */
-  function ritualAcceptBlocked() {
+  function ritualAcceptBlocked(options = {}) {
     if (!Ritual) return true;
+    const allowTextMode = options.allowTextMode === true;
     const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
     const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
     const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
-    return Boolean(!state.data || document.hidden || state.data.soundMode === 'text' || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
+    return Boolean(!state.data || document.hidden || (!allowTextMode && state.data.soundMode === 'text') || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
   }
   function ritualTick(now = new Date()) {
     if (!Ritual || !state.data) return;
@@ -1204,7 +1205,8 @@
     const now = new Date();
     const awake = ritualAwakePetIds(now);
     if (!Ritual.mealReady(state.data, { awakePetIds: awake }, now)) return false;
-    if (ritualAcceptBlocked()) return false;
+    /* 手で選ぶごはんは音オフでも受け付ける。playPetSound/speak 側が無音を守る */
+    if (ritualAcceptBlocked({ allowTextMode:true })) return false;
     const petIds = Ritual.feed(state.data, awake, now, food);
     save();
     noteSulkCare();
