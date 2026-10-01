@@ -1233,7 +1233,8 @@
     if (!Ritual || !state.data) return false;
     const petId = ['pet-1', 'pet-2'].find(id => Ritual.canTuckIn(state.data, id, new Date()));
     if (!petId) return false;
-    if (ritualAcceptBlocked()) return false;
+    /* 寝かしつけも音オフで受け付ける。playPetSound/speak 側が無音を守る */
+    if (ritualAcceptBlocked({ allowTextMode:true })) return false;
     const entry = Ritual.tuckIn(state.data, petId, new Date());
     if (!entry) return false;
     save();
@@ -1242,11 +1243,14 @@
     if (dim) { dim.dataset.dim = 'on'; window.setTimeout(() => { delete dim.dataset.dim; }, 1500); }
     window.setTimeout(() => {
       const text = sulkNameless(Ritual.withName(Ritual.phrases.tuckIn, state.data.childName));
-      bubble(text); showPetBubble(petId, text);
+      /* 全員寝たあとの renderTwoPets（updateScreen の中でも呼ばれる）は主吹き出しを消す。
+         描画を全部済ませてから最後に一言を出すことで、音オフでも「また あした」が見える */
+      save(); renderTwoPets(); applyRitualAttributes();
       speak(text, 'sleepy'); playPetSound('sleepy');
       setPetState(petId, 'sleepy');
       addRitualBond(1);
-      save(); renderTwoPets(); applyRitualAttributes(); updateScreen();
+      updateScreen();
+      bubble(text); showPetBubble(petId, text);
     }, 1500);
     return true;
   }
