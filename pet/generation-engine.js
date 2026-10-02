@@ -10,8 +10,8 @@
   /* 各段のdays=進むのに要る日数、care=同じく要る世話の増え、cap=世話が足りなくても進む限界（設計書2章・4章） */
   const RULES = {
     baby:  { days: 0, care: 3, cap: 1  },
-    child: { days: 3, care: 3, cap: 6  },
-    big:   { days: 7, care: 5, cap: 14 },
+    child: { days: 2, care: 3, cap: 4  },
+    big:   { days: 5, care: 5, cap: 10 },
     adult: { days: 7, care: 5, cap: 14 }
   };
   const phrases = {
