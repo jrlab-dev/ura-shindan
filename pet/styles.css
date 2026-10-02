@@ -506,3 +506,17 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 
 /* reduced-motion：段の切り替えの遅移だけ確実に止める（既存の288行と同じ配慮） */
 @media (prefers-reduced-motion:reduce){.pet .pet-body,.pet .ear,.pet .face,.pet .eye,.pet .cheek,.pet .belly,.pet .paw{transition:none!important}}
+
+/* --- ラジカセくん（ろくおんあそび・発注書AC・設計書 ラジカセくん録音v1）。絵は3枚のwebpをdata-radioで差し替える --- */
+.radio-body{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:6px}
+.radio-face{width:280px;height:190px;background:center/280px auto no-repeat url(icons/radio-normal.webp)}
+#radio-dialog[data-radio="recording"] .radio-face{background-image:url(icons/radio-recording.webp)}
+#radio-dialog[data-radio="playing"] .radio-face{background-image:url(icons/radio-playing.webp)}
+.radio-remaining{margin:0;font-size:30px;font-weight:700;color:#a65069}
+#radio-message{margin:0;text-align:center}
+.radio-record-button{width:92px;height:92px;min-height:92px;border:0;border-radius:50%;background:#e05a4f;color:#fff;font-size:15px;font-weight:700;box-shadow:0 8px 22px rgba(224,90,79,.35)}
+.radio-record-button:focus-visible{outline:3px solid rgba(224,90,79,.4)}
+#radio-dialog[data-radio="recording"] .radio-record-button{background:#a65069;box-shadow:0 8px 22px rgba(166,80,105,.35)}
+.radio-plays{display:flex;gap:8px;flex-wrap:nowrap;justify-content:center;margin-top:4px;width:100%}
+.radio-plays .small-button{flex:1 1 0;min-width:0;min-height:52px;padding-inline:4px}
+.radio-plays .small-button:disabled{opacity:.45;cursor:not-allowed}

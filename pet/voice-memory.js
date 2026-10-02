@@ -24,6 +24,17 @@
   const ECHO_MAX_DURATION_MS = 5000;
   const ECHO_STOP_MS = 4000;
   const ECHO_MAX_BYTES = 768 * 1024;
+  /* ろくおん（ラジカセくん・設計書 ラジカセくん録音v1）専用の上限。まねっこのTEST_*・ECHO_*は変えない */
+  const RADIO_MAX_DURATION_MS = 30000;   /* 30秒で自動的に止まる */
+  const RADIO_STOP_MS = 30000;
+  const RADIO_TOLERANCE_MS = 800;        /* 自動停止タイマーのぶれぶん。30秒ちょうどの録音が上限判定に引っかからないように */
+  const RADIO_PLAY_MAX_MS = RADIO_MAX_DURATION_MS + RADIO_TOLERANCE_MS;
+  const RADIO_MAX_BYTES = 3072 * 1024;
+  const RADIO_MAX_GRAINS = 1800;         /* 30秒を18ms間隔で鳴らすのに必要な粒（1667）より余裕を持たせた数 */
+  /* 再生前の正規化と音量の上限（設計書「音量」）。目標peakは効果音（.13〜.16）より大きくならない値 */
+  const RADIO_TARGET_PEAK = .16;
+  const RADIO_MAX_GAIN = 10;             /* 無音まぎれの録音を持ち上げすぎない上限 */
+  const RADIO_QUIET_SCALE = .5;          /* 静かな時間（Life.isQuietTime）は半分の音量 */
   const LIVE_CALIBRATION_MS = 800;
   const LIVE_PREROLL_MS = 200;
   const LIVE_SPEECH_START_MS = 120;
@@ -59,12 +70,50 @@
       maxBytes:bounded(maxBytes, TEST_MAX_BYTES, 1, TEST_MAX_BYTES)
     };
   };
-  const grainPlan = (durationSeconds, pitchRate = 1) => {
-    const duration = Math.max(0, Math.min(TEST_MAX_DURATION_MS / 1000, Number(durationSeconds) || 0));
+  /* ろくおん専用の上限（まねっこのnormalizeTemporaryLimitsとは別の道）。kind・invalidReasonは_recordWithLimitsで使う。
+     長さの既定は 30秒＋タイマーのぶれぶん（RADIO_PLAY_MAX_MS）。自動停止は30秒ちょうど＋数msで返ってくるので、
+     ぴったりの30秒で判定すると30秒の録音が全部棄てられてしまう */
+  const normalizeRadioLimits = ({ stopMs, maxDurationMs, maxBytes } = {}) => {
+    const bounded = (value, fallback, min, max) => typeof value === 'number' && Number.isFinite(value) ? Math.max(min, Math.min(max, Math.round(value))) : fallback;
+    const duration = bounded(maxDurationMs, RADIO_PLAY_MAX_MS, MIN_DURATION_MS, RADIO_PLAY_MAX_MS);
+    return {
+      kind:'radio',
+      invalidReason:'invalid-radio-clip',
+      stopMs:bounded(stopMs, RADIO_STOP_MS, MIN_DURATION_MS, Math.min(RADIO_STOP_MS, duration)),
+      maxDurationMs:duration,
+      maxBytes:bounded(maxBytes, RADIO_MAX_BYTES, 1, RADIO_MAX_BYTES)
+    };
+  };
+  /* 再生前の正規化（設計書「音量」）。peakから目標peakへそろえる倍率を出す。大きな声は下げ・小さな声は上げ（上げはRADIO_MAX_GAINまで） */
+  const radioOutputGain = (peak, quiet = false) => {
+    const value = Number(peak);
+    const clipped = Number.isFinite(value) && value > 0 ? Math.min(1, value) : 0;
+    if (!clipped) return 0;
+    const gain = Math.min(RADIO_MAX_GAIN, RADIO_TARGET_PEAK / clipped);
+    return quiet === true ? gain * RADIO_QUIET_SCALE : gain;
+  };
+  /* デコード済み音声の最大振幅（正規化の材料）。チャンネルは最大8本まで見る */
+  const audioPeak = audio => {
+    let peak = 0;
+    try {
+      const channels = Math.max(0, Math.min(8, Math.floor(Number(audio && audio.numberOfChannels) || 0)));
+      for (let channel = 0; channel < channels; channel += 1) {
+        const data = audio.getChannelData(channel);
+        for (let index = 0; index < data.length; index += 1) {
+          const value = Math.abs(data[index]);
+          if (value > peak) peak = value;
+        }
+      }
+    } catch (_) { return 0; }
+    return Math.max(0, Math.min(1, peak));
+  };
+  /* 粒の計画。第3・4引数はろくおんの30秒再生だけが既定と違う値を渡す（まねっこ呼び出しは変わらない） */
+  const grainPlan = (durationSeconds, pitchRate = 1, maxDurationMs = TEST_MAX_DURATION_MS, maxGrains = MAX_GRAINS) => {
+    const duration = Math.max(0, Math.min(maxDurationMs / 1000, Number(durationSeconds) || 0));
     const low = Number(pitchRate) < 1;
     const grainMs = low ? LOW_GRAIN_MS : GRAIN_MS;
     const hopMs = low ? LOW_GRAIN_HOP_MS : GRAIN_HOP_MS;
-    const count = Math.min(MAX_GRAINS, Math.ceil(duration * 1000 / hopMs));
+    const count = Math.min(maxGrains, Math.ceil(duration * 1000 / hopMs));
     return Array.from({ length:count }, (_, index) => {
       const offset = index * hopMs / 1000;
       return { offset, duration:Math.min(grainMs / 1000, Math.max(0, duration - offset)), low };
@@ -405,6 +454,12 @@
     return control.finish();
   };
 
+  VoiceMemory.prototype.finishRadioRecording = function () {
+    const control = this.recordControl;
+    if (!control || control.kind !== 'radio' || typeof control.finish !== 'function') return false;
+    return control.finish();
+  };
+
   VoiceMemory.prototype.stopPlayback = function () {
     this.playbackToken += 1;
     const current = this.playback;
@@ -665,11 +720,21 @@
   };
 
   VoiceMemory.prototype.recordTemporary = function ({ stopMs, maxDurationMs, maxBytes, onPending, onStart, onStop } = {}) {
-    const limits = normalizeTemporaryLimits({ stopMs, maxDurationMs, maxBytes });
+    /* 試験録音（まねっこ・声づくり）。上限はTEST_*・ECHO_*のまま（設計書 ラジカセくん録音v1「まねっこの上限は変えず」） */
+    return this._recordWithLimits(normalizeTemporaryLimits({ stopMs, maxDurationMs, maxBytes }), { onPending, onStart, onStop });
+  };
+
+  VoiceMemory.prototype.recordRadio = function ({ stopMs, maxDurationMs, maxBytes, onPending, onStart, onStop } = {}) {
+    /* ろくおん（ラジカセくん）。30秒の録音を通す専用の上限で同じ道を通る。保存はしない（呼び出し側のradio-recorder.jsが1本だけ保存する） */
+    return this._recordWithLimits(normalizeRadioLimits({ stopMs, maxDurationMs, maxBytes }), { onPending, onStart, onStop });
+  };
+
+  VoiceMemory.prototype._recordWithLimits = function (limits, { onPending, onStart, onStop } = {}) {
     const stopNotice = (() => { let called = false; return () => { if (!called && onStop) { called = true; try { onStop(); } catch (_) {} } }; })();
     const immediate = reason => { stopNotice(); return Promise.resolve({ ok:false, reason }); };
     if (this.pendingRecording || this.permissionInFlight || this.recording || this.destructiveOps) return immediate('busy');
     if (!this.mediaDevices || !this.mediaDevices.getUserMedia || !this.MediaRecorder) return immediate('unsupported');
+    const invalidReason = limits.invalidReason || 'invalid-test-clip';
 
     this.pendingRecording = true;
     this.permissionInFlight = true;
@@ -729,7 +794,7 @@
         if (!done) watchdogTimer = this.setTimeout(() => finish({ ok:false, reason:'record-failed' }), STOP_WATCHDOG_MS);
       };
       const control = {
-        kind:'temporary',
+        kind:limits.kind || 'temporary',
         cancel:reason => requestRecorderStop(reason || 'discarded'),
         finish:() => {
           if (done || !recorder || !startedAt) return false;
@@ -761,7 +826,7 @@
           if (!sessionCurrent()) { requestRecorderStop('invalidated'); return; }
           if (event.data && event.data.size) {
             chunkBytes += event.data.size;
-            if (chunkBytes > limits.maxBytes) { requestRecorderStop('invalid-test-clip'); return; }
+            if (chunkBytes > limits.maxBytes) { requestRecorderStop(invalidReason); return; }
             chunks.push(event.data);
           }
         };
@@ -774,7 +839,7 @@
           const durationMs = stoppedAt - startedAt;
           const blob = new Blob(chunks, { type:recorder.mimeType || (chunks[0] && chunks[0].type) || '' });
           const ok = isBlob(blob) && blob.size > 0 && blob.size <= limits.maxBytes && durationMs >= MIN_DURATION_MS && durationMs <= limits.maxDurationMs && supportedMime(blob.type);
-          finish(ok ? { ok:true, blob, durationMs, mimeType:blob.type } : { ok:false, reason:'invalid-test-clip' });
+          finish(ok ? { ok:true, blob, durationMs, mimeType:blob.type } : { ok:false, reason:invalidReason });
         };
         try {
           startedAt = this.now();
@@ -1136,14 +1201,128 @@
     }
   };
 
+  /* ろくおん（ラジカセくん）専用の再生（設計書 ラジカセくん録音v1）。まねっこのplayProcessedの上限（TEST_*）は変えず、
+     30秒の録音を通す道をここに持つ。tuningなし＝「ふつう」（録った声をそのまま。正規化と音量上限だけ）。
+     tuningあり＝まねっこと同じ粒の加工（app.js の echoTuning と同じ設定）。戻るのは鳴らし始めた時点（playProcessedと同じ） */
+  VoiceMemory.prototype.playRadioClip = async function ({ blob, tuning, quiet } = {}) {
+    if (!this.AudioContext || this.destructiveOps) return { ok:false, reason:'missing' };
+    if (!isBlob(blob) || !blob.size || blob.size > RADIO_MAX_BYTES || !supportedMime(blob.type)) return { ok:false, reason:'invalid-radio-clip' };
+    const usesTuning = tuning !== undefined && tuning !== null;
+    const resumeLiveAfterPlayback = Boolean(this.liveEcho && !this.liveEcho.paused && this.pauseLiveEchoDetection());
+    this.stopPlayback();
+    const capturedSession = this.sessionToken;
+    const capturedPlayback = this.playbackToken;
+    const stillCurrent = async () => capturedSession === this.sessionToken && capturedPlayback === this.playbackToken && !this.destructiveOps;
+    let context = null;
+    const sources = [];
+    try {
+      try {
+        context = new this.AudioContext();
+        if (context.state === 'suspended') await context.resume();
+        if (!await stillCurrent()) throw new Error('invalidated');
+        const bytes = await blob.arrayBuffer();
+        const audio = await context.decodeAudioData(bytes.slice(0));
+        if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) throw new Error('invalid-audio');
+        if (audio.duration * 1000 > RADIO_PLAY_MAX_MS) throw new Error('invalid-radio-clip');
+        if (!await stillCurrent()) throw new Error('invalidated');
+        /* 再生前の正規化（設計書「音量」）。小声でも大声でも同じくらいで聞こえ・効果音より大きくならない・静かな時間は半分 */
+        const peak = audioPeak(audio);
+        const gainValue = radioOutputGain(peak, quiet === true);
+        if (!(gainValue > 0)) throw new Error('silent-clip');
+        const settings = usesTuning ? normalizeTuning(tuning) : null;
+        let durationMs;
+        if (!settings) {
+          /* ふつう：録った声をそのまま流す（声まねv1の「生音を出さない」方針の例外・設計書「生の声」） */
+          const gain = context.createGain();
+          gain.gain.value = gainValue;
+          const source = context.createBufferSource();
+          source.buffer = audio;
+          source.connect(gain);
+          gain.connect(context.destination);
+          sources.push(source);
+          source.start();
+          durationMs = Math.ceil(audio.duration * 1000);
+        } else {
+          /* ぽこ・ふわ：まねっこと同じフィルター・圧縮器・粒の計画（まねっこのmainGain .75の代わりに正規化した音量を入れる） */
+          const durationSeconds = Math.min(RADIO_MAX_DURATION_MS / 1000, audio.duration);
+          const high = context.createBiquadFilter();
+          const low = context.createBiquadFilter();
+          const peakFilter = context.createBiquadFilter();
+          const compressor = context.createDynamicsCompressor();
+          const mainGain = context.createGain();
+          const echoDelay = settings.doubleMix > 0 ? context.createDelay() : null;
+          const echoGain = settings.doubleMix > 0 ? context.createGain() : null;
+          high.type = settings.pitchRate < 1 ? 'lowpass' : 'highpass'; high.frequency.value = settings.pitchRate < 1 ? 2500 + settings.brightness * 10 : 250 + settings.brightness * 6;
+          low.type = settings.pitchRate < 1 ? 'lowshelf' : 'highshelf'; low.frequency.value = settings.pitchRate < 1 ? 180 : 1800; low.gain.value = settings.pitchRate < 1 ? 4 : settings.brightness / 30;
+          peakFilter.type = 'peaking'; peakFilter.frequency.value = 1800; peakFilter.Q.value = 1; peakFilter.gain.value = settings.brightness / 15;
+          compressor.threshold.value = -20; compressor.ratio.value = 5;
+          mainGain.gain.value = gainValue;
+          if (echoDelay && echoGain) { echoDelay.delayTime.value = .03; echoGain.gain.value = settings.doubleMix; }
+          high.connect(low); low.connect(peakFilter); peakFilter.connect(compressor); compressor.connect(mainGain); if (echoDelay && echoGain) { compressor.connect(echoDelay); echoDelay.connect(echoGain); }
+          const baseTime = context.currentTime + .02;
+          if (settings.timingMode === 'preserve') {
+            const plan = grainPlan(durationSeconds, settings.pitchRate, RADIO_MAX_DURATION_MS, RADIO_MAX_GRAINS);
+            let audibleEnd = 0;
+            plan.forEach(grain => {
+              const source = context.createBufferSource();
+              const windowGain = context.createGain();
+              const scheduledOffset = grain.offset / settings.speedRate;
+              const when = baseTime + scheduledOffset;
+              const audibleGrainDuration = grain.duration / settings.pitchRate;
+              audibleEnd = Math.max(audibleEnd, scheduledOffset + audibleGrainDuration);
+              source.buffer = audio;
+              source.playbackRate.value = settings.pitchRate;
+              windowGain.gain.setValueAtTime(0, when);
+              windowGain.gain.linearRampToValueAtTime(1, when + audibleGrainDuration / 2);
+              windowGain.gain.linearRampToValueAtTime(0, when + audibleGrainDuration);
+              source.connect(windowGain); windowGain.connect(high);
+              sources.push(source);
+              source.start(when, grain.offset, grain.duration);
+            });
+            durationMs = Math.ceil(audibleEnd * 1000);
+          } else {
+            const source = context.createBufferSource();
+            source.buffer = audio;
+            source.playbackRate.value = settings.pitchRate;
+            source.connect(high);
+            sources.push(source);
+            source.start(baseTime, 0, durationSeconds);
+            durationMs = Math.ceil(durationSeconds / settings.pitchRate * 1000);
+          }
+        }
+        if (!await stillCurrent()) throw new Error('invalidated');
+        const current = { context, sources, timer:null };
+        this.playback = current;
+        current.timer = this.setTimeout(() => {
+          if (this.playback === current) this.playback = null;
+          sources.forEach(source => { try { source.stop(); } catch (_) {} try { source.disconnect(); } catch (_) {} });
+          try { context.close().catch(() => {}); } catch (_) {}
+        }, durationMs + 400);
+        if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection(durationMs + 370);
+        return { ok:true, durationMs, peak, gainValue };
+      } catch (_) {
+        if (this.playback && this.playback.context === context) this.playback = null;
+        sources.forEach(source => { try { source.stop(); } catch (_) {} try { source.disconnect(); } catch (_) {} });
+        if (context) try { context.close().catch(() => {}); } catch (_) {}
+        if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection();
+        return { ok:false, reason:'process-failed' };
+      }
+    } catch (_) {
+      if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection();
+      return { ok:false, reason:'process-failed' };
+    }
+  };
+
   return {
     DB_NAME, DB_VERSION, STORE_NAME, META_STORE, MAX_DURATION_MS, MIN_DURATION_MS, RECORD_STOP_MS,
     STOP_WATCHDOG_MS, MAX_BYTES, MAX_CLIPS, MAX_TOTAL_CLIPS, TEST_MAX_DURATION_MS, TEST_STOP_MS, TEST_MAX_BYTES,
-    ECHO_MAX_DURATION_MS, ECHO_STOP_MS, ECHO_MAX_BYTES, LIVE_CALIBRATION_MS, LIVE_PREROLL_MS,
+    ECHO_MAX_DURATION_MS, ECHO_STOP_MS, ECHO_MAX_BYTES, RADIO_MAX_DURATION_MS, RADIO_STOP_MS, RADIO_PLAY_MAX_MS,
+    RADIO_MAX_BYTES, RADIO_MAX_GRAINS, RADIO_TARGET_PEAK, RADIO_MAX_GAIN, RADIO_QUIET_SCALE,
+    LIVE_CALIBRATION_MS, LIVE_PREROLL_MS,
     LIVE_SPEECH_START_MS, LIVE_SILENCE_END_MS, LIVE_UTTERANCE_STOP_MS, LIVE_MAX_DURATION_MS,
     LIVE_MAX_BYTES, LIVE_FRAME_MS, LIVE_MIN_RMS, LIVE_MAX_RMS, LIVE_THRESHOLD_MULTIPLIER,
     LIVE_CALIBRATION_PERCENTILE, LIVE_HEALTH_TIMEOUT_MS, GRAIN_MS, GRAIN_HOP_MS, LOW_GRAIN_MS, LOW_GRAIN_HOP_MS, MAX_GRAINS,
-    DEFAULT_TUNING, normalizeTuning, normalizeTemporaryLimits, grainPlan, safeId, clipKey, supportedMime, validateClip,
+    DEFAULT_TUNING, normalizeTuning, normalizeTemporaryLimits, normalizeRadioLimits, radioOutputGain, audioPeak, grainPlan, safeId, clipKey, supportedMime, validateClip,
     LiveEchoDetector,
     nextGeneration, epochMatches, VoiceMemory
   };

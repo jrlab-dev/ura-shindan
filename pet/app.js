@@ -26,6 +26,10 @@
   const PHOTO_MAX = PhotoFrame && PhotoFrame.MAX_PHOTOS || 6;
   const PHOTO_LIMIT_HINT = PhotoFrame && PhotoFrame.LIMIT_HINT || 'はがしてから、もう1まい とれるよ';
   const PHOTO_CAMERA_HINT = PhotoFrame && PhotoFrame.CAMERA_HINT || 'カメラは使えないよ';
+  /* ラジカセくん（設計書 ラジカセくん録音v1）。録音は1つだけ・この端末のIndexedDBのみ。
+     マイクと加工再生は voice-memory.js のろくおん専用経路（recordRadio・playRadioClip）を使う（マイクの持ち主を1つに保つ） */
+  const RadioBox = window.LittleCompanionRadioRecorder;
+  const RADIO_MIC_HINT = RadioBox && RadioBox.MIC_HINT || 'マイクが つかえないみたい';
   /* 儀式エンジンがあるときだけ、舞台判定（主役・起きている子・全員ねんね）に「寝かしつけで早く眠った子」を反映する */
   if (Ritual && Life && typeof Life.getStageState === 'function') {
     const rawGetStageState = Life.getStageState.bind(Life);
@@ -43,7 +47,7 @@
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false, echoRelayStop:false, photoEngine:null, photoList:[], photoCapture:null, photoViewId:'', newbornIndex:0 };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false, echoRelayStop:false, photoEngine:null, photoList:[], photoCapture:null, photoViewId:'', newbornIndex:0, radioEngine:null, radioClip:null, radioRecording:false, radioCountdownTimer:null, radioPlaying:false, radioPlayToken:0 };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -114,7 +118,7 @@
   function twoPetLearnedWord() { return (state.data && state.data.learnedWords || []).slice().reverse().find(item => (item.profileId || 'p-default') === activeProfileId())?.word || ''; }
   function twoPetToy() { const relation = pairRelation(); const toys = relation && relation.sharedToys || []; return toys.length ? toys[toys.length - 1].toyId : ''; }
   function twoPetHardBlocked() { const modal = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden); return !state.data || document.hidden || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modal; }
-  function twoPetBlocked() { return twoPetHardBlocked() || state.game || state.recognizing || state.director || Boolean(state.echoSession) || Boolean(state.tuningBlob) || Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording)) || Boolean(speechAvailable && window.speechSynthesis.speaking) || Boolean(state.audioNodes.length) || companionActive() || Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle') || Boolean(state.activityLock && state.activityLock.isBlocked('two-pet-event')); }
+  function twoPetBlocked() { return twoPetHardBlocked() || state.game || state.recognizing || state.director || Boolean(state.echoSession) || Boolean(state.tuningBlob) || Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording)) || Boolean(speechAvailable && window.speechSynthesis.speaking) || Boolean(state.audioNodes.length) || companionActive() || Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle') || Boolean(state.activityLock && state.activityLock.isBlocked('two-pet-event')) || radioBusy(); }
   function recentTwoPetEvents(relation, now = Date.now()) { return (relation && relation.sharedEvents || []).filter(item => { const at = Date.parse(item && item.at || ''); return Number.isFinite(at) && now - at >= 0 && now - at < 15 * 60 * 1000; }); }
   function ensureTwoPetSession() {
     if (!TwoPetDirector || !TwoPetDirector.createSession || !state.data) return null;
@@ -199,7 +203,7 @@
     const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
     const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
     const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
-    const blocked = !state.data || document.hidden || state.data.soundMode === 'text' || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking) || twoPetReplacesCompanion() || (action !== 'echo' && Boolean(state.echoSession));
+    const blocked = !state.data || document.hidden || state.data.soundMode === 'text' || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking) || twoPetReplacesCompanion() || (action !== 'echo' && Boolean(state.echoSession)) || radioBusy();
     return CompanionDirector && typeof CompanionDirector.isBlocked === 'function' ? CompanionDirector.isBlocked({ blocked }) : blocked;
   }
   function companionContext(action = '') { return { now:Date.now(), blocked:companionBlocked(action), echoEnabled:Boolean(state.data && state.data.echoModeEnabled), learnedWord:companionLearnedWord() }; }
@@ -289,6 +293,8 @@
     $('sound-mode-select').value = state.data.soundMode;
     $('voice-memory-toggle').checked = state.data.voiceMemoryEnabled === true;
     $('echo-mode-toggle').checked = state.data.echoModeEnabled === true;
+    $('radio-toggle').checked = state.data.radioPlayEnabled === true;
+    $('play-radio-button').hidden = !radioEnabled();  /* 保護者がオフの間は、ろくおんの遊びカードも出さない（写真立てと同じ仕組み） */
     const echoSession = state.echoSession;
     $('echo-button').hidden = state.data.echoModeEnabled !== true || Boolean(echoSession);
     $('echo-button').disabled = state.echoRecording === 'pending' || !soundOn;
@@ -452,7 +458,7 @@
   function saveTuning() { const petId=selectedTuningPetId(); const raw={ pitchRate:Number($('tuning-pitch').value) / 100, speedRate:Number($('tuning-speed').value) / 100, doubleMix:Number($('tuning-double').value) / 100, brightness:Number($('tuning-brightness').value), timingMode:$('tuning-timing-mode').value }; const normalized=VoiceMemory.normalizeTuning(raw); normalized.pitchRate=Math.max(.55,Math.min(3.5,normalized.pitchRate)); normalized.doubleMix=Math.max(0,Math.min(.36,Number(raw.doubleMix)||0)); if(normalized.pitchRate===1) normalized.pitchRate=1.2; state.data.echoVoiceOverrides=state.data.echoVoiceOverrides||{}; state.data.echoVoiceOverrides[petId]=normalized; save(); updateScreen(); }
   function clearEchoTimers() { ['echoInviteTimer','echoEndTimer','echoIdleTimer','echoResumeTimer'].forEach(key => { window.clearTimeout(state[key]); state[key] = null; }); }
   function liveEchoApi(name) { return (state.voice && typeof state.voice[name] === 'function' && state.voice[name].bind(state.voice)) || (VoiceMemory && typeof VoiceMemory[name] === 'function' && VoiceMemory[name]); }
-  function echoHardBlocked() { return !state.data || document.hidden || state.game || Life.isSafetyPaused(state.data) || $('setup-dialog').open || $('parent-dialog').open || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden || Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording)); }
+  function echoHardBlocked() { return !state.data || document.hidden || state.game || Life.isSafetyPaused(state.data) || $('setup-dialog').open || $('parent-dialog').open || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden || Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording)) || radioBusy(); }
   function echoBlocked() { return echoHardBlocked() || twoPetActive() || twoPetIntroductionPending() || state.recognizing || state.director || (Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle') || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking); }
   function canStartEcho(source = 'spontaneous') { return state.data && state.data.echoModeEnabled === true && state.data.soundMode !== 'text' && !(['manual','companion'].includes(source) ? echoHardBlocked() : echoBlocked()); }
   function interruptForManualEcho() { state.manualInterruptToken += 1; if (state.recognizing) stopRecognition(); clearSpeechWatchdog(); if (speechAvailable) window.speechSynthesis.cancel(); stopPetAudio(); if (state.voice) state.voice.stopPlayback(); hideQuestion(); renderStoryCandidates(null); toggleTextEntry(false); }
@@ -966,6 +972,102 @@
       showToast('しゃしんを はがしたよ');
     });
   }
+  /* --- ラジカセくん（radio-recorder.js・設計書 ラジカセくん録音v1）。録音は1つだけ・この端末の中だけ。
+         録り直したら入れ替え・1秒未満や録音中に閉じたら前の録音を残す・まねっこと同じ声で聞き返す --- */
+  function radioEnabled() { return Boolean(state.data && state.data.radioPlayEnabled === true); }
+  /* ほかの仕組み（まねっこ・なかよし場面・2匹場面・困りごと）がラジカセくんと重ならないための印 */
+  function radioBusy() { const dialog = $('radio-dialog'); return Boolean(state.radioRecording || state.radioPlaying || (dialog && dialog.open)); }
+  function radioFace(name) { const dialog = $('radio-dialog'); if (dialog) dialog.dataset.radio = name; }
+  async function refreshRadioPanel() {
+    const clip = state.radioEngine ? await state.radioEngine.load() : null;
+    state.radioClip = clip;
+    const has = Boolean(clip);
+    ['radio-play-normal','radio-play-poko','radio-play-fuwa'].forEach(id => { const button = $(id); if (button) button.disabled = !has || state.radioRecording; });
+    return clip;
+  }
+  function stopRadioActivities() {
+    window.clearInterval(state.radioCountdownTimer); state.radioCountdownTimer = null;
+    if (state.radioRecording || state.radioPlaying) { if (state.voice) { state.voice.stopRecording(); state.voice.stopPlayback(); } }
+    state.radioRecording = false; state.radioPlaying = false; state.radioPlayToken += 1;
+    const dialog = $('radio-dialog');
+    if (dialog && dialog.open) { radioFace('normal'); $('radio-remaining').hidden = true; $('radio-record-button').textContent = '● ろくおん'; refreshRadioPanel(); }
+  }
+  function openRadioPlay() {
+    if (stageAsleep() || !state.data || Life.isSafetyPaused(state.data) || state.echoSession || state.game || !radioEnabled()) return;
+    cancelTwoPetMoment('radio'); cancelCompanionMoment(); cancelEcho(); noteInteraction();
+    if (state.voice) state.voice.stopPlayback();
+    state.radioRecording = false; state.radioPlaying = false; state.radioPlayToken += 1;
+    window.clearInterval(state.radioCountdownTimer); state.radioCountdownTimer = null;
+    radioFace('normal');
+    $('radio-remaining').hidden = true;
+    $('radio-record-button').textContent = '● ろくおん';
+    $('radio-message').textContent = 'ろくおんしてあそんでね';
+    const dialog = $('radio-dialog');
+    if (!dialog.open) dialog.showModal();
+    refreshRadioPanel();
+  }
+  function closeRadioPlay() {
+    stopRadioActivities();  /* 録音中に閉じたらその録音は捨てる（前の録音を残す）。再生中なら止める */
+    const dialog = $('radio-dialog');
+    if (dialog.open) dialog.close();
+  }
+  async function runRadioRecord() {
+    if (!state.voice || state.radioRecording || state.radioPlaying) return;
+    state.radioRecording = true;
+    radioFace('recording');
+    $('radio-record-button').textContent = '■ とめる';
+    $('radio-message').textContent = 'マイクの きょかをまってね';
+    ['radio-play-normal','radio-play-poko','radio-play-fuwa'].forEach(id => { $(id).disabled = true; });
+    const startedAt = Date.now();
+    const updateRemaining = () => { const node = $('radio-remaining'); if (node) { node.hidden = false; node.textContent = `のこり ${RadioBox && RadioBox.remainingSeconds ? RadioBox.remainingSeconds(Date.now() - startedAt) : 30}`; } };
+    updateRemaining();
+    window.clearInterval(state.radioCountdownTimer);
+    state.radioCountdownTimer = window.setInterval(updateRemaining, 200);
+    const result = await state.voice.recordRadio({
+      onStart:() => { $('radio-message').textContent = 'ろくおんちゅう… はなしてね'; },
+      onStop:() => { window.clearInterval(state.radioCountdownTimer); state.radioCountdownTimer = null; $('radio-remaining').hidden = true; radioFace('normal'); $('radio-record-button').textContent = '● ろくおん'; }
+    });
+    window.clearInterval(state.radioCountdownTimer); state.radioCountdownTimer = null;
+    state.radioRecording = false;
+    $('radio-remaining').hidden = true;
+    radioFace('normal');
+    $('radio-record-button').textContent = '● ろくおん';
+    if (!result.ok) {
+      /* マイクが使えない・許されなかった → 「マイクが つかえないみたい」と出て、何も壊れない */
+      $('radio-message').textContent = result.reason === 'denied' || result.reason === 'unsupported' ? RADIO_MIC_HINT : result.reason === 'busy' ? 'いまは ろくおん できないよ' : 'もういちど おしてね';
+      await refreshRadioPanel();
+      return;
+    }
+    const verdict = RadioBox ? RadioBox.radioVerdict({ durationMs:result.durationMs, bytes:result.blob.size, mimeType:result.blob.type }) : { ok:false, reason:'unsupported' };
+    if (!verdict.ok) {
+      /* 1秒未満で止めた録音は残さない。前の録音はそのまま残る */
+      $('radio-message').textContent = verdict.reason === 'too-short' ? 'ちょっと みじかかった。もういちど！' : 'その ろくおんは のこせないよ';
+      await refreshRadioPanel();
+      return;
+    }
+    const saved = state.radioEngine ? await state.radioEngine.save({ blob:result.blob, mimeType:result.blob.type, durationMs:result.durationMs, bytes:result.blob.size }) : { ok:false, reason:'save-failed' };
+    if (!saved.ok) { $('radio-message').textContent = 'のこせなかった。もういちど ためしてね'; await refreshRadioPanel(); return; }
+    $('radio-message').textContent = 'うつったよ！ きいてみてね';
+    await refreshRadioPanel();
+  }
+  /* もう一度押すと止まる。許可待ちの間（まだ録音が始まっていない）に押されたら、要求ごと取り消す */
+  function stopRadioRecord() { if (!state.voice) return; if (!state.voice.finishRadioRecording()) state.voice.stopRecording(); }
+  async function playRadio(kind) {
+    if (!state.voice || state.radioRecording) return;
+    const clip = state.radioClip || await refreshRadioPanel();
+    if (!clip) return;
+    stopPetAudio();
+    if (speechAvailable) window.speechSynthesis.cancel();
+    state.voice.stopPlayback();  /* 再生中に別のボタン → 前のを止めて新しい方を流す */
+    const token = ++state.radioPlayToken;
+    state.radioPlaying = true;
+    radioFace('playing');
+    $('radio-message').textContent = kind === 'normal' ? 'ふつうの こえ' : kind === 'pet-1' ? `${petInfo('pet-1').name}の こえ` : `${petInfo('pet-2').name}の こえ`;
+    /* ぽこ・ふわはまねっこと同じ echoTuning の設定で加工。静かな時間は半分の音量（playRadioClip の中） */
+    const result = await state.voice.playRadioClip({ blob:clip.blob, tuning:kind === 'normal' ? null : echoTuning(kind), quiet:Life.isQuietTime(new Date()) });
+    if (!result || !result.ok) { state.radioPlaying = false; radioFace('normal'); $('radio-message').textContent = 'ならせなかった。もういちど おしてね'; return; }
+    window.setTimeout(() => { if (token !== state.radioPlayToken || state.radioRecording) return; state.radioPlaying = false; radioFace('normal'); if ($('radio-dialog').open) $('radio-message').textContent = 'もういちど きく？'; }, Math.max(0, Number(result.durationMs) || 0) + 500);
+  }
   function clearSpontaneous() { window.clearTimeout(state.spontaneousTimer); window.clearTimeout(state.monologueTimer); window.clearTimeout(state.initialPromptTimer); window.clearTimeout(state.echoInviteTimer); state.spontaneousTimer = null; state.monologueTimer = null; state.initialPromptTimer = null; state.echoInviteTimer = null; }
   function scheduleEchoInvite() {
     window.clearTimeout(state.echoInviteTimer); state.echoInviteTimer = null;
@@ -1009,7 +1111,7 @@
     const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
     const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
     const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
-    return Boolean(!state.data || document.hidden || state.data.soundMode === 'text' || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
+    return Boolean(!state.data || document.hidden || state.data.soundMode === 'text' || Life.isQuietTime(new Date()) || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.audioNodes.length) || Boolean(speechAvailable && window.speechSynthesis.speaking) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner) || radioBusy());
   }
   function troubleMissingPartKinds(activePetId) {
     const missing = [];
@@ -1565,7 +1667,7 @@
     if (speechAvailable) { refreshVoices(); window.speechSynthesis.onvoiceschanged = refreshVoices; }
     const savedData = readData(); const previousSeen = savedData && savedData.lastSeenAt; const firstToday = !!savedData && (!previousSeen || Life.today(previousSeen) !== Life.today(new Date())); state.data = savedData; applyElapsed();
     if (!state.data) { state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); $('setup-dialog').showModal(); }
-    state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; state.photoEngine = PhotoFrame ? new PhotoFrame.PhotoFrame() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
+    state.voice = VoiceMemory ? new VoiceMemory.VoiceMemory() : null; state.photoEngine = PhotoFrame ? new PhotoFrame.PhotoFrame() : null; state.radioEngine = RadioBox ? new RadioBox.RadioRecorder() : null; const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
     Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); generationOnOpen(); growthOnOpen(); puniWakeCheck(); { if (Ritual && state.data && Ritual.mealPrefOnOpen) { const pref = Ritual.mealPrefOnOpen(state.data, new Date()); if (pref.changed) save(); } }
     updateScreen(); if (savedData) { welcomeOnOpen(previousSeen, firstToday); const resumedStory = Story.resume(state.data); if (resumedStory) storyPresent(resumedStory); else if (!Story.isActive(state.data) && !sulkingNow()) weekStartDay(); } setSeen();
     $('setup-form').addEventListener('submit', event => { event.preventDefault(); const petName = nameForStorage($('setup-pet-name').value, 'ぽこ'); const childName = nameForStorage($('setup-child-name').value, ''); state.data.petName = petName.value; state.data.childName = childName.value; const initialProfile = (state.data.profiles || []).find(item => item.id === state.data.activeProfileId); if (initialProfile) initialProfile.childName = childName.value; state.data.soundMode = document.querySelector('input[name="setup-sound"]:checked').value === 'on' ? 'pet' : 'text'; $('setup-dialog').close(); bubble(state.data.childName ? `こんにちは、${state.data.childName}。あえたね` : 'こんにちは。あえたね'); updateScreen(); if (!Life.isQuietTime(new Date())) speak('こんにちは。あえたね'); save(); if (petName.personal || childName.personal) showToast('個人情報らしい名前は覚えないよ'); noteInteraction(); });
@@ -1596,6 +1698,14 @@
     $('camera-toggle').addEventListener('change', event => setCamera(event.target.checked)); $('camera-stop').addEventListener('click', () => { $('camera-toggle').checked = false; setCamera(false); });
     { const photoToggle = $('photo-frame-toggle'); if (photoToggle) photoToggle.addEventListener('change', event => { if (!state.data) return; state.data.photoFrameEnabled = event.target.checked; if (!event.target.checked) closePhotoSession(); save(); updateScreen(); }); }
     $('play-photo-button').addEventListener('click', () => { $('play-menu-dialog').close(); startPhotoSession(); });
+    /* ラジカセくん（ろくおんあそび）。保護者トグルをオフにしたら、開いていたら閉じてマイクも止める */
+    { const radioToggle = $('radio-toggle'); if (radioToggle) radioToggle.addEventListener('change', event => { if (!state.data) return; state.data.radioPlayEnabled = event.target.checked; if (!event.target.checked) closeRadioPlay(); save(); updateScreen(); }); }
+    $('play-radio-button').addEventListener('click', () => { $('play-menu-dialog').close(); openRadioPlay(); });
+    $('radio-record-button').addEventListener('click', () => { if (state.radioRecording) stopRadioRecord(); else runRadioRecord(); });
+    $('radio-play-normal').addEventListener('click', () => playRadio('normal'));
+    $('radio-play-poko').addEventListener('click', () => playRadio('pet-1'));
+    $('radio-play-fuwa').addEventListener('click', () => playRadio('pet-2'));
+    $('radio-dialog').addEventListener('close', stopRadioActivities);
     $('photo-capture').addEventListener('click', takePhoto); $('photo-retry').addEventListener('click', retakePhoto); $('photo-keep').addEventListener('click', keepPhoto); $('photo-cancel').addEventListener('click', closePhotoSession);
     { const wall = $('photo-frame-wall'); if (wall) wall.addEventListener('click', event => { const button = event.target && event.target.closest ? event.target.closest('.wall-photo') : null; if (!button) return; const photo = (state.photoList || []).find(item => item.id === button.dataset.photoId); if (photo) openPhotoViewer(photo); }); }
     $('photo-peel').addEventListener('click', peelPhoto);
@@ -1617,8 +1727,8 @@
     $('forget-cancel').addEventListener('click', () => { $('forget-confirm-box').hidden = true; });
     $('learned-words').addEventListener('click', async event => { const id = event.target && event.target.dataset.forgetWord; if (!id) return; await deleteWordWithLedger(activeProfileId(), id); });
     $('voice-record-button').addEventListener('click', () => { cancelEcho(); recordWordVoice(); }); $('voice-clear-button').addEventListener('click', () => { cancelEcho(); $('voice-clear-confirm-box').hidden = false; $('forget-confirm-box').hidden = true; }); $('voice-clear-cancel').addEventListener('click', () => { $('voice-clear-confirm-box').hidden = true; }); $('voice-clear-confirm').addEventListener('click', async () => { cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('voice-memory-status').textContent = '消せません。もう一度ためしてね'; return; } $('voice-clear-confirm-box').hidden = true; await refreshVoiceCount(); showToast('声の記憶を消しました'); });
-    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } const photosRemoved = state.photoEngine ? await state.photoEngine.clearAll() : { ok:true }; if (!photosRemoved.ok) { $('forget-confirm-box').hidden = false; showToast('写真を消せません。もう一度ためしてね'); return; } discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); scheduleTrouble(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); closePhotoSession(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); ritualTick(); sulkTick(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
+    $('forget-confirm').addEventListener('click', async () => { cancelTwoPetMoment('deleting'); cancelCompanionMoment(); cancelEcho(); const removed = state.voice ? await state.voice.clearAll() : { ok:true }; if (!removed.ok) { $('forget-confirm-box').hidden = false; showToast('声の記憶を消せません。もう一度ためしてね'); return; } const photosRemoved = state.photoEngine ? await state.photoEngine.clearAll() : { ok:true }; if (!photosRemoved.ok) { $('forget-confirm-box').hidden = false; showToast('写真を消せません。もう一度ためしてね'); return; } const radioRemoved = state.radioEngine ? await state.radioEngine.clear() : { ok:true }; if (!radioRemoved.ok) { $('forget-confirm-box').hidden = false; showToast('ろくおんを消せません。もう一度ためしてね'); return; } state.radioClip = null; discardTuningBlob(); localStorage.removeItem(STORAGE_KEY); stopCamera(); state.data = Life.createDefaultState(new Date()); state.data.lastSeenAt = new Date().toISOString(); state.storyDraft = null; state.voiceTarget = null; ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); scheduleTrouble(); save(); updateScreen(); $('forget-confirm-box').hidden = true; $('parent-dialog').close(); await refreshVoiceCount(); bubble('また、はじめまして'); showToast('記憶を消しました'); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelTwoPetMoment('hidden'); if (state.activityLock) state.activityLock.activateHardBlock('hidden'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); closePhotoSession(); stopRadioActivities(); if (state.voice) state.voice.invalidate(); clearSpontaneous(); clearSpeechWatchdog(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; stopPetAudio(); if (speechAvailable) window.speechSynthesis.cancel(); window.clearTimeout(state.lookDirectionTimer); state.lookDirectionTimer = null; ['pet-1','pet-2'].forEach(id => { if (state.yawnTimers[id]) { clearTimeout(state.yawnTimers[id]); state.yawnTimers[id] = null; } if (state.rollTimers[id]) { clearTimeout(state.rollTimers[id]); state.rollTimers[id] = null; } }); } else if (!($('setup-dialog') && $('setup-dialog').open)) { if (state.activityLock) state.activityLock.clearHardBlock('hidden'); noteInteraction(); ritualTick(); sulkTick(); scheduleStoryRecall(); updateScreen(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); } else { clearSpontaneous(); window.clearTimeout(state.storyRecallTimer); state.storyRecallTimer = null; updateScreen(); } }); window.addEventListener('pagehide', () => { cancelTwoPetMoment('pagehide'); cancelCompanionMoment(); cancelEcho(); discardTuningBlob(); if (state.voice) state.voice.invalidate(); });
     if (savedData) pendingDeletionRetry.finally(() => { scheduleSpontaneous(); scheduleTrouble(); scheduleStoryRecall(); scheduleCompanionMoment(); scheduleTwoPetMoment(); updateLookDirection(); scheduleYawn('pet-1'); scheduleYawn('pet-2'); scheduleRoll('pet-1'); scheduleRoll('pet-2'); });
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     schedulePuniWander();
