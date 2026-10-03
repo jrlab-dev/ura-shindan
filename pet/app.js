@@ -857,10 +857,12 @@
       });
     }).catch(() => {});
   }
+  /* 撮った写真を見せるとき video を枠から外すので、getElementById では二度と見つからない。最初に掴んだ要素を使い回す（2026-10-03：2枚目から撮れなかった不具合） */
+  function photoVideo() { if (!state.photoVideoNode) state.photoVideoNode = $('photo-video'); return state.photoVideoNode; }
   function renderPhotoPreview(dataUrl) {
     const slot = $('photo-view-slot');
     slot.replaceChildren();
-    if (!dataUrl) { slot.appendChild($('photo-video')); return; }
+    if (!dataUrl) { slot.appendChild(photoVideo()); return; }
     const image = document.createElement('img');
     image.src = dataUrl; image.alt = 'とったしゃしん';
     slot.appendChild(image);
@@ -887,7 +889,7 @@
     cancelTwoPetMoment('photo'); cancelCompanionMoment(); cancelEcho(); noteInteraction();
     $('photo-session').hidden = false;
     $('photo-message').textContent = 'カメラをじゅんびしています';
-    state.photoEngine.startCamera($('photo-video')).then(result => {
+    state.photoEngine.startCamera(photoVideo()).then(result => {
       if (!state.data) { closePhotoSession(); return; }
       if (!result.ok) { closePhotoSession(); bubble(PHOTO_CAMERA_HINT); playPetSound('sad'); setState('sad'); return; }  /* 拒否・非対応でもふつうに戻る */
       $('photo-message').textContent = '「うつす」をおしてね';
@@ -896,7 +898,7 @@
   function takePhoto() {
     const engine = state.photoEngine;
     if (!engine || state.photoCapture || $('photo-session').hidden) return;
-    const result = engine.capture($('photo-video'));
+    const result = engine.capture(photoVideo());
     if (!result.ok) { $('photo-message').textContent = 'うつせなかった。もういちど おしてね'; return; }
     engine.stopCamera();  /* 撮ったらすぐカメラを止める（映像を溜めない） */
     state.photoCapture = result.dataUrl;
@@ -915,7 +917,7 @@
     $('photo-retry').hidden = true;
     $('photo-keep').hidden = true;
     $('photo-message').textContent = 'カメラをじゅんびしています';
-    engine.startCamera($('photo-video')).then(result => {
+    engine.startCamera(photoVideo()).then(result => {
       if (!result.ok) { closePhotoSession(); bubble(PHOTO_CAMERA_HINT); playPetSound('sad'); return; }
       $('photo-capture').hidden = false;
       $('photo-message').textContent = '「うつす」をおしてね';

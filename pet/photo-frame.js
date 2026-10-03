@@ -126,7 +126,7 @@
     try { stream = await this.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }); }
     catch (_) { this.stream = null; return { ok:false, reason:'denied' }; }
     this.stream = stream;
-    if (video) { try { video.srcObject = stream; } catch (_) {} }
+    if (video) { try { video.srcObject = stream; } catch (_) {} try { const playing = video.play && video.play(); if (playing && playing.catch) playing.catch(() => {}); } catch (_) {} }  /* 枠に戻した video は autoplay だけでは動き出さない端末があるので明示的に再生する */
     return { ok:true };
   };
 
