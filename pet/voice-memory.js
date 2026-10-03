@@ -1259,6 +1259,9 @@
           mainGain.gain.value = gainValue;
           if (echoDelay && echoGain) { echoDelay.delayTime.value = .03; echoGain.gain.value = settings.doubleMix; }
           high.connect(low); low.connect(peakFilter); peakFilter.connect(compressor); compressor.connect(mainGain); if (echoDelay && echoGain) { compressor.connect(echoDelay); echoDelay.connect(echoGain); }
+          /* スピーカーへつなぐ（2026-10-03：これが抜けていて、ぽこ・ふわの声が鳴らなかった） */
+          mainGain.connect(context.destination);
+          if (echoGain) echoGain.connect(context.destination);
           const baseTime = context.currentTime + .02;
           if (settings.timingMode === 'preserve') {
             const plan = grainPlan(durationSeconds, settings.pitchRate, RADIO_MAX_DURATION_MS, RADIO_MAX_GRAINS);
