@@ -861,8 +861,9 @@
   function photoVideo() { if (!state.photoVideoNode) state.photoVideoNode = $('photo-video'); return state.photoVideoNode; }
   function renderPhotoPreview(dataUrl) {
     const slot = $('photo-view-slot');
+    const video = photoVideo();  /* 枠を空にする前に掴む（空にしたあとでは見つからない） */
     slot.replaceChildren();
-    if (!dataUrl) { slot.appendChild(photoVideo()); return; }
+    if (!dataUrl) { if (video) slot.appendChild(video); return; }
     const image = document.createElement('img');
     image.src = dataUrl; image.alt = 'とったしゃしん';
     slot.appendChild(image);
