@@ -18,6 +18,7 @@
   const pitchStep = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   /* 学習画面は、カードの短い呼び名ではなく原曲名を見出しにする。 */
   const LEARNING_TITLES = Object.freeze({
+    twinkle: 'きらきら星',
     ofuro: '人形の夢（抜粋）',
     canon: 'カノン（メインから）',
     jesu: '主よ、人の望みの喜びよ',

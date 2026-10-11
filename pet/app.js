@@ -33,6 +33,7 @@
   /* おんがく（設計書 おんがくv1）。♪から絵のカードで曲を流す。一覧と次の状態の決め方は music-player.js 持ち */
   const MusicBox = window.LittleCompanionMusicPlayer;
   const MusicLearning = window.LittleCompanionMusicLearning;
+  const MusicRhythm = window.LittleCompanionMusicRhythm;
   const MusicBus = window.LittleCompanionMusicAudioBus;
   const MusicRecording = window.LittleCompanionMusicRecording;
   /* マイクの許可を待つ上限（voice-memory.js・設計書 字が読めなくても使えるマイク）。
@@ -57,7 +58,7 @@
   const DEFAULTS = Life.createDefaultState(new Date());
   const $ = id => document.getElementById(id);
   const pet = $('pet');
-  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false, echoRelayStop:false, photoEngine:null, photoList:[], photoCapture:null, photoViewId:'', newbornIndex:0, radioEngine:null, radioClip:null, radioRecording:false, radioCountdownTimer:null, radioPlaying:false, radioPlayToken:0, musicAudioBus:null, musicRecorder:null, musicPlayer:null, musicLearning:null, musicMuteHintTimer:null };
+  const state = { data: null, recognition: null, recognizing: false, recognitionHadResult:false, cameraStream: null, replyTimer: null, spontaneousTimer: null, monologueTimer: null, initialPromptTimer: null, directorTimer: null, director: null, storyRecallTimer: null, weekTimer:null, storyDraft:null, seedGlowId:'', voice:null, voiceCount:0, voiceTarget:null, tuningBlob:null, tuningToken:0, echoBlob:null, echoToken:0, echoRecording:false, echoSession:null, echoInviteTimer:null, echoEndTimer:null, echoIdleTimer:null, echoResumeTimer:null, echoNoInviteUntil:0, manualInterruptToken:0, companionSession:null, companionTimer:null, companionToken:0, twoPetSession:null, twoPetProfileId:'', twoPetInviteTimer:null, twoPetSceneTimer:null, twoPetStepTimers:[], twoPetToken:0, activityLock:ActivityLock && ActivityLock.ActivityLock ? new ActivityLock.ActivityLock() : null, speechArbiter:SpeechArbiter && SpeechArbiter.SpeechArbiter ? new SpeechArbiter.SpeechArbiter() : null, lastSpontaneousAt: 0, spontaneousDate:'', spontaneousSeen:[], lastInteractionAt: Date.now(), game: null, audioContext: null, audioNodes: [], audioTimer: null, speechWatchdog: null, lookDirectionTimer: null, yawnTimers:{'pet-1':null,'pet-2':null}, rollTimers:{'pet-1':null,'pet-2':null}, puniWanderTimer: null, troubleTimer: null, troubleToken: 0, troubleNextAt: 0, troubleRemindTimer: null, troubleRemindToken: 0, troubleHiccupTaps: 0, ritualYawnTimer: null, ritualMealBusy: false, ritualMealToken: 0, sulkHalfTimer: null, sulkResumeTimer: null, sulkResumeAt: 0, sulkPlayingSeen: false, echoRelayStop:false, photoEngine:null, photoList:[], photoCapture:null, photoViewId:'', newbornIndex:0, radioEngine:null, radioClip:null, radioRecording:false, radioCountdownTimer:null, radioPlaying:false, radioPlayToken:0, musicAudioBus:null, musicRecorder:null, musicPlayer:null, musicLearning:null, musicRhythm:null, musicMuteHintTimer:null };
   const session = { lastIntent:'', lastTopic:'', userMood:'okay', turnCount:0 };
   const speechAvailable = 'speechSynthesis' in window;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1232,8 +1233,9 @@
     if (result && !result.ok && result.reason === 'unsupported') musicRecordingUi({ message:'この端末では おんがくを録れないよ' });
   }
   function musicLearningStop() { if (state.musicLearning) state.musicLearning.stop(); document.body.classList.remove('music-learning-playing'); }
-  function musicLearningActive() { return Boolean(state.musicLearning && (typeof state.musicLearning.isActive === 'function' ? state.musicLearning.isActive() : state.musicLearning.playing)); }
-  function musicStop() { if (state.musicPlayer) state.musicPlayer.stop(); musicLearningStop(); musicRefresh(); }
+  function musicRhythmActive() { return Boolean(state.musicRhythm && state.musicRhythm.getState && state.musicRhythm.getState().active); }
+  function musicLearningActive() { return Boolean(state.musicLearning && (typeof state.musicLearning.isActive === 'function' ? state.musicLearning.isActive() : state.musicLearning.playing)) || musicRhythmActive(); }
+  function musicStop() { if (state.musicPlayer) state.musicPlayer.stop(); musicLearningStop(); if (state.musicRhythm) state.musicRhythm.stop(); musicRefresh(); }
   /* 音モードが「文字だけ」のとき：カードは押せるが音は出さず、🔇の絵をふわっと見せる */
   function showMusicMuteHint() {
     const dialog = $('music-dialog');
@@ -1278,15 +1280,20 @@
   }
   function setMusicMode(mode) {
     const learn = mode === 'learn';
-    const listenPanel = $('music-listen-panel'); const learnPanel = $('music-learn-panel');
-    if (listenPanel) listenPanel.hidden = learn;
+    const rhythm = mode === 'rhythm';
+    const listenPanel = $('music-listen-panel'); const learnPanel = $('music-learn-panel'); const rhythmPanel = $('music-rhythm-panel');
+    if (listenPanel) listenPanel.hidden = learn || rhythm;
     if (learnPanel) learnPanel.hidden = !learn;
-    const listenButton = $('music-listen-mode'); const learnButton = $('music-learn-mode');
-    if (listenButton) { listenButton.setAttribute('aria-selected', String(!learn)); }
-    if (learnButton) { learnButton.setAttribute('aria-selected', String(learn)); }
-    if (learn) { if (state.musicPlayer && state.musicPlayer.trackId) state.musicPlayer.stop(); musicRefresh(); }
-    else musicLearningStop();
+    if (rhythmPanel) rhythmPanel.hidden = !rhythm;
+    const listenButton = $('music-listen-mode'); const learnButton = $('music-learn-mode'); const rhythmButton = $('music-rhythm-mode');
+    if (listenButton) listenButton.setAttribute('aria-selected', String(!learn && !rhythm));
+    if (learnButton) learnButton.setAttribute('aria-selected', String(learn));
+    if (rhythmButton) rhythmButton.setAttribute('aria-selected', String(rhythm));
+    if (learn) { if (state.musicPlayer && state.musicPlayer.trackId) state.musicPlayer.stop(); if (state.musicRhythm) state.musicRhythm.stop(); musicRefresh(); }
+    else if (rhythm) { if (state.musicPlayer && state.musicPlayer.trackId) state.musicPlayer.stop(); musicLearningStop(); musicRefresh(); }
+    else { musicLearningStop(); if (state.musicRhythm) state.musicRhythm.stop(); }
     if (state.musicLearning) state.musicLearning.render();
+    if (state.musicRhythm) { state.musicRhythm.render(); if (rhythm) state.musicRhythm.scrollToFirstNote(); }
   }
   function toggleMusicLearning() {
     if (!state.musicLearning) return;
@@ -1909,8 +1916,18 @@
       }, onChange: value => {
         document.body.classList.toggle('music-learning-playing', Boolean(value.active || value.playing));
       } });
-      if (MusicBox && MusicBox.TRACKS && MusicBox.TRACKS[0]) state.musicLearning.select(MusicBox.TRACKS[0].id);
+      state.musicLearning.select('ofuro');
       state.musicLearning.mount($('music-learning-root'));
+    }
+    if (MusicRhythm && MusicRhythm.MusicRhythmController) {
+      state.musicRhythm = new MusicRhythm.MusicRhythmController({ scoreData:window.LittleCompanionMusicScoreData || null, trackIds:MusicBox ? MusicBox.TRACKS.map(track => track.id) : [], audioContext:musicRoute && musicRoute.context, outputNode:musicRoute && musicRoute.output, beforePlay:() => {
+        if (state.data && state.data.soundMode === 'text') { showMusicMuteHint(); return false; }
+        if (state.musicPlayer && state.musicPlayer.trackId) { state.musicPlayer.stop(); musicRefresh(); }
+        if (state.musicLearning) state.musicLearning.stop();
+        return true;
+      }, onChange:value => { document.body.classList.toggle('music-rhythm-playing', Boolean(value.active)); } });
+      state.musicRhythm.select('twinkle');
+      state.musicRhythm.mount($('music-rhythm-root'));
     }
     const pendingDeletionRetry = retryPendingDeletions(); refreshVoiceCount();
     Story.restore(state.data); ensureCompanionSession(); ensureTwoPetSession(); restoreTroubleOnLoad(); ritualTick(); sulkOnOpen(); generationOnOpen(); growthOnOpen(); puniWakeCheck(); { if (Ritual && state.data && Ritual.mealPrefOnOpen) { const pref = Ritual.mealPrefOnOpen(state.data, new Date()); if (pref.changed) save(); } }
@@ -1966,7 +1983,8 @@
       $('music-record-button').addEventListener('click', toggleMusicRecording);
       $('music-listen-mode').addEventListener('click', () => setMusicMode('listen'));
       $('music-learn-mode').addEventListener('click', () => setMusicMode('learn'));
-      $('music-dialog').addEventListener('close', () => { cancelMusicRecording('closed'); if ($('music-learn-mode').getAttribute('aria-selected') === 'true') musicLearningStop(); });
+      $('music-rhythm-mode').addEventListener('click', () => setMusicMode('rhythm'));
+      $('music-dialog').addEventListener('close', () => { cancelMusicRecording('closed'); musicLearningStop(); if (state.musicRhythm) state.musicRhythm.stop(); });
       setMusicMode('learn');
       musicRecordingUi();
     }

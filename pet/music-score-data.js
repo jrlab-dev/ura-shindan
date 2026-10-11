@@ -1,10 +1,10 @@
-/* 自動生成: 道具_音楽学習データ/再生成_音楽学習データ.py */
+/* 音楽学習用の音符データ。 */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.LittleCompanionMusicScoreData = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   return {
-  "version": "music-learning-v2-source-20261010-2",
+  "version": "music-learning-v2-source-20261011-3",
   "scores": {
     "ofuro": {
       "id": "ofuro",
@@ -850,9 +850,9 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/ofuro_ningyo_no_yume.mid",
+        "midiPath": "ofuro_ningyo_no_yume.mid",
         "midiSha256": "c610d89c8bee639aa40389692570c629651874bdc018517028574d57d2469a7d",
-        "scoreSource": "ningyo_no_yume.mid（make_midi.pyのmel）",
+        "scoreSource": "Esten『人形の夢と目覚め』Op.202-4（主旋律）",
         "scoreCopy": null,
         "selectionRule": "MIDI channel 1（生成スクリプトの主旋律channel 0）だけを抽出",
         "scoreLicense": null,
@@ -884,7 +884,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "ticksPerBeat": 480,
           "rawNotePairs": 73,
@@ -6110,10 +6110,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/canon_full.mid",
+        "midiPath": "canon_full.mid",
         "midiSha256": "2964b5e56b84cd4c9c0f2f67e0b86fbbf2750e92334072860f207e7fccf6a38a",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/入手記録/PDMX.csv（Qmc8nZHr...）",
-        "scoreCopy": "元楽譜/canon.mxl",
+        "scoreSource": "パッヘルベル『カノン ニ長調』P.37（第1ヴァイオリン）",
+        "scoreCopy": "canon.mxl",
         "selectionRule": "CC0の原譜4声部のMIDI track 1（Violin I）をraw note-on/offで抽出。同時開始和音は最高音1音にする。原MIDI第19小節・72拍のA5からsuffixを採用し、その音を0秒へ移動",
         "scoreLicense": "cc-zero",
         "scoreLicenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -6149,7 +6149,7 @@
         "learningStartSec": 80.0,
         "learningStartNote": "A5",
         "suffixPolicy": "指定した原MIDI拍以降のraw音符だけを採用し、最初の採用音を0秒へ移動",
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 0,
           "partName": "Violin I",
@@ -12686,10 +12686,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/jesu_full.mid",
+        "midiPath": "jesu_full.mid",
         "midiSha256": "91d5bf9c544ec322abc47ff660eb307745c70039d603aec42685b0c811f61b43",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/入手記録/PDMX.csv（QmdTts...）",
-        "scoreCopy": "元楽譜/jesu.mxl",
+        "scoreSource": "J.S.バッハ『主よ、人の望みの喜びよ』BWV147（Violin 1）",
+        "scoreCopy": "jesu.mxl",
         "selectionRule": "CC0原譜の弦楽四重奏4声部からViolin 1をraw note-on/offで抽出。冒頭から続く三連符の器楽旋律を採用し、同時開始和音があれば最高音1音にする",
         "scoreLicense": "cc-zero",
         "scoreLicenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -12725,7 +12725,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 0,
           "partName": "Violin 1",
@@ -20630,10 +20630,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/haru_spring1_full.mid",
+        "midiPath": "haru_spring1_full.mid",
         "midiSha256": "29f2d47a7f5d71d400c439de2255f017107ff7c409615c148b46214ca157f771",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/楽譜/春_第1楽章.mxl",
-        "scoreCopy": "元楽譜/haru.mxl",
+        "scoreSource": "ヴィヴァルディ『四季』より春 第1楽章（フルート主旋律）",
+        "scoreCopy": "haru.mxl",
         "selectionRule": "MIDIのFluteトラックをraw note-on/offで抽出。原MIDIに同時開始和音なしのため全音を保持",
         "scoreLicense": null,
         "scoreLicenseUrl": null,
@@ -20664,7 +20664,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 1,
           "partName": "Flute",
@@ -25559,10 +25559,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/sugarplum_full.mid",
+        "midiPath": "sugarplum_full.mid",
         "midiSha256": "fa4a5751806c9d71065cc55c2b383f20e557696f01256218c344ede746a58373",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/楽譜/金平糖の精の踊り.mxl",
-        "scoreCopy": "元楽譜/sugarplum.mxl",
+        "scoreSource": "チャイコフスキー『金平糖の精の踊り』原曲主旋律（Celesta）",
+        "scoreCopy": "sugarplum.mxl",
         "selectionRule": "sugarplum/full.midのtrack 13（原譜Celesta 1）をraw note-on/offで抽出。同時開始和音は最高音（右手上声）だけを採用し、代表的なCelesta旋律を単旋律化",
         "scoreLicense": null,
         "scoreLicenseUrl": null,
@@ -25607,7 +25607,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 12,
           "partName": "Celesta 1（右手上声）",
@@ -28138,10 +28138,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/masu_trout_full.mid",
+        "midiPath": "masu_trout_full.mid",
         "midiSha256": "6987ed88f339905ae4720172d0595f1031d886d63511e0b6afe89868aae5c402",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/楽譜/ます_歌とピアノの器楽再生.mxl",
-        "scoreCopy": "元楽譜/masu.mxl",
+        "scoreSource": "シューベルト『ます』D.550（歌声部）",
+        "scoreCopy": "masu.mxl",
         "selectionRule": "MIDIのVoiceパート（歌声部）を抽出。和音があれば最高音を採用",
         "scoreLicense": null,
         "scoreLicenseUrl": null,
@@ -28172,7 +28172,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 0,
           "partName": "Voice",
@@ -33661,10 +33661,10 @@
       ],
       "source": {
         "kind": "midi",
-        "midiPath": "道具_音楽学習データ/元MIDI/donau_quartet_full.mid",
+        "midiPath": "donau_quartet_full.mid",
         "midiSha256": "1adffb76f0279e2d08dcc7042bcdb0272e8c4ab9a5642fa51315e84af499048b",
-        "scoreSource": "かんじモンスター/設計書/10_音楽/楽譜/美しく青きドナウ_弦楽四重奏編曲.mxl",
-        "scoreCopy": "元楽譜/donau.mxl",
+        "scoreSource": "ヨハン・シュトラウス2世『美しく青きドナウ』Op.314（第1ヴァイオリン）",
+        "scoreCopy": "donau.mxl",
         "selectionRule": "MIDIの第1Violinパートを抽出。和音は最高音1音にして単旋律化",
         "scoreLicense": null,
         "scoreLicenseUrl": null,
@@ -33695,7 +33695,7 @@
         "learningStartSec": null,
         "learningStartNote": null,
         "suffixPolicy": null,
-        "extractionVersion": "music-learning-v2-source-20261010-2",
+        "extractionVersion": "music-learning-v2-source-20261011-3",
         "extraction": {
           "partIndex": 0,
           "partName": "Violin",
@@ -33715,6 +33715,559 @@
           ]
         },
         "scoreCopySha256": "ebee8780d7ed0e5a85d792f14ec281a53ab69b8b17028d9cbdf98482eabb5c17"
+      }
+    },
+    "twinkle": {
+      "id": "twinkle",
+      "title": "きらきら星",
+      "sourceLabel": "『きらきら星』基本旋律（伝承フランス民謡）",
+      "duration": 28.8,
+      "notes": [
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 0.0,
+          "duration": 0.6,
+          "beat": 0.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 0.6,
+          "duration": 0.6,
+          "beat": 1.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 1.2,
+          "duration": 0.6,
+          "beat": 2.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 1.8,
+          "duration": 0.6,
+          "beat": 3.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 69,
+          "name": "A4",
+          "step": "A",
+          "octave": 4,
+          "accidental": null,
+          "start": 2.4,
+          "duration": 0.6,
+          "beat": 4.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 69,
+          "name": "A4",
+          "step": "A",
+          "octave": 4,
+          "accidental": null,
+          "start": 3.0,
+          "duration": 0.6,
+          "beat": 5.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 3.6,
+          "duration": 1.2,
+          "beat": 6.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 4.8,
+          "duration": 0.6,
+          "beat": 8.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 5.4,
+          "duration": 0.6,
+          "beat": 9.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 6.0,
+          "duration": 0.6,
+          "beat": 10.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 6.6,
+          "duration": 0.6,
+          "beat": 11.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 7.2,
+          "duration": 0.6,
+          "beat": 12.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 7.8,
+          "duration": 0.6,
+          "beat": 13.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 8.4,
+          "duration": 1.2,
+          "beat": 14.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 9.6,
+          "duration": 0.6,
+          "beat": 16.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 10.2,
+          "duration": 0.6,
+          "beat": 17.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 10.8,
+          "duration": 0.6,
+          "beat": 18.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 11.4,
+          "duration": 0.6,
+          "beat": 19.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 12.0,
+          "duration": 0.6,
+          "beat": 20.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 12.6,
+          "duration": 0.6,
+          "beat": 21.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 13.2,
+          "duration": 1.2,
+          "beat": 22.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 14.4,
+          "duration": 0.6,
+          "beat": 24.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.0,
+          "duration": 0.6,
+          "beat": 25.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.6,
+          "duration": 0.6,
+          "beat": 26.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 16.2,
+          "duration": 0.6,
+          "beat": 27.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 16.8,
+          "duration": 0.6,
+          "beat": 28.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 17.4,
+          "duration": 0.6,
+          "beat": 29.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 18.0,
+          "duration": 1.2,
+          "beat": 30.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 19.2,
+          "duration": 0.6,
+          "beat": 32.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 19.8,
+          "duration": 0.6,
+          "beat": 33.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 20.4,
+          "duration": 0.6,
+          "beat": 34.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 21.0,
+          "duration": 0.6,
+          "beat": 35.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 69,
+          "name": "A4",
+          "step": "A",
+          "octave": 4,
+          "accidental": null,
+          "start": 21.6,
+          "duration": 0.6,
+          "beat": 36.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 69,
+          "name": "A4",
+          "step": "A",
+          "octave": 4,
+          "accidental": null,
+          "start": 22.2,
+          "duration": 0.6,
+          "beat": 37.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 22.8,
+          "duration": 1.2,
+          "beat": 38.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 24.0,
+          "duration": 0.6,
+          "beat": 40.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 24.6,
+          "duration": 0.6,
+          "beat": 41.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 25.2,
+          "duration": 0.6,
+          "beat": 42.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 25.8,
+          "duration": 0.6,
+          "beat": 43.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 26.4,
+          "duration": 0.6,
+          "beat": 44.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 27.0,
+          "duration": 0.6,
+          "beat": 45.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 27.6,
+          "duration": 1.2,
+          "beat": 46.0,
+          "beats": 2.0
+        }
+      ],
+      "phrases": [
+        {
+          "start": 0.0,
+          "end": 8.4,
+          "firstNote": 0,
+          "lastNote": 12
+        },
+        {
+          "start": 8.4,
+          "end": 16.8,
+          "firstNote": 13,
+          "lastNote": 24
+        },
+        {
+          "start": 16.8,
+          "end": 25.2,
+          "firstNote": 25,
+          "lastNote": 36
+        },
+        {
+          "start": 25.2,
+          "end": 28.8,
+          "firstNote": 37,
+          "lastNote": 41
+        }
+      ],
+      "source": {
+        "kind": "midi",
+        "midiPath": "twinkle_theme.mid",
+        "midiSha256": "6be62d15060aa25248e7428485eb0e8fc055c16bc6dcc06c9dfd8707c6949cd5",
+        "scoreSource": "Savarese『Twinkle Twinkle Little Star』基本旋律（Traditional French Folk Song）",
+        "scoreCopy": null,
+        "selectionRule": "Savarese譜の主旋律G4 G4 D5 D5 E5 E5 D5等をC majorへ7半音下げ、4分音符/2分音符の音価を保持。装飾・伴奏・変奏を含まない基本旋律42音を採用",
+        "scoreLicense": "public-domain-melody",
+        "scoreLicenseUrl": "https://www.savarese.org/downloads/sheetmusic/violin/TwinkleTwinkleLittleStar.pdf",
+        "sourceDataset": "https://www.savarese.org/downloads/sheetmusic/violin/TwinkleTwinkleLittleStar.pdf",
+        "sourceCatalogueId": null,
+        "sourceArchiveMember": null,
+        "sourceMetadataId": null,
+        "sourceWorkId": "Twinkle Twinkle Little Star (Traditional French Folk Song)",
+        "tempoBpm": 100.0,
+        "tempoChanges": [
+          {
+            "tick": 0,
+            "beat": 0.0,
+            "bpm": 100.0
+          }
+        ],
+        "timingBasis": "学習版は元MIDIの拍位置を保持し、設計テンポBPMで秒化する。原MIDIの実時間を再現する値ではない。tempoイベントは照合用に記録",
+        "restPolicy": "休符はnotesに追加せず、前後のstart差（空白）として保持",
+        "audioDurationSec": 31.84325,
+        "trimLeadSec": 0.0,
+        "tempoMode": "constant",
+        "scoreNoteEvents": 42,
+        "scoreTempoMarks": [],
+        "tempoEvidence": "採用譜に記載されたAllegro四分音符125 BPMを参照し、学習用には追いやすい四分音符100 BPMへ固定",
+        "scoreToRawReason": "公開譜の主旋律を手順に固定した派生MIDIへ記録し、raw note-on/offの42音をそのまま採用。推測による追加なし",
+        "learningStartMeasure": null,
+        "learningStartBeat": null,
+        "learningStartSec": null,
+        "learningStartNote": null,
+        "suffixPolicy": null,
+        "extractionVersion": "music-learning-v2-source-20261011-3",
+        "extraction": {
+          "partIndex": 0,
+          "partName": "Theme melody",
+          "ticksPerBeat": 384,
+          "rawTrackIndex": 1,
+          "rawNotePairs": 42,
+          "selectedRawNotes": 42,
+          "simultaneousGroupsCollapsed": 0,
+          "rawTimingMatchCount": 42,
+          "rawTimingMaxDeltaBeats": 0,
+          "tempoEventsRaw": [
+            {
+              "tick": 0,
+              "beat": 0.0,
+              "bpm": 100.0
+            }
+          ]
+        },
+        "scoreToSelectedRawDelta": 0
       }
     }
   }
