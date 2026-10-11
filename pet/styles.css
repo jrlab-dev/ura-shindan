@@ -1,0 +1,700 @@
+:root { color-scheme: light; --ink:#443b57; --muted:#827890; --lavender:#f5efff; --purple:#806ac4; --purple-dark:#614ba0; --mint:#dff6ed; --peach:#ffe5d6; --white:#fff; --shadow:0 10px 34px rgba(80,60,120,.13); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; }
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+.voice-test { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; align-items:center; padding:12px 0; border-bottom:1px solid #eee8f8; }
+.voice-test p { margin:0; font-size:12px; color:var(--muted); }
+.voice-test-status { grid-column:1/-1; color:var(--purple) !important; }
+.quiet-note { margin:10px 0; color:var(--muted); font-size:12px; }
+.setting-row select { min-height:44px; max-width:150px; border:1px solid #ded4f1; border-radius:10px; padding:0 8px; color:var(--ink); background:#fff; }
+.game-panel { position:fixed; inset:0; z-index:10; display:grid; place-items:center; padding:15px; background:rgba(35,25,55,.35); }
+.game-panel[hidden] { display:none !important; }
+.game-card { width:min(100%,520px); padding:22px; border-radius:25px; background:#fff; color:var(--ink); box-shadow:0 20px 70px rgba(45,30,80,.3); }
+.game-head,.game-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }.game-head h2{margin:0;font-size:20px}.game-head span{min-width:44px;min-height:44px;display:grid;place-items:center;border-radius:50%;background:#f7f3ff;color:var(--purple);font-weight:700}.game-card>p{text-align:center;color:var(--muted);margin:10px 0}.game-board{position:relative;min-height:260px;margin:10px 0;border-radius:20px;background:linear-gradient(145deg,#f7f2ff,#eafaf5);overflow:hidden}.game-target{position:absolute;width:64px;height:64px;min-width:64px;min-height:64px;border:0;border-radius:50%;background:transparent;padding:0;box-shadow:none;transition:left .2s,top .2s}.game-target .puni-body{display:block}.game-target[data-melt="true"] .puni-body{animation:none;transform:scale(1.4,.35);transition:transform .6s ease}.game-target[data-melt="true"] .puni-eye{height:2px}.game-target:not([data-melt="true"]) .puni-body{transition:transform .25s ease}@media (prefers-reduced-motion:reduce){.game-target[data-melt="true"] .puni-body{transition:none}}.game-foot strong{font-size:15px}.game-foot strong span{color:var(--purple);font-size:24px}.game-foot .small-button{min-width:100px}
+html, body { margin:0; min-height:100%; background:var(--lavender); color:var(--ink); }
+body { min-height:100svh; overscroll-behavior:none; }
+button,input { font:inherit; }
+button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+.app-shell { width:min(100%,900px); min-height:100svh; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr auto auto; padding:env(safe-area-inset-top) clamp(16px,4vw,42px) max(14px,env(safe-area-inset-bottom)); }
+.topbar { display:flex; align-items:center; justify-content:space-between; min-height:72px; }
+.brand,.dialog-head { display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.04em; }
+.brand { flex:0 0 auto; white-space:nowrap; font-size:clamp(18px,3vw,24px); }
+.brand-dot { width:18px; height:18px; display:inline-block; border-radius:50%; background:#f0a4ae; box-shadow:0 0 0 6px #fbe2e3; }
+.top-actions { display:flex; gap:9px; }
+.icon-button { border:0; min-width:48px; min-height:48px; border-radius:50%; color:var(--ink); background:rgba(255,255,255,.7); box-shadow:0 3px 10px rgba(60,45,100,.08); font-size:22px; }
+.icon-button[aria-pressed="false"] { opacity:.45; }
+.pet-stage { position:relative; overflow-x:clip; min-height:390px; display:flex; flex-direction:column; align-items:center; justify-content:center; isolation:isolate; }
+.status-pill { position:absolute; top:14px; border-radius:99px; background:rgba(255,255,255,.7); color:var(--muted); padding:7px 14px; font-size:13px; }
+.inner-state{position:absolute;top:49px;color:var(--muted);font-size:11px;opacity:.85}
+.companion-moment{position:absolute;top:68px;max-width:min(82%,340px);margin:0;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.82);color:var(--purple-dark);font-size:12px;text-align:center;box-shadow:0 2px 8px rgba(80,60,120,.08)}
+.bubble { max-width:min(80%,360px); min-height:42px; margin-bottom:18px; padding:11px 18px; border-radius:22px; color:var(--ink); background:#fff; box-shadow:var(--shadow); font-size:clamp(16px,2.7vw,20px); text-align:center; transition:transform .25s, opacity .25s; }
+.bubble::after { content:""; display:block; position:absolute; margin:8px 0 0 13px; border:8px solid transparent; border-top-color:#fff; }
+.recognized-text { max-width:min(88%,420px); min-height:20px; margin:-10px 0 8px; color:var(--muted); font-size:12px; text-align:center; }
+.question-candidates { display:grid; grid-template-columns:repeat(2,minmax(110px,1fr)); gap:8px; width:min(92%,430px); margin:-8px 0 12px; }
+.question-candidates button { min-height:52px; border:2px solid #ded4f1; border-radius:15px; padding:8px 12px; background:#fff; color:var(--ink); font-weight:700; box-shadow:0 3px 9px rgba(80,60,120,.08); }
+.question-candidates button:active,.question-candidates button:focus-visible { border-color:var(--purple); background:#f7f3ff; outline:3px solid rgba(128,106,196,.2); }
+.pet { width:230px; height:260px; position:relative; animation:float-pink 8.7s ease-in-out infinite; user-select:none; touch-action:none; }
+.pets-row{display:flex;align-items:flex-end;justify-content:center;gap:clamp(0px,2vw,28px);width:min(96%,620px);min-height:346px;padding-top:36px;overflow:visible}.pet-slot{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;--pet-base:1;--depth-scale:1;--depth-lift:0px;--depth-shift:0px;--extra-rotate:0deg;transform:translate(var(--depth-shift),var(--depth-lift)) scale(calc(var(--pet-base) * var(--depth-scale))) rotate(var(--extra-rotate));transform-origin:bottom center;transition:transform .4s ease,filter .4s ease}.pet-slot-2{--pet-base:1.12}.pet-slot.is-active-pet{order:-1;z-index:1}.pet-slot[data-depth="near"]{--depth-scale:1.24;--depth-lift:0px;z-index:30}.pet-slot[data-depth="mid"]{--depth-scale:.90;--depth-lift:-50px;z-index:20;filter:brightness(.94) saturate(.92)}.pet-slot[data-depth="far"]{--depth-scale:.70;--depth-lift:-84px;z-index:10;filter:brightness(.86) saturate(.72) blur(.6px)}.pet-name{margin:0 0 -5px;font-size:13px;font-weight:700;color:var(--purple-dark)}.pet-slot[data-pet-id="pet-1"] .pet-name{color:#a64169}.pet-slot[data-pet-id="pet-2"] .pet-name{color:#2f6f9e}.pet-bubble{position:absolute;z-index:2;top:-43px;max-width:160px;min-height:28px;padding:7px 10px;border-radius:16px;background:#fff;box-shadow:var(--shadow);font-size:12px;text-align:center}.pet-bubble::after{content:"";position:absolute;bottom:-10px;left:50%;border:6px solid transparent;border-top-color:#fff}.two-pet-status{position:absolute;top:84px;max-width:90%;padding:5px 10px;border-radius:99px;background:#f5efff;color:var(--purple-dark);font-size:12px;text-align:center}.pet[data-state="watching"] .eye{transform:translateY(-3px)}.pet[data-state="ear-react"] .ear{animation:wobble .38s ease-in-out 3}.pet[data-state="body-react"]{animation:copy-think .42s ease-in-out 3}
+.pet[data-state="reply-wait-quick"]{animation:quick-wait .2s ease-in-out 2}.pet-2[data-state="reply-wait-slow"] .eye{animation:reply-blink .5s ease-in-out 1}.pet-2[data-state="reply-wait-slow"] .ear{animation:wobble .58s .12s ease-in-out 1}
+.pet-shadow { position:absolute; bottom:4px; left:20px; right:20px; height:24px; border-radius:50%; background:rgba(81,62,113,.12); filter:blur(5px); }
+.pet-body { position:absolute; left:20px; right:20px; bottom:18px; height:205px; border-radius:48% 48% 42% 42%; background:linear-gradient(140deg,#f8bfd0,#eb91af 65%,#c9688d); box-shadow:inset -13px -16px 0 rgba(166,65,105,.16),0 12px 20px rgba(87,65,130,.18); outline:2px solid rgba(166,65,105,.2); overflow:visible; }
+.pet-2 .pet-body { border-radius:48% 48% 54% 54% / 43% 43% 59% 59%; background:linear-gradient(140deg,#b9e2f8,#79bce8 65%,#4f8fc8); box-shadow:inset -13px -16px 0 rgba(47,111,158,.16),0 12px 20px rgba(47,111,158,.16); outline-color:rgba(47,111,158,.28); }
+.pet-2 .ear { background:#76b9e5; }
+.ear { position:absolute; width:58px; height:70px; top:-27px; background:#e993b0; border-radius:65% 45% 50% 50%; transform:rotate(-28deg); z-index:-1; }
+.ear::after { content:""; position:absolute; inset:12px; border-radius:inherit; background:#f8bfd0; opacity:.65; }
+.pet-2 .ear::after { background:#b9e2f8; }
+.ear-left { left:5px; }.ear-right { right:5px; transform:scaleX(-1) rotate(-28deg); }
+.face { position:absolute; left:29px; right:29px; top:39px; height:86px; border-radius:50%; transform:translateX(var(--look-x,0px));transition:transform .5s ease }
+.eye { position:absolute; width:21px; height:28px; border-radius:50%; background:#40374f; transition:height .2s,transform .2s; overflow:hidden; }
+.eye::after { content:""; position:absolute; width:6px; height:8px; top:4px; left:4px; border-radius:50%; background:white; }
+.eye-left { left:14px; }.eye-right { right:14px; }
+.cheek { position:absolute; top:49px; width:23px; height:12px; border-radius:50%; background:#e993b0; opacity:.65; }.pet-2 .cheek{background:#76b9e5}.cheek-left{left:0}.cheek-right{right:0}
+.mouth { --mouth-color:#a64169; position:absolute; left:50%; top:53px; width:20px; height:12px; margin-left:-10px; border-bottom:3px solid var(--mouth-color); border-radius:0 0 50% 50%; background:transparent; transition:all .2s; }.pet-2 .mouth{--mouth-color:#2f6f9e}
+.belly { position:absolute; left:50%; bottom:29px; width:83px; height:60px; margin-left:-41px; border-radius:50%; background:rgba(255,255,255,.2); }
+.paw { position:absolute; bottom:5px; width:48px; height:36px; border-radius:50%; background:#eb91af; }.pet-2 .paw{background:#79bce8}.paw-left{left:6px;transform:rotate(14deg)}.paw-right{right:6px;transform:rotate(-14deg)}
+.welcome-note { color:var(--muted); margin:5px 0 0; font-size:14px; }
+@keyframes float-pink{0%{transform:translate(0,0)}8%{transform:translate(10px,-7px)}17%{transform:translate(20px,0)}25%{transform:translate(32px,-7px)}33%{transform:translate(40px,0)}42%{transform:translate(48px,-7px)}50%{transform:translate(40px,0)}58%{transform:translate(20px,-7px)}67%{transform:translate(0,0)}75%{transform:translate(-20px,-7px)}83%{transform:translate(-40px,0)}92%{transform:translate(-26px,-7px)}100%{transform:translate(0,0)}}
+@keyframes float-blue{0%{transform:translate(0,0)}8%{transform:translate(13px,-10px)}17%{transform:translate(26px,0)}25%{transform:translate(39px,-10px)}33%{transform:translate(46px,0)}42%{transform:translate(52px,-10px)}50%{transform:translate(46px,0)}58%{transform:translate(26px,-10px)}67%{transform:translate(0,0)}75%{transform:translate(-26px,-10px)}83%{transform:translate(-46px,0)}92%{transform:translate(-30px,-10px)}100%{transform:translate(0,0)}}
+@keyframes sleep-breath{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes blink { 0%,43%,48%,100%{transform:scaleY(1)}45%,47%{transform:scaleY(.1)} }
+.eye { animation:blink 5.2s infinite; transform-origin:center; }.eye-right{animation-delay:.07s}
+.pet[data-state="happy"] { animation:hop .65s ease-in-out 2; }.pet[data-state="happy"] .eye{height:13px; border-radius:50% 50% 0 0; top:8px; transform:rotate(180deg)}.pet[data-state="happy"] .mouth{height:20px;width:28px;margin-left:-14px;border:3px solid #493a5a;border-top:0}.pet[data-state="sad"] .mouth{height:9px;border-bottom:0;border-top:3px solid #493a5a}.pet[data-state="sad"] .eye{transform:rotate(10deg)}
+.pet[data-state="sleepy"]{animation:sleep-breath 6s ease-in-out infinite}.pet-2[data-state="sleepy"]{animation:sleep-breath 7.3s ease-in-out infinite}.pet[data-state="sleepy"] .eye{height:3px;top:14px;border-radius:3px}.pet[data-state="sleepy"] .eye::after{opacity:0}.pet[data-state="sleepy"] .mouth{width:11px;margin-left:-5px}.pet[data-state="sleepy"]::after{content:"Zz";position:absolute;top:-26px;right:6px;font-size:26px;font-weight:700;opacity:0;color:#8b6f9e;animation:zz-float 3s ease-in-out infinite;pointer-events:none;text-shadow:0 1px 2px rgba(255,255,255,0.85)}.pet-2[data-state="sleepy"]::after{color:#5b8fb9}.pet[data-state="sleepy"] .eye,.pet[data-state="sleepy"] .mouth,.pet[data-state="sleepy"]::after{animation-play-state:running}.pet[data-state="sleepy"][data-doze="true"] .eye{height:10px;top:9px;border-radius:50%}.pet[data-state="sleepy"][data-doze="true"] .eye::after{opacity:0.6}@keyframes zz-float{0%{opacity:0.35;transform:translateY(0) scale(0.85)}30%{opacity:0.95;transform:translateY(-6px) scale(1)}70%{opacity:0.95;transform:translateY(-14px) scale(1.05)}100%{opacity:0.35;transform:translateY(-20px) scale(0.9)}}.pet[data-state="listening"] .ear{animation:wobble .5s ease-in-out infinite alternate}.pet[data-state="thinking"] .eye-left{transform:translate(-5px,-4px)}.pet[data-state="thinking"] .eye-right{transform:translate(5px,-4px)}.pet[data-state="talking"] .mouth{animation:talk-pink .26s steps(1,end) infinite}.pet-2[data-state="talking"] .mouth{animation:talk-blue .44s steps(1,end) infinite}.pet-2:not([data-state="happy"]):not([data-state="sad"]):not([data-state="sleepy"]):not([data-state="copy-thinking"]):not([data-state="copy-speaking"]):not([data-state="copy-happy"]):not([data-state="copy-invite"]):not([data-state="copy-satisfied"]){animation:float-blue 15.9s ease-in-out infinite}
+.pet[data-state="copy-listening"] .eye,.pet[data-state="copy-live"] .eye{height:32px;transform:scale(1.08)}.pet[data-state="copy-listening"] .ear,.pet[data-state="copy-live"] .ear{transform-origin:50% 88%}.pet[data-state="copy-listening"] .ear-left,.pet[data-state="copy-live"] .ear-left{animation:copy-ear-left .5s ease-in-out infinite alternate}.pet[data-state="copy-listening"] .ear-right,.pet[data-state="copy-live"] .ear-right{animation:copy-ear-right .5s ease-in-out -.25s infinite alternate}.pet[data-state="copy-thinking"]{animation:copy-think .5s ease-in-out infinite alternate}.pet[data-state="copy-thinking"] .eye-left{transform:translate(-4px,-5px)}.pet[data-state="copy-thinking"] .eye-right{transform:translate(4px,-5px)}.pet[data-state="copy-speaking"]{animation:copy-speak .34s ease-in-out infinite alternate}.pet[data-state="copy-speaking"] .mouth{animation:talk .3s steps(1,end) infinite}.pet[data-state="copy-happy"]{animation:hop .52s ease-in-out 1}.pet[data-state="copy-happy"] .eye{height:13px;border-radius:50% 50% 0 0;top:8px;transform:rotate(180deg)}
+.pet[data-state="copy-invite"]{animation:copy-think .7s ease-in-out infinite alternate}.pet[data-state="copy-invite"] .ear{animation:copy-ear-left .55s ease-in-out infinite alternate}.pet[data-state="copy-calibrating"] .ear{animation:none;opacity:.62}.pet[data-state="copy-calibrating"] .eye{height:22px}.pet[data-state="copy-ready"] .ear{animation:copy-ear-right .7s ease-in-out infinite alternate}.pet[data-state="copy-satisfied"]{animation:hop .7s ease-in-out 1}.pet[data-state="copy-satisfied"] .eye{height:13px;border-radius:50% 50% 0 0;top:8px;transform:rotate(180deg)}
+@keyframes copy-ear-left{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-6px) rotate(-46deg)}}@keyframes copy-ear-right{from{transform:translateY(-6px) scaleX(-1) rotate(-46deg)}to{transform:translateY(0) scaleX(-1) rotate(-6deg)}}@keyframes copy-think{to{transform:translateX(4px) rotate(1deg)}}@keyframes copy-speak{to{transform:translateY(-5px)}}
+@keyframes hop{50%{transform:translateY(-20px) rotate(2deg)}} @keyframes wobble{to{transform:rotate(-10deg)}} @keyframes talk-pink{0%,49%{width:20px;height:12px;margin-left:-10px;border-bottom:3px solid var(--mouth-color);border-radius:0 0 50% 50%;background:transparent;clip-path:none}50%,100%{width:24px;height:16px;margin-left:-12px;border-bottom:0;border-radius:0;background:var(--mouth-color);clip-path:polygon(50% 100%, 0 0, 100% 0)}} @keyframes talk-blue{0%,49%{width:20px;height:12px;margin-left:-10px;border-bottom:3px solid var(--mouth-color);border-radius:0 0 50% 50%;background:transparent;clip-path:none}50%,100%{width:24px;height:16px;margin-left:-12px;border-bottom:0;border-radius:0;background:var(--mouth-color);clip-path:polygon(50% 100%, 0 0, 100% 0)}} @keyframes talk{0%,49%{width:20px;height:12px;margin-left:-10px;border-bottom:3px solid var(--mouth-color);border-radius:0 0 50% 50%;background:transparent;clip-path:none}50%,100%{width:24px;height:16px;margin-left:-12px;border-bottom:0;border-radius:0;background:var(--mouth-color);clip-path:polygon(50% 100%, 0 0, 100% 0)}}
+@keyframes quick-wait{50%{transform:translateX(4px) rotate(1deg)}} @keyframes reply-blink{50%{transform:scaleY(.08)}}
+.controls { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; width:100%; max-width:760px; margin:0 auto; }
+.care-button,.talk-button { min-height:62px; border:0; border-radius:20px; color:var(--ink); background:#fff; box-shadow:0 5px 15px rgba(80,60,120,.1); font-weight:700; transition:transform .15s,background .15s; }.care-button:active,.talk-button:active{transform:scale(.95)}.care-button span{display:block;font-size:22px;color:var(--purple)}.talk-button{background:var(--purple);color:#fff;min-width:150px}.talk-button span{font-size:12px;margin-bottom:5px}.talk-button.is-listening{background:#d7839a;animation:pulse 1s infinite}@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(215,131,154,.2)}}
+.teach-word-button{white-space:nowrap;font-size:14px}
+.play-menu-dialog form{padding:24px}.play-cards{display:grid;gap:10px;margin-top:18px}.play-card{min-height:78px;border:2px solid #ded4f1;border-radius:18px;padding:12px 15px;background:#fff;color:var(--ink);text-align:left}.play-card strong,.play-card span{display:block}.play-card strong{font-size:17px}.play-card span{margin-top:4px;color:var(--muted);font-size:13px}.play-card:focus-visible{outline:3px solid rgba(128,106,196,.3);border-color:var(--purple)}.pink-card{border-color:#f1bfd0}.blue-card{border-color:#b8ddf3}
+.text-entry { display:flex; width:100%; max-width:760px; gap:8px; margin:12px auto 0; }.text-entry input { min-width:0; flex:1; min-height:50px; border:2px solid #e5dcf5; border-radius:16px; padding:0 15px; color:var(--ink); background:#fff; }.send-button,.primary-button{border:0;border-radius:15px;padding:0 20px;background:var(--purple);color:#fff;font-weight:700;min-height:50px}.input-hint { min-height:20px; margin:12px 0 0; color:var(--muted); text-align:center; font-size:13px; }
+.dialog { border:0; border-radius:26px; padding:0; width:min(calc(100% - 30px),500px); color:var(--ink); box-shadow:0 20px 70px rgba(45,30,80,.25); }.dialog::backdrop{background:rgba(35,25,55,.3);backdrop-filter:blur(3px)}.dialog form{padding:28px}.dialog h1,.dialog h2{margin:0;font-size:22px}.dialog p{line-height:1.6}.dialog label{display:block;margin-top:16px;font-size:14px;font-weight:700}.dialog input[type=text],.dialog input:not([type]){width:100%;min-height:48px;border:2px solid #e5dcf5;border-radius:13px;padding:0 13px;background:#fff;color:var(--ink)}.optional{font-weight:400;color:var(--muted);font-size:12px}.dialog fieldset{margin:19px 0;padding:13px 0 4px;border:0}.dialog legend{font-size:14px;font-weight:700}.choice{display:inline-block!important;margin:8px 16px 0 0!important;font-weight:400!important}.choice input{accent-color:var(--purple)}.primary-button{width:100%;margin-top:10px;min-height:56px}.parent-form{max-height:min(90svh,700px);overflow:auto}.dialog-head{position:relative}.close-button{min-width:44px;min-height:44px;margin-left:auto;border:0;background:transparent;color:var(--muted);font-size:32px;line-height:1}.privacy-note{border-radius:14px;padding:11px 13px;background:#f7f3ff;font-size:13px}.settings-list{border-top:1px solid #eee8f8}.setting-row{display:flex!important;align-items:center;justify-content:space-between;min-height:57px;margin:0!important;border-bottom:1px solid #eee8f8;font-weight:600!important}.setting-row input{position:absolute;opacity:0}.switch{width:49px;height:28px;border-radius:99px;background:#dcd8e6;position:relative;transition:.2s}.switch::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:white;border-radius:50%;box-shadow:0 1px 3px #999;transition:.2s}.setting-row input:checked+.switch{background:var(--purple)}.setting-row input:checked+.switch::after{transform:translateX(21px)}.dialog h3{margin:20px 0 8px;font-size:15px}.camera-box{background:#f7f3ff;border-radius:16px;padding:10px}.camera-box video{width:100%;max-height:180px;object-fit:cover;border-radius:10px;background:#ddd}.camera-box p{margin:6px 0;font-size:12px}.small-button,.danger-button{min-height:44px;border-radius:12px;padding:0 13px;border:1px solid #ded4f1;background:#fff;color:var(--ink)}.danger-button{color:#a65069;border-color:#f2ccd5}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stats div{padding:12px 5px;text-align:center;border-radius:15px;background:#f7f3ff}.stats strong,.stats span{display:block}.stats strong{font-size:24px;color:var(--purple)}.stats span{font-size:12px;color:var(--muted)}.memory-summary{min-height:20px;margin:5px 0!important;color:var(--muted);font-size:13px}.parent-actions{display:flex;justify-content:space-between;gap:8px;margin-top:22px}.inline-edit,.inline-confirm{margin-top:14px;padding:14px;border-radius:15px;background:#f7f3ff}.inline-edit label{margin-top:0!important}.inline-actions{display:flex;gap:8px;margin-top:10px}.inline-actions button{flex:1}.inline-confirm p{margin:0;font-size:13px}.version-note{text-align:center;color:#aaa;font-size:11px;margin-bottom:0}.toast{position:fixed;left:50%;bottom:25px;z-index:5;transform:translate(-50%,15px);opacity:0;pointer-events:none;border-radius:99px;padding:10px 16px;background:#443b57;color:#fff;font-size:13px;transition:.25s}.toast.show{transform:translate(-50%,0);opacity:1}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:560px){body{overflow-x:hidden}.topbar{gap:6px}.top-actions{gap:5px}.profile-switch select{max-width:100px;padding:0 5px}.icon-button{min-width:44px;min-height:44px}.brand #pet-name-label{display:none}.brand{gap:0}.pet-stage{min-height:340px;justify-content:flex-start;padding-top:4px}.status-pill{position:static;margin:0 0 2px;padding:4px 10px;font-size:11px}.inner-state{position:static;margin-bottom:7px}.companion-moment,.two-pet-status{position:static;margin:0 0 7px}.pets-row{align-items:flex-end;gap:0;width:100%;max-width:100vw;min-height:246px;height:246px;overflow:visible;padding-top:36px}.pet-slot{flex:1 1 0;width:50%;max-width:50%;--pet-base:.66}.pet-slot-2{--pet-base:.74}.pet-slot[data-depth="mid"]{--depth-lift:-34px}.pet-slot[data-depth="far"]{--depth-lift:-58px}.pet-name{font-size:12px}.pet-bubble{top:-31px;max-width:128px;font-size:11px}.controls{grid-template-columns:repeat(3,1fr);gap:8px}.talk-button{grid-column:1/-1;min-height:58px}.echo-button{grid-column:1/-1}.care-button{min-height:58px;font-size:13px}.teach-word-button{grid-column:span 2}.app-shell{padding-left:13px;padding-right:13px}.bubble{margin-bottom:8px}}
+@media (min-width:700px) and (orientation:landscape){.app-shell{grid-template-rows:auto 1fr auto auto}.pet-stage{min-height:330px}.pets-row{min-height:281px}.pet-slot{--pet-base:.8}.pet-slot-2{--pet-base:.896}.bubble{margin-bottom:5px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.pet[data-state="copy-live"] .ear-left,.pet[data-state="copy-listening"] .ear-left{transform:translateY(-3px) rotate(-46deg)!important}.pet[data-state="copy-live"] .ear-right,.pet[data-state="copy-listening"] .ear-right{transform:translateY(-3px) scaleX(-1) rotate(-46deg)!important}}
+.learned-words{display:grid;gap:7px}.learned-word-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:6px 8px 6px 12px;border-radius:12px;background:#f7f3ff;color:var(--ink);font-size:13px}.learned-word-row button{min-width:44px;min-height:44px;border:1px solid #ded4f1;border-radius:10px;background:#fff;color:var(--muted)}
+.echo-session-panel{width:100%;max-width:760px;margin:0 auto 8px;padding:12px 18px;border-radius:18px;background:#f5efff;color:var(--purple-dark);text-align:center}.echo-session-panel p{margin:2px 0}.echo-session-panel p:first-child{font-size:13px;font-weight:700}.echo-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;width:100%;max-width:760px;margin:0 auto;align-items:center}.echo-press-button,.echo-stop-button,.echo-live-status{min-height:52px;border-radius:18px;font-weight:700}.echo-press-button{border:0;background:var(--purple);color:#fff;font-size:17px}.echo-stop-button{min-width:92px;border:1px solid #ded4f1;background:#fff;color:var(--ink)}.echo-live-status{display:flex;align-items:center;justify-content:center;margin:0;padding:0 14px;background:#f5efff;color:var(--purple-dark);font-size:15px}.echo-live-status[data-phase="live"]{background:#e6fff6;color:#276b57;box-shadow:0 0 0 3px rgba(71,179,144,.15)}.echo-session-panel[data-mode="press"]+.echo-controls .echo-press-button{animation:echo-glow 1.5s ease-in-out infinite}@keyframes echo-glow{50%{box-shadow:0 0 0 8px rgba(132,91,190,.16)}}
+.today-memory{margin:4px 0 0;padding:7px 12px;border-radius:12px;background:rgba(255,255,255,.65);color:var(--purple-dark);font-size:12px}
+.voice-record-panel{display:grid;justify-items:center;gap:7px;margin:8px auto 0;padding:9px 12px;border-radius:14px;background:#fff5f8;color:#8c5269;font-size:13px}.voice-record-panel p{margin:0}.voice-record-panel .small-button{min-height:44px}.voice-record-panel.is-recording{background:#ffe0e8;color:#a33f5d}.voice-record-panel.is-recording .small-button{background:#a65069;color:#fff;border-color:#a65069}
+.voice-tuning{margin:12px 0;padding:12px;border-radius:14px;background:#f7f3ff}.voice-tuning h3,.voice-tuning p{margin:4px 0}.tuning-phrase{font-weight:700}.voice-tuning label{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-top:12px}.voice-tuning input[type=range]{grid-column:1/-1;width:100%;min-height:44px}.voice-tuning button{min-height:44px;margin:8px 4px 0 0}.tuning-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.tuning-presets .small-button{flex:1 1 120px;margin:0}.voice-tuning select{min-height:44px;border:1px solid #ded4f1;border-radius:10px;background:#fff;color:var(--ink);padding:0 8px}.voice-tuning input:disabled,.voice-tuning button:disabled{opacity:.52;cursor:not-allowed}
+.word-seeds{display:none}/* 2026-09-05 利用者：覚えた言葉のラベルは子どもがボタンと思って押すので舞台には出さない。一覧は保護者画面「覚えたことば」に残す */.word-seed{padding:5px 10px;border-radius:999px;background:#fff4bf;color:#80611e;font-size:12px;box-shadow:0 2px 8px rgba(130,95,25,.12)}.word-seed.is-new{animation:seed-glow .9s ease-out 1}@keyframes seed-glow{0%{transform:scale(.8);box-shadow:0 0 0 0 rgba(246,190,82,.7)}60%{transform:scale(1.08);box-shadow:0 0 0 9px rgba(246,190,82,0)}100%{transform:scale(1);box-shadow:0 2px 8px rgba(130,95,25,.12)}}
+[hidden]{display:none!important}
+.profile-switch select{min-height:44px;max-width:118px;border:1px solid #d8cdef;border-radius:14px;background:#fff;color:#504565;padding:0 8px;font:inherit}
+.profile-list{display:grid;gap:8px;margin:8px 0}.profile-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:6px 8px;background:#faf8ff;border-radius:12px}.profile-row button{min-height:44px}.week-today{font-size:.9rem}
+.puni{position:absolute;right:12px;bottom:64px;--puni-d:.5;width:calc(46px * (0.65 + var(--puni-d) * 0.60));height:calc(36px * (0.65 + var(--puni-d) * 0.60));z-index:20;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:right .7s ease,left .7s ease,margin-left .7s ease,bottom .7s ease,width .7s ease,height .7s ease,filter .7s ease;animation:puni-drift 19s ease-in-out infinite}.puni-body{position:relative;width:100%;height:100%;background:linear-gradient(160deg,#c9b0ec 0%,#9d79cf 58%,#8462bd 100%);border-radius:50% 50% 42% 42%/62% 62% 38% 38%;box-shadow:inset -5px -7px 12px rgba(255,255,255,.30),inset 4px 6px 10px rgba(255,255,255,.16),0 4px 10px rgba(96,64,150,.26);animation:puni-wobble 3.4s ease-in-out infinite}.puni-shine{position:absolute;top:14%;left:20%;width:28%;height:20%;background:rgba(255,255,255,.55);border-radius:50%;filter:blur(1px)}.puni-eye{position:absolute;top:48%;width:12%;height:15%;background:#4b3a70;border-radius:50%;opacity:.7}.puni-eye-left{left:29%}.puni-eye-right{right:29%}.puni-name{display:none;position:absolute;left:0;right:0;top:-19px;margin:0;text-align:center;font-size:12px;font-weight:700;color:#8462bd;letter-spacing:.04em;pointer-events:none;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 6px rgba(255,255,255,.8)}.puni[data-spot="0"]{--puni-d:.15;left:12px;right:auto;bottom:132px;z-index:5;filter:brightness(.85) blur(.6px)}.puni[data-spot="1"]{--puni-d:.15;left:50%;right:auto;margin-left:calc(-23px * (0.65 + var(--puni-d) * 0.60));bottom:132px;z-index:5;filter:brightness(.85) blur(.6px)}.puni[data-spot="2"]{--puni-d:.15;right:12px;bottom:132px;z-index:5;filter:brightness(.85) blur(.6px)}.puni[data-spot="3"]{--puni-d:.5;left:12px;right:auto;bottom:64px;z-index:20}.puni[data-spot="4"]{--puni-d:.5;left:50%;right:auto;margin-left:calc(-23px * (0.65 + var(--puni-d) * 0.60));bottom:64px;z-index:20}.puni[data-spot="5"]{--puni-d:.5;right:12px;bottom:64px;z-index:20}.puni[data-spot="6"]{--puni-d:1;left:12px;right:auto;bottom:8px;z-index:32}.puni[data-spot="7"]{--puni-d:1;left:50%;right:auto;margin-left:calc(-23px * (0.65 + var(--puni-d) * 0.60));bottom:8px;z-index:32}.puni[data-spot="8"]{--puni-d:1;right:12px;bottom:8px;z-index:32}@keyframes puni-wobble{0%,100%{border-radius:50% 50% 42% 42%/62% 62% 38% 38%;transform:translateY(0) scale(1,1)}25%{border-radius:46% 54% 45% 39%/58% 66% 34% 42%;transform:translateY(-3px) scale(1.05,.95)}50%{border-radius:53% 47% 39% 45%/66% 58% 42% 34%;transform:translateY(0) scale(.96,1.04)}75%{border-radius:48% 52% 44% 41%/60% 64% 36% 40%;transform:translateY(-2px) scale(1.03,.98)}}.puni[data-front="true"]{--puni-d:1;left:50%;right:auto;margin-left:calc(-23px * (0.65 + var(--puni-d) * 0.60));bottom:8px;z-index:32;animation:puni-drift-front 17s ease-in-out infinite}.puni[data-front="true"] .puni-name{display:block}.puni[data-poke="true"] .puni-body{animation:puni-squish .55s ease-out}@keyframes puni-drift{0%,100%{transform:translateX(0)}25%{transform:translateX(-24px)}50%{transform:translateX(0)}75%{transform:translateX(24px)}}@keyframes puni-drift-front{0%,100%{transform:translateX(0)}25%{transform:translateX(-60px)}50%{transform:translateX(0)}75%{transform:translateX(60px)}}
+/* 発注書O：ぷにのあくびと眠り（.pet[data-yawn="true"] .mouth の丸い口の考え方をぷにのサイズで。既存のぷにの行は触らない） */
+.puni-mouth{display:none;position:absolute;top:56%;left:50%;width:30%;height:26%;margin-left:-15%;border:2px solid #4b3a70;border-top:0;border-radius:50%;opacity:.75;box-sizing:border-box}.puni[data-puni-yawn="true"] .puni-mouth{display:block}.puni[data-puni-yawn="true"] .puni-eye,.puni[data-puni-sleep="true"] .puni-eye{height:4px}.puni[data-puni-sleep="true"]{animation:sleep-breath 6s ease-in-out infinite}.puni[data-puni-sleep="true"] .puni-body{animation:none}@keyframes puni-squish{0%{transform:scale(1,1)}25%{transform:scale(1.3,.68)}50%{transform:scale(.92,1.14)}75%{transform:scale(1.06,.96)}100%{transform:scale(1,1)}}
+@media (max-width:400px){@keyframes float-pink{0%{transform:translate(0,0)}8%{transform:translate(7px,-7px)}17%{transform:translate(14px,0)}25%{transform:translate(22px,-7px)}33%{transform:translate(28px,0)}42%{transform:translate(34px,-7px)}50%{transform:translate(28px,0)}58%{transform:translate(14px,-7px)}67%{transform:translate(0,0)}75%{transform:translate(-14px,-7px)}83%{transform:translate(-28px,0)}92%{transform:translate(-18px,-7px)}100%{transform:translate(0,0)}}@keyframes float-blue{0%{transform:translate(0,0)}8%{transform:translate(8px,-10px)}17%{transform:translate(16px,0)}25%{transform:translate(24px,-10px)}33%{transform:translate(30px,0)}42%{transform:translate(36px,-10px)}50%{transform:translate(30px,0)}58%{transform:translate(16px,-10px)}67%{transform:translate(0,0)}75%{transform:translate(-16px,-10px)}83%{transform:translate(-30px,0)}92%{transform:translate(-20px,-10px)}100%{transform:translate(0,0)}}}
+.pet[data-attention="true"] .eye{height:32px;transform:scale(1.08)}.pet[data-attention="true"] .ear{animation:wobble .5s ease-in-out infinite alternate}.pet-slot[data-attention="true"]{filter:none;opacity:1;z-index:35}.pet[data-yawn="true"] .mouth{width:26px;height:22px;margin-left:-13px;border-radius:50%;border:3px solid var(--mouth-color);border-top:0}.pet[data-yawn="true"] .eye{height:8px}.pet-slot[data-roll="true"]{--extra-rotate:5deg;transition:transform 3s ease}
+
+/* 部屋の背景 */
+.room{position:absolute;inset:0;z-index:-1;pointer-events:none;display:flex;flex-direction:column;overflow:hidden}
+.room-wall{flex:4;position:relative;background:linear-gradient(180deg,#faf8ff 0%,#f5efff 50%,#f0e9fc 100%);overflow:hidden}
+.room-wall::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(128,106,196,.03) 28px,rgba(128,106,196,.03) 30px);opacity:.6}
+.room-floor{flex:5;position:relative;background:#f7f3d0;overflow:hidden}
+.floor-baseboard{position:absolute;top:0;left:0;right:0;height:8px;background:#8b7355}
+.floor-planks{position:absolute;top:8px;left:0;right:0;bottom:0;display:flex;flex-direction:column}
+.floor-plank{flex:1;border-bottom:1px solid rgba(139,115,85,.15)}
+.floor-plank:nth-child(2){border-bottom-width:1px}
+.floor-plank:nth-child(3){border-bottom-width:2px}
+.floor-plank:nth-child(4){border-bottom-width:1px}
+.floor-plank:nth-child(5){border-bottom-width:1px}
+.room-rug{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:55%;height:45%;max-width:400px;max-height:120px;background:linear-gradient(135deg,#ffe5f0 0%,#fff0f5 50%,#ffe5f0 100%);border-radius:50%;opacity:.4;box-shadow:0 2px 8px rgba(128,106,196,.08)}
+.room-window{position:absolute;top:11%;left:8%;width:100px;height:100px;border-radius:8px;background:#fff;box-shadow:0 2px 8px rgba(128,106,196,.15);overflow:hidden}
+.window-sky{position:absolute;inset:6px;background:linear-gradient(180deg,#87ceeb 0%,#b0e0e6 100%);border-radius:4px;transition:background .8s ease}
+.window-frame{position:absolute;inset:0;border:6px solid #fff;border-radius:8px;box-shadow:inset 0 0 0 2px rgba(128,106,196,.08)}
+.window-mullion-vertical{position:absolute;top:0;bottom:0;left:50%;width:4px;background:#fff;transform:translateX(-50%);box-shadow:0 0 0 1px rgba(128,106,196,.08)}
+.window-mullion-horizontal{position:absolute;left:0;right:0;top:50%;height:4px;background:#fff;transform:translateY(-50%);box-shadow:0 0 0 1px rgba(128,106,196,.08)}
+.window-cloud{position:absolute;top:20%;right:15%;width:28px;height:12px;background:#fff;border-radius:12px;opacity:.9;box-shadow:0 0 8px rgba(255,255,255,.5);animation:cloud-drift 20s ease-in-out infinite}
+.window-cloud::before,.window-cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.window-cloud::before{width:14px;height:14px;top:-6px;left:4px}
+.window-cloud::after{width:12px;height:12px;top:-2px;right:4px}
+@keyframes cloud-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+.window-stars{position:absolute;top:15%;left:10%;width:80%;height:80%;opacity:0;transition:opacity .8s ease}
+.window-stars::before{content:"";position:absolute;top:20%;left:20%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:8px 12px 0 #fff,20px 5px 0 #fff,35px 18px 0 #fff,45px 8px 0 #fff,55px 25px 0 #fff}
+.window-moon{position:absolute;top:15%;right:18%;width:16px;height:16px;background:linear-gradient(135deg,#fffacd 0%,#fff8dc 100%);border-radius:50%;opacity:0;transition:opacity .8s ease;box-shadow:0 0 6px rgba(255,250,205,.6)}
+.room-shelf{position:absolute;top:calc(44.44% - 60px);right:5%;width:50px;height:60px;background:#d4c4b8;border-radius:4px;box-shadow:0 2px 6px rgba(128,106,196,.1)}
+.shelf-plant{position:absolute;top:-15px;left:10%;width:20px;height:20px;background:#4a7c4e;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:inset -2px -2px 4px rgba(0,0,0,.2)}
+.shelf-plant::after{content:"";position:absolute;bottom:-8px;left:50%;width:6px;height:10px;background:#8b7355;border-radius:3px;transform:translateX(-50%)}
+.shelf-book{position:absolute;bottom:8px;width:8px;height:24px;border-radius:2px;box-shadow:1px 1px 2px rgba(128,106,196,.1)}
+.book-1{left:8px;background:#e993b0}
+.book-2{left:18px;background:#76b9e5;height:22px;bottom:10px}
+.book-3{left:28px;background:#f2b46b;height:20px;bottom:12px}
+.room-light{position:absolute;top:0;left:65%;transform:translateX(-50%);width:30px;height:60px;z-index:2}
+.light-cord{position:absolute;top:0;left:50%;width:2px;height:30px;background:#8b7355;transform:translateX(-50%)}
+.light-shade{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:24px;height:18px;background:#d4c4b8;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;box-shadow:0 2px 6px rgba(128,106,196,.15)}
+.light-glow{position:absolute;top:48px;left:50%;transform:translateX(-50%);width:60px;height:60px;background:radial-gradient(circle,rgba(255,248,220,.4) 0%,rgba(255,248,220,.1) 50%,transparent 70%);border-radius:50%;opacity:0;transition:opacity .8s ease}
+
+/* 時間帯による変化 */
+.pet-stage[data-timeofday="morning"] .window-sky{background:linear-gradient(180deg,#b0d4e8 0%,#d4e5f7 100%)}
+.pet-stage[data-timeofday="morning"] .room-wall{background:linear-gradient(180deg,#faf8ff 0%,#f5efff 50%,#f0e9fc 100%)}
+.pet-stage[data-timeofday="morning"] .room-floor{background:#f7f3d0}
+.pet-stage[data-timeofday="day"] .window-sky{background:linear-gradient(180deg,#87ceeb 0%,#b0e0e6 100%)}
+.pet-stage[data-timeofday="day"] .room-wall{background:linear-gradient(180deg,#fcfafd 0%,#f7f3ff 50%,#f2ebf9 100%)}
+.pet-stage[data-timeofday="day"] .room-floor{background:#faf8d8}
+.pet-stage[data-timeofday="evening"] .window-sky{background:linear-gradient(180deg,#ffd4a3 0%,#ffcfb8 50%,#f5b7a8 100%)}
+.pet-stage[data-timeofday="evening"] .room-wall{background:linear-gradient(180deg,#f8f2fc 0%,#f3ebf7 50%,#eee4f2 100%)}
+.pet-stage[data-timeofday="evening"] .room-floor{background:#f5edd0}
+.pet-stage[data-timeofday="night"] .window-sky{background:linear-gradient(180deg,#1a1a3e 0%,#2d2d5a 100%)}
+.pet-stage[data-timeofday="night"] .room-wall{background:linear-gradient(180deg,#e8e4f0 0%,#e0dcf0 50%,#d8d4e8 100%)}
+.pet-stage[data-timeofday="night"] .room-floor{background:#e8e4c0}
+.pet-stage[data-timeofday="night"] .window-stars{opacity:1}
+.pet-stage[data-timeofday="night"] .window-moon{opacity:1}
+.pet-stage[data-timeofday="night"] .light-glow{opacity:1}
+.pet-stage[data-timeofday="night"] .window-cloud{opacity:0}
+
+@media (prefers-reduced-motion:reduce){.window-cloud{animation:none}}
+
+/* 困りごとの部品 */
+#trouble-book,#trouble-ball,#trouble-leaf-1,#trouble-leaf-2{display:none;position:absolute;border:0;padding:0;margin:0;background:transparent;font:inherit;pointer-events:none}
+#trouble-book,#trouble-ball{cursor:pointer}
+.pet-stage[data-trouble="book"] #trouble-book{display:block;pointer-events:auto}
+.pet-stage[data-trouble="ball"] #trouble-ball{display:block;pointer-events:auto}
+.pet-stage[data-trouble="window"] #trouble-window{cursor:pointer;pointer-events:auto}
+.pet-stage[data-trouble="leaf"][data-trouble-pet="pet-1"] #trouble-leaf-1,.pet-stage[data-trouble="leaf"][data-trouble-pet="pet-2"] #trouble-leaf-2{display:inline-block;pointer-events:auto}
+
+/* 落ちた本 - 床の左下隅 */
+#trouble-book{left:8px;bottom:8px;width:44px;height:44px;background:#e993b0;border-radius:2px;transform:rotate(-15deg);box-shadow:1px 1px 2px rgba(128,106,196,.1)}
+#trouble-book::before{content:"";position:absolute;top:4px;left:2px;right:2px;bottom:4px;background:#f8bfd0;border-radius:1px;opacity:.5}
+
+/* ボール - 棚の上 */
+#trouble-ball{right:8px;top:-20px;width:44px;height:44px;background:#f2b46b;border-radius:50%;box-shadow:0 2px 6px rgba(128,106,196,.15)}
+#trouble-ball::before{content:"";position:absolute;top:8px;left:8px;width:12px;height:12px;background:rgba(255,255,255,.5);border-radius:50%}
+
+/* 開いた窓 */
+.pet-stage[data-trouble="window"] .room-window{pointer-events:auto}
+.pet-stage[data-trouble="window"] .room-window .window-sky{transform:translateX(34%);transition:transform .4s ease}
+.pet-stage[data-trouble="window"] .room-window .window-frame{transform:translateX(3px)}
+.pet-stage[data-trouble="window"] .room-window .window-mullion-vertical{transform:translateX(3px) translateX(-50%)}
+.pet-stage[data-trouble="window"] .room-window .window-mullion-horizontal{animation:window-shiver .3s ease-in-out infinite}
+.pet-stage[data-trouble="window"] .room-window .window-sky,
+.pet-stage[data-trouble="window"] .room-window .window-frame,
+.pet-stage[data-trouble="window"] .room-window .window-mullion-vertical,
+.pet-stage[data-trouble="window"] .room-window .window-mullion-horizontal,
+.pet-stage[data-trouble="window"] .room-window .window-cloud,
+.pet-stage[data-trouble="window"] .room-window .window-stars,
+.pet-stage[data-trouble="window"] .room-window .window-moon{pointer-events:none}
+
+@keyframes window-shiver{0%,100%{transform:translateY(-50%)}50%{transform:translateY(calc(-50% + 1px))}}
+
+/* 葉っぱ - 頭の上 */
+.pet{overflow:visible!important;position:relative}
+.pet .pet-body{overflow:visible!important}
+#pet .pet-body,#pet-2 .pet-body{overflow:visible!important}
+#trouble-leaf-1,#trouble-leaf-2{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:68px;height:68px;background:transparent;border-radius:50%;cursor:pointer;z-index:10}#trouble-leaf-1::after,#trouble-leaf-2::after{content:"";position:absolute;left:18px;top:18px;width:30px;height:34px;background:#5a9d5e;border-radius:0 62% 0 62%;transform:rotate(-22deg);box-shadow:inset -3px -3px 0 rgba(0,0,0,.12)}
+#trouble-leaf-1::before,#trouble-leaf-2::before{content:"";position:absolute;top:14px;left:34px;width:3px;height:12px;background:#4a7c4e;border-radius:2px;transform:rotate(-22deg);z-index:1}
+
+/* ぷにの隠れ */
+#puni[data-hide]{width:116px;height:90px;animation:none;transition:none;z-index:10}
+#puni[data-hide="left"]{left:-52px;right:auto;bottom:40%}
+#puni[data-hide="right"]{right:-52px;left:auto;bottom:40%}
+#puni[data-hide="bottom"]{bottom:-40px;top:auto;right:50%;transform:translateX(50%)}
+.pet-stage[data-trouble="puni"]{overflow-y:clip}
+
+/* 困っているペットの動き */
+.pet[data-trouble="puni"]{animation:trouble-look 3s ease-in-out infinite}
+@keyframes trouble-look{0%,100%{transform:translateX(0)}25%{transform:translateX(4px)}75%{transform:translateX(-4px)}}
+
+.pet[data-trouble="book"]{animation:trouble-tilt 4s ease-in-out infinite}
+@keyframes trouble-tilt{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+
+.pet[data-trouble="window"]{animation:trouble-shiver .5s linear infinite}
+@keyframes trouble-shiver{0%,100%{transform:translateY(0)}25%{transform:translateY(-1px)}75%{transform:translateY(1px)}}
+
+.pet[data-trouble="hiccup"]{animation:trouble-hiccup 3s ease-in-out infinite}
+@keyframes trouble-hiccup{0%,100%,95%{transform:translateY(0)}97%{transform:translateY(-8px)}}
+
+.pet[data-trouble="leaf"] .ear{animation:wobble .38s ease-in-out 3}
+.pet[data-trouble="leaf"] .eye{transform:translateY(-6px)}
+
+.pet[data-trouble="ball"]{animation:trouble-look-up 2s ease-in-out infinite}
+@keyframes trouble-look-up{0%,100%,95%{transform:rotate(0)}96%,98%{transform:rotate(-5deg) translateY(-10px)}99%{transform:rotate(0) translateY(-4px)}}
+
+@media (prefers-reduced-motion:reduce){.pet[data-trouble],.pet-stage[data-trouble="window"] .room-window .window-mullion-horizontal,.pet[data-trouble="leaf"] .ear{animation:none!important}.pet[data-trouble="puni"]{transform:translateX(0)}.pet[data-trouble="book"]{transform:rotate(0)}.pet[data-trouble="window"]{transform:translateY(0)}.pet[data-trouble="leaf"] .eye{transform:translateY(0)}}
+
+/* 朝と夜の儀式の部品（状態は属性で渡す。エンジンが付けてCSSが見る） */
+#ritual-bowl{display:none;position:absolute;right:8px;bottom:56px;width:48px;height:48px;border:0;padding:0;margin:0;background:transparent;font:inherit;pointer-events:none;cursor:pointer;transform-origin:50% 100%}
+.pet-stage[data-meal] #ritual-bowl{display:block;pointer-events:auto}
+#ritual-bowl:focus-visible{outline:3px solid rgba(128,106,196,.4);outline-offset:2px}
+#ritual-bowl::before{content:"";position:absolute;left:2px;right:2px;bottom:8px;height:24px;background:linear-gradient(180deg,#fffdf7,#f1e6d4);border:3px solid #cbb99f;border-top:0;border-radius:4px 4px 22px 22px;box-shadow:inset 0 -7px 0 rgba(139,115,85,.14)}
+#ritual-bowl::after{content:"";position:absolute;left:7px;right:7px;bottom:29px;height:14px;border-radius:50% 50% 8px 8px/70% 70% 12px 12px;background:#f0b46b;box-shadow:inset 0 -3px 0 rgba(166,65,105,.18);transition:opacity .3s}
+.pet-stage[data-meal="eaten"] #ritual-bowl::after{opacity:0}
+.pet-stage[data-meal="eating"] #ritual-bowl{animation:bowl-sway .32s ease-in-out infinite}
+@keyframes bowl-sway{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+/* ごはんの好き嫌い：ready の間だけ器の左に2つの小皿（絵文字で出す）。器は見せたまま押せない */
+.ritual-menu{display:none;position:absolute;right:80px;bottom:56px;gap:8px;z-index:1}
+.pet-stage[data-meal="ready"] #ritual-menu{display:flex;pointer-events:auto}
+.ritual-food{display:grid;place-items:center;min-width:44px;min-height:44px;width:44px;height:44px;border:3px solid #cbb99f;border-radius:4px 4px 14px 14px;background:linear-gradient(180deg,#fffdf7,#f1e6d4);padding:0;margin:0;font-size:22px;line-height:1;cursor:pointer}
+.ritual-food:focus-visible{outline:3px solid rgba(128,106,196,.4);outline-offset:2px}
+.pet-stage[data-meal="ready"] #ritual-bowl{pointer-events:none}
+.pet-stage[data-meal-hit="true"] #ritual-bowl{animation:bowl-hop .36s ease-in-out infinite}
+@keyframes bowl-hop{0%,100%{transform:rotate(0) translateY(0)}25%{transform:rotate(-7deg) translateY(-5px)}75%{transform:rotate(7deg) translateY(-5px)}}
+#ritual-bowl[data-food="apple"]::after{background:#e05a4f}
+#ritual-bowl[data-food="onigiri"]::after{background:#f7f3ea;box-shadow:inset 0 -3px 0 rgba(139,115,85,.2)}
+
+/* 寝ぼけ：目が半分・体が1.2秒周期でゆれる */
+.pet[data-ritual="drowsy"] .eye{height:12px;top:10px}
+#pet[data-ritual="drowsy"],#pet-2[data-ritual="drowsy"]{animation:ritual-drowse 1.2s ease-in-out infinite}
+@keyframes ritual-drowse{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* あくび：口が丸く開く（属性は1.5秒で外れる） */
+.pet[data-ritual="yawn"] .mouth{width:24px;height:22px;margin-left:-12px;top:48px;border:3px solid var(--mouth-color);border-top:0;border-radius:50%;background:#493a5a;animation:ritual-yawn 1.5s ease-in-out 1;transform-origin:center}
+@keyframes ritual-yawn{0%{transform:scale(.3)}40%,70%{transform:scale(1)}100%{transform:scale(.3)}}
+
+/* 翌朝の機嫌（10分間の既定の顔。:where で弱くして、data-state の表情を優先させる） */
+.pet:where([data-ritual-mood="tired"]) .eye{height:12px;top:10px}
+.pet:where([data-ritual-mood="good"]) .eye::before{content:"";position:absolute;top:5px;right:3px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:-7px 5px 0 -1px #fff;z-index:1}
+#pet:where([data-ritual-mood="hungry"]),#pet-2:where([data-ritual-mood="hungry"]){animation:ritual-lean 4s ease-in-out infinite}
+@keyframes ritual-lean{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
+
+/* 明かりを消す幕 */
+#ritual-dim{position:absolute;inset:0;z-index:9;background:#000;opacity:0;pointer-events:none;transition:opacity 1.5s ease}
+#ritual-dim[data-dim="on"]{opacity:.6;transition:opacity .12s ease}
+
+@media (prefers-reduced-motion:reduce){#ritual-bowl,.pet-stage[data-meal-hit="true"] #ritual-bowl,#pet[data-ritual="drowsy"],#pet-2[data-ritual="drowsy"],#pet[data-ritual="yawn"] .mouth,#pet-2[data-ritual="yawn"] .mouth,#pet[data-ritual-mood="hungry"],#pet-2[data-ritual-mood="hungry"]{animation:none!important}}
+
+/* 拗ねの見た目（data-sulk。既存の行は触らず、いちばん下に足して順位を作る）。
+   順位＝data-state ＞ data-sulk ＞ data-ritual-mood。data-state の表情・眠り・寝ぼけの間は :where(:not(...)) で data-sulk を外す */
+/* ぬるっと切り替えるための遷移（base の .face の transform .5s ease はそのまま残す） */
+.pet .face{transition:transform .5s ease,opacity .4s ease}
+.pet .ear{transition:transform .4s ease}
+.pet .pet-body{transition:transform .4s ease}
+@keyframes sulk-breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03,.97)}}
+/* away：顔を隠す／耳を外へ倒す／体を6度むこうへ傾ける／浮遊を止めてゆっくりの呼吸。影はそのまま */
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .face{opacity:0}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .ear-left{transform:translateY(3px) rotate(-80deg);transform-origin:50% 88%}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .ear-right{transform:translateY(3px) scaleX(-1) rotate(-80deg);transform-origin:50% 88%}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .pet-body{transform:rotate(6deg);transform-origin:50% 100%}
+/* 浮遊を止めて呼吸へ。pet-2 の float-blue（:not 連打で強い）と ritual-lean（#pet）に勝てるよう id で書く。
+   困りごとの揺れ・一時の反応（body-react など）の間は data-trouble / その data-state に譲る */
+#pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])),#pet-2[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])){animation:sulk-breath 7s ease-in-out infinite}
+/* half：戻る瞬間の3秒だけ。横顔（傾き3度・うっすら顔） */
+.pet[data-sulk="half"] .face{opacity:.55}
+.pet[data-sulk="half"] .pet-body{transform:rotate(3deg);transform-origin:50% 100%}
+/* reduced motion では傾きだけ（アニメも遷移も無し） */
+@media (prefers-reduced-motion:reduce){#pet[data-sulk="away"],#pet-2[data-sulk="away"]{animation:none!important}.pet[data-sulk] .face,.pet[data-sulk] .ear,.pet[data-sulk] .pet-body{transition:none!important}}
+
+/* 成長の見た目（data-growth。既存の行は触らず、いちばん下に足す。段階×data-state の掛け算で書く） */
+/* 段階1：うれしい反応のとき、耳もいっしょにぴょこっと（既存 wobble を耳に重ねるだけ。新規keyframe無し） */
+.pet[data-growth="1"][data-state="happy"] .ear{animation:wobble .38s ease-in-out 3}
+/* 段階3：うれしい反応のとき、hop に重ねて左右にごきげんにゆれる（新規アニメはこの1個だけ）。
+   回転のあいだも hop と同じ浮き高さをなぞるので、hop の動きを打ち消さない。
+   ★一回転(360deg)は230×260pxの体には大きすぎ、画面幅390pxで左端の子（主役）が画面外へはみ出す実害を
+   スクショで確認したため、既存の wobble・sulk の傾き幅（10〜16度）に合わせて振れ幅を抑えた */
+@keyframes growth-spin{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-20px) rotate(-16deg)}75%{transform:translateY(-20px) rotate(16deg)}100%{transform:translateY(0) rotate(0)}}
+.pet[data-growth="3"][data-state="happy"]{animation:hop .65s ease-in-out 2, growth-spin .5s ease-in-out 1}
+/* reduced motion：段階3の新規回転だけ確実に止める（耳の wobble など他は既存の reduced-motion 規則に従う） */
+@media (prefers-reduced-motion:reduce){.pet[data-growth="3"][data-state="happy"]{animation:none!important}}
+
+/* 壁の写真立て（発注書W・設計書 写真立てv1）。既存の行は触らず、いちばん下に足す。
+   位置と大きさはこの変数1か所で決める（実機で利用者が数字を合わせるため。初期値は窓と重ならない壁の右上の仮置き） */
+.room-photo-frame{
+  --frame-right:18%;
+  --frame-top:8%;
+  --frame-width:104px;
+  --frame-photo:40px;
+  --frame-gap:6px;
+  position:absolute;
+  top:var(--frame-top);
+  right:var(--frame-right);
+  width:var(--frame-width);
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--frame-gap);
+  align-content:flex-start;
+  padding:7px;
+  background:linear-gradient(180deg,#d9c9bc,#c2afa0);
+  border-radius:6px;
+  box-shadow:0 2px 8px rgba(128,106,196,.2), inset 0 0 0 2px rgba(255,255,255,.35);
+}
+/* 額の中の1枚。押すと大きく見られる（はがす画面へ） */
+.wall-photo{display:grid;place-items:center;width:var(--frame-photo);height:var(--frame-photo);border:0;padding:2px;background:#fff;border-radius:2px;box-shadow:0 1px 3px rgba(80,60,120,.3);cursor:pointer}
+.wall-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.wall-photo:focus-visible{outline:3px solid rgba(128,106,196,.45);outline-offset:2px}
+/* 撮り直し・保存の確認に使う撮影画面（game-panel と同じ作り） */
+.photo-session{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:15px;background:rgba(35,25,55,.35)}
+.photo-session[hidden]{display:none !important}
+.photo-card{width:min(100%,520px);padding:22px;border-radius:25px;background:#fff;box-shadow:0 20px 70px rgba(45,30,80,.3)}
+.photo-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.photo-head h2{margin:0;font-size:20px}
+.photo-card>p{text-align:center;color:var(--muted);margin:10px 0}
+.photo-view-slot{position:relative;min-height:200px;margin:10px 0;border-radius:20px;background:linear-gradient(145deg,#f7f2ff,#eafaf5);overflow:hidden;display:grid;place-items:center}
+.photo-view-slot video{width:100%;max-height:240px;object-fit:cover;background:#ddd}
+.photo-view-slot img{display:block;width:100%;max-height:240px;object-fit:contain}
+.photo-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.photo-actions .primary-button{min-width:150px}
+/* 額をタップしたときの大きな見せ方・はがすボタン */
+.photo-view-body{display:grid;place-items:center;margin:10px 0}
+.photo-view-body img{display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#f7f3ff}
+.photo-peel{width:100%;margin-top:10px}
+
+/* 世代交代の見た目（発注書Y・設計書 世代交代v1 の5章。既存の行は触らず、いちばん下に足す）。
+   段＝data-life（baby/child/big/adult）、おとなの型＝data-adult（amaenbo/oshaberi/genki）、
+   旅立ち＝data-away、色＝CSS変数 --pet-hue（0〜360の数）。
+   :where() で属性を0点に落として「.pet .部品 の既定値より上・data-state / data-sulk の表情より下」の順位に置く
+   （sulk ブロックと同じ流儀。表情・眠り・困りごとの間は既存どおりそちらが勝つ） */
+/* 段が変わるとき、ぬるっと切り替わる（0.6秒程度。transform は sulk と同じ .4s、
+   .eye の height/transform は既定の .2s を踏襲して上書きしない） */
+.pet .pet-body{transition:transform .4s ease,left .6s ease,right .6s ease,height .6s ease,border-radius .6s ease}
+.pet .ear{transition:transform .4s ease,width .6s ease,height .6s ease,top .6s ease,left .6s ease,right .6s ease}
+.pet .face{transition:transform .5s ease,opacity .4s ease,left .6s ease,right .6s ease,top .6s ease,height .6s ease}
+.pet .eye{transition:height .2s,transform .2s,width .6s ease}
+.pet .cheek{transition:width .6s ease,height .6s ease,top .6s ease}
+.pet .belly{transition:width .6s ease,height .6s ease,bottom .6s ease,margin-left .6s ease}
+.pet .paw{transition:width .6s ease,height .6s ease,bottom .6s ease,left .6s ease,right .6s ease}
+
+/* 姿6体。部品は足さず、既にある .pet-body/.ear/.face/.eye/.cheek/.mouth/.belly/.paw の寸法と丸みだけを変える */
+/* あかちゃん：体は小さく丸く。目は大きく。耳は小さく下へ垂れる。全体を zoom で0.75倍 */
+.pet:where([data-life="baby"]){zoom:.75}
+.pet:where([data-life="baby"]) .pet-body{left:42px;right:42px;height:126px;border-radius:50% 50% 48% 48%}
+.pet:where([data-life="baby"]) .face{left:10px;right:10px;top:22px;height:74px}
+.pet:where([data-life="baby"]) .eye{width:30px;height:40px}
+.pet:where([data-life="baby"]) .eye-left{left:12px}
+.pet:where([data-life="baby"]) .eye-right{right:12px}
+.pet:where([data-life="baby"]) .cheek{top:44px;width:20px;height:10px}
+.pet:where([data-life="baby"]) .mouth{top:58px;width:14px;height:9px;margin-left:-7px}
+.pet:where([data-life="baby"]) .ear{width:34px;height:40px;top:-8px;border-radius:70% 50% 55% 55%}
+.pet:where([data-life="baby"]) .ear-left{left:2px;transform:rotate(-64deg)}
+.pet:where([data-life="baby"]) .ear-right{right:2px;transform:scaleX(-1) rotate(-64deg)}
+.pet:where([data-life="baby"]) .belly{width:60px;height:44px;bottom:16px;margin-left:-30px}
+.pet:where([data-life="baby"]) .paw{width:34px;height:26px;bottom:6px}
+.pet:where([data-life="baby"]) .paw-left{left:4px}
+.pet:where([data-life="baby"]) .paw-right{right:4px}
+/* こども：今の見た目に一番近い（ほぼ既定のまま。あかちゃんとの差で成長が見える）。全体を zoom で0.9倍 */
+.pet:where([data-life="child"]){zoom:.9}
+.pet:where([data-life="child"]) .pet-body{left:24px;right:24px;height:192px;border-radius:49% 49% 45% 45%}
+.pet:where([data-life="child"]) .face{left:28px;right:28px;top:38px;height:86px}
+.pet:where([data-life="child"]) .eye{width:23px;height:30px}
+.pet:where([data-life="child"]) .cheek{top:48px;width:24px;height:13px}
+.pet:where([data-life="child"]) .ear{width:56px;height:66px;top:-24px}
+.pet:where([data-life="child"]) .belly{width:82px;height:60px}
+.pet:where([data-life="child"]) .paw{width:46px;height:35px}
+/* おおきいこども：口が大きい丸い体（2026-09-12 利用者の決定で旧おしゃべりと交換）。全体を zoom で0.92倍 */
+.pet:where([data-life="big"]){zoom:.92}
+.pet:where([data-life="big"]) .pet-body{left:22px;right:22px;height:208px;border-radius:46% 46% 44% 44%}
+.pet:where([data-life="big"]) .face{left:26px;right:26px;top:36px;height:86px}
+.pet:where([data-life="big"]) .eye{width:21px;height:24px}
+.pet:where([data-life="big"]) .eye-left{left:12px}
+.pet:where([data-life="big"]) .eye-right{right:12px}
+.pet:where([data-life="big"]) .cheek{top:48px;width:22px;height:12px}
+.pet:where([data-life="big"]) .mouth{top:50px;width:34px;height:20px;margin-left:-17px}
+.pet:where([data-life="big"]) .ear{width:54px;height:62px;top:-20px}
+.pet:where([data-life="big"]) .ear-left{left:8px;transform:rotate(-14deg)}
+.pet:where([data-life="big"]) .ear-right{right:8px;transform:scaleX(-1) rotate(-14deg)}
+.pet:where([data-life="big"]) .belly{width:80px;height:58px;bottom:26px;margin-left:-40px}
+.pet:where([data-life="big"]) .paw{width:46px;height:34px;bottom:6px}
+.pet:where([data-life="big"]) .paw-left{left:7px}
+.pet:where([data-life="big"]) .paw-right{right:7px}
+/* おとな・あまえんぼ：ふんわり丸く。目が大きい。左耳が折れて垂れている（2026-09-12 利用者の指示） */
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .pet-body{left:16px;right:16px;height:196px;border-radius:52% 52% 50% 50%}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .face{left:24px;right:24px;top:34px;height:88px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye{width:38px;height:44px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye-left{left:11px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .eye-right{right:11px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .cheek{top:44px;width:34px;height:16px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .mouth{top:56px;width:18px;height:11px;margin-left:-9px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear{width:64px;height:68px;top:-14px;border-radius:60% 60% 45% 45%}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear-left{left:-4px;top:-4px;transform:rotate(-96deg)}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .ear-right{right:0;transform:scaleX(-1) rotate(-62deg)}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .belly{width:96px;height:66px;bottom:22px;margin-left:-48px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw{width:52px;height:38px;bottom:5px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw-left{left:5px}
+.pet:where([data-life="adult"][data-adult="amaenbo"]) .paw-right{right:5px}
+/* おとな・おしゃべり：体を縦に伸ばし耳を立てる。口が大きい（2026-09-12 旧おおきいこどもと交換・口3倍） */
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .pet-body{left:26px;right:26px;height:224px;border-radius:44% 44% 40% 40%}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .face{left:22px;right:22px;top:34px;height:92px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .eye{width:20px;height:26px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .cheek{top:52px;width:22px;height:11px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .mouth{top:48px;width:66px;height:36px;margin-left:-33px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear{width:44px;height:84px;top:-34px;border-radius:55% 40% 50% 50%}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear-left{left:12px;transform:rotate(-12deg)}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .ear-right{right:12px;transform:scaleX(-1) rotate(-12deg)}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .belly{width:72px;height:64px;bottom:24px;margin-left:-36px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw{width:42px;height:34px;bottom:6px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw-left{left:8px}
+.pet:where([data-life="adult"][data-adult="oshaberi"]) .paw-right{right:8px}
+/* おとな・げんき：すらっと細く。耳はねこのように三角形（2026-09-12 利用者の指示） */
+.pet:where([data-life="adult"][data-adult="genki"]) .pet-body{left:34px;right:34px;height:236px;border-radius:42% 42% 38% 38%}
+.pet:where([data-life="adult"][data-adult="genki"]) .face{left:18px;right:18px;top:40px;height:84px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye{width:18px;height:27px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye-left{left:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .eye-right{right:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .cheek{top:50px;width:18px;height:10px}
+/* ねこの口（2026-09-12 利用者が口エディタで確定）：Uを2つ、内側の線がまんなかで重なる。頂点に鼻 */
+.pet:where([data-life="adult"][data-adult="genki"]) .mouth{top:42px;width:52px;height:25px;margin-left:-26px;border-bottom:0;background:none}
+/* 鼻は独立部品で最前面（Uの線を隠す。2026-09-12 利用者の指示） */
+.pet:where([data-life="adult"][data-adult="genki"]) .cat-nose{position:absolute;left:19.5px;top:2.5px;width:17px;height:17px;border-radius:50%;background:#9c6b52;z-index:2}
+.pet:where([data-life="adult"][data-adult="genki"]) .mouth::before,.pet:where([data-life="adult"][data-adult="genki"]) .mouth::after{content:"";position:absolute;border:3.5px solid var(--mouth-color);border-top:0;border-radius:0 0 999px 999px}
+.pet:where([data-life="adult"][data-adult="genki"]) .mouth::before{left:3.5px;top:10.5px;width:24px;height:14.5px}
+.pet:where([data-life="adult"][data-adult="genki"]) .mouth::after{left:24.5px;top:10.5px;width:24px;height:14.5px}
+/* 話すとき：Uと鼻はそのまま、開いた口（逆三角）がいちばん上で点滅する。共通のtalkアニメ（口全体を三角に変形）はげんきでは打ち消す */
+.pet:where([data-life="adult"][data-adult="genki"]) .cat-open{position:absolute;left:11px;top:21.5px;width:36px;height:25px;background:var(--mouth-color);clip-path:polygon(50% 100%,0 0,100% 0);opacity:0;z-index:1}
+.pet:where([data-life="adult"][data-adult="genki"])[data-state="talking"] .mouth,.pet:where([data-life="adult"][data-adult="genki"])[data-state="copy-speaking"] .mouth{animation:none}
+.pet:where([data-life="adult"][data-adult="genki"])[data-state="talking"] .cat-open,.pet:where([data-life="adult"][data-adult="genki"])[data-state="copy-speaking"] .cat-open{animation:cat-open-blink .3s steps(1,end) infinite}
+@keyframes cat-open-blink{0%,49%{opacity:0}50%,100%{opacity:1}}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear{width:96px;height:71px;top:-33px;border-radius:0;clip-path:polygon(50% 0,56% 2%,100% 100%,0 100%,44% 2%);transform-origin:50% 100%}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear::after{clip-path:polygon(50% 0,56% 2%,100% 100%,0 100%,44% 2%);inset:11px 14px;border-radius:0}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-left{left:5px;transform:rotate(-32deg)}
+.pet:where([data-life="adult"][data-adult="genki"]) .ear-right{right:5px;transform:scaleX(-1) rotate(-32deg)}
+/* 猫耳（2026-09-13 利用者が猫耳エディタで確定）：体側の下中央を軸に、先端を10度・0.9秒で揺らす */
+@keyframes cat-ear-left-wiggle{from{transform:rotate(-32deg)}to{transform:rotate(-22deg)}}
+@keyframes cat-ear-right-wiggle{from{transform:scaleX(-1) rotate(-32deg)}to{transform:scaleX(-1) rotate(-22deg)}}
+.pet:where([data-life="adult"][data-adult="genki"]):is([data-state="ear-react"],[data-state="reply-wait-slow"],[data-state="listening"],[data-state="copy-listening"],[data-state="copy-live"],[data-state="copy-invite"],[data-state="copy-ready"]) .ear-left,
+.pet:where([data-life="adult"][data-adult="genki"])[data-attention="true"] .ear-left,
+.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-left{animation-name:cat-ear-left-wiggle;animation-duration:.9s}
+.pet:where([data-life="adult"][data-adult="genki"]):is([data-state="ear-react"],[data-state="reply-wait-slow"],[data-state="listening"],[data-state="copy-listening"],[data-state="copy-live"],[data-state="copy-invite"],[data-state="copy-ready"]) .ear-right,
+.pet:where([data-life="adult"][data-adult="genki"])[data-attention="true"] .ear-right,
+.pet:where([data-life="adult"][data-adult="genki"])[data-trouble="leaf"] .ear-right{animation-name:cat-ear-right-wiggle;animation-duration:.9s}
+.pet:where([data-life="adult"][data-adult="genki"]) .belly{width:60px;height:70px;bottom:20px;margin-left:-30px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw{width:38px;height:30px;bottom:7px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw-left{left:10px}
+.pet:where([data-life="adult"][data-adult="genki"]) .paw-right{right:10px}
+/* ふわ専用：全段階の体を約7%横広にする（2026-09-12 利用者の指示）。ぽこ・白い子には影響させない */
+.pet.pet-2:where([data-life="baby"]) .pet-body{left:36px;right:36px}
+.pet.pet-2:where([data-life="child"]) .pet-body{left:18px;right:18px}
+.pet.pet-2:where([data-life="big"]) .pet-body{left:16px;right:16px}
+.pet.pet-2:where([data-life="adult"][data-adult="amaenbo"]) .pet-body{left:10px;right:10px}
+.pet.pet-2:where([data-life="adult"][data-adult="oshaberi"]) .pet-body{left:20px;right:20px}
+.pet.pet-2:where([data-life="adult"][data-adult="genki"]) .pet-body{left:28px;right:28px}
+/* ふわのおとな・おしゃべり：左耳だけ少し横へ垂らし、左右同じに見える状態を外す */
+.pet.pet-2:where([data-life="adult"][data-adult="oshaberi"]) .ear-left{left:4px;top:-18px;transform:rotate(-55deg)}
+/* ===== 2代目・白い子（2026-09-12 利用者が白い子エディタで確定） =====
+   保存データの highVoiceColor が white の時、pet-1 に data-white 属性を付けてこの見た目へ切り替える。
+   耳はどの段階でも無い（豆みたいな耳は消す・利用者の指示）。おとな＝雪だるま風（頭が横楕円・体が縦楕円） */
+
+
+/* 色（--pet-hue が 0〜360の数で入っているときだけ体の色が変わる。
+   入っていないときは今のピンク・青に見えるよう、id ごとに今の色の色相を既定値に敷く
+   （pet-1=340 ピンク相当 / pet-2=205 青相当。data-life が無いときはこの規則自体が効かないので一日中今までどおり） */
+#pet:where([data-life]) .pet-body{background:linear-gradient(140deg,hsl(var(--pet-hue,340) 81% 86%),hsl(var(--pet-hue,340) 69% 75%) 65%,hsl(var(--pet-hue,340) 47% 60%));outline-color:hsl(var(--pet-hue,340) 44% 45% / .2)}
+#pet:where([data-life]) .ear{background:hsl(var(--pet-hue,340) 66% 75%)}
+#pet:where([data-life]) .ear::after{background:hsl(var(--pet-hue,340) 81% 86%)}
+#pet:where([data-life]) .cheek{background:hsl(var(--pet-hue,340) 66% 75%)}
+#pet:where([data-life]) .paw{background:hsl(var(--pet-hue,340) 69% 75%)}
+#pet:where([data-life]) .mouth{--mouth-color:hsl(var(--pet-hue,340) 44% 45%)}
+#pet-2:where([data-life]) .pet-body{background:linear-gradient(140deg,hsl(var(--pet-hue,205) 82% 85%),hsl(var(--pet-hue,205) 71% 69%) 65%,hsl(var(--pet-hue,205) 52% 55%));outline-color:hsl(var(--pet-hue,205) 54% 40% / .28)}
+#pet-2:where([data-life]) .ear{background:hsl(var(--pet-hue,205) 68% 68%)}
+#pet-2:where([data-life]) .ear::after{background:hsl(var(--pet-hue,205) 82% 85%)}
+#pet-2:where([data-life]) .cheek{background:hsl(var(--pet-hue,205) 68% 68%)}
+#pet-2:where([data-life]) .paw{background:hsl(var(--pet-hue,205) 71% 69%)}
+#pet-2:where([data-life]) .mouth{--mouth-color:hsl(var(--pet-hue,205) 54% 40%)}
+
+/* 白い子は上のID別の色より後ろで上書きする。高い声の子にだけ data-white が付く */
+#pet[data-white="true"][data-life] .pet-body{background:linear-gradient(140deg,#ffffff,#f1eff5 65%,#d9d5df);outline-color:rgba(120,116,128,.25)}
+#pet[data-white="true"][data-life] .ear{display:none}
+#pet[data-white="true"][data-life] .cheek{background:#f6cdd7}
+#pet[data-white="true"][data-life] .paw{background:#ece9f1}
+#pet[data-white="true"][data-life="adult"] .pet-body{left:41px;right:41px;height:189px;border-radius:46% 46% 50% 50% / 60% 60% 57% 57%;background:linear-gradient(140deg,#ffffff,#f1eff5 65%,#d9d5df)}
+#pet[data-white="true"][data-life="adult"] .face{left:-7px;right:-7px;top:-88px;height:150px;background:linear-gradient(165deg,#ffffff,#efedf3);border-radius:50%;box-shadow:0 3px 10px rgba(90,86,110,.14);z-index:1}
+#pet[data-white="true"][data-life="adult"] .eye{top:43px}
+#pet[data-white="true"][data-life="adult"] .eye-left{left:31px}
+#pet[data-white="true"][data-life="adult"] .eye-right{right:31px}
+#pet[data-white="true"][data-life="adult"] .cheek{top:75px}
+#pet[data-white="true"][data-life="adult"] .mouth{top:88px}
+#pet[data-white="true"][data-life="adult"] .belly{width:74px;height:68px;margin-left:-37px}
+#pet[data-white="true"][data-life="adult"] .paw{width:31px;height:24px}
+
+/* 旅立ち（data-away="true"]）：うすくして、小さくして、さわれないようにする。
+   縮みは .pet-body にかける（.pet の浮遊アニメが transform を持っているため。耳・顔・手足は体の中にあるのでいっしょに縮む） */
+.pet[data-away="true"]{opacity:.4;pointer-events:none;transition:opacity .6s ease}
+.pet[data-away="true"] .pet-body{transform:scale(.72);transform-origin:50% 100%}
+
+/* 名前を聞く箱（#name-edit-box と同じ .inline-edit の見た目。pet-stage の中でも崩れないよう、
+   dialog の中の input と同じ指定を借りる。新しい色は作らない） */
+#newborn-box{width:min(100%,340px);margin:12px auto 0}
+#newborn-box label{display:block;margin-bottom:8px;font-size:14px;font-weight:700}
+#newborn-box input{width:100%;min-height:48px;border:2px solid #e5dcf5;border-radius:13px;padding:0 13px;background:#fff;color:var(--ink)}
+
+/* reduced-motion：段の切り替えの遅移だけ確実に止める（既存の288行と同じ配慮） */
+@media (prefers-reduced-motion:reduce){.pet .pet-body,.pet .ear,.pet .face,.pet .eye,.pet .cheek,.pet .belly,.pet .paw{transition:none!important}}
+
+/* --- ラジカセくん（ろくおんあそび・発注書AC・設計書 ラジカセくん録音v1）。絵は3枚のwebpをdata-radioで差し替える --- */
+.radio-body{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:6px}
+.radio-face{width:280px;height:190px;background:center/280px auto no-repeat url(icons/radio-normal.webp)}
+#radio-dialog[data-radio="recording"] .radio-face{background-image:url(icons/radio-recording.webp)}
+#radio-dialog[data-radio="playing"] .radio-face{background-image:url(icons/radio-playing.webp)}
+.radio-remaining{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;font-size:15px;font-weight:700;color:#a65069}
+#radio-message{margin:0;text-align:center}
+.radio-record-button{width:92px;height:92px;min-height:92px;border:0;border-radius:50%;background:#e05a4f;color:#fff;font-size:15px;font-weight:700;box-shadow:0 8px 22px rgba(224,90,79,.35)}
+.radio-record-button:focus-visible{outline:3px solid rgba(224,90,79,.4)}
+#radio-dialog[data-radio="recording"] .radio-record-button{background:#a65069;box-shadow:0 8px 22px rgba(166,80,105,.35)}
+.radio-plays{display:flex;gap:8px;flex-wrap:nowrap;justify-content:center;margin-top:4px;width:100%}
+.radio-plays .small-button{flex:1 1 0;min-width:0;min-height:52px;padding-inline:4px}
+.radio-plays .small-button:disabled{opacity:.45;cursor:not-allowed}
+
+/* --- 字が読めなくても使えるマイク（発注書AD・設計書）。録音ボタンは●／■の絵・残り時間は減っていく輪・再生ボタンは絵 --- */
+.radio-record-button{font-size:40px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+#radio-dialog[data-radio="recording"] .radio-record-button{animation:record-pulse 1.1s ease-in-out infinite}
+@keyframes record-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#radio-dialog[data-radio="waiting"] .radio-face{background-image:url(icons/radio-recording.webp)}
+.radio-wait{display:none;margin:0;font-size:36px;animation:radio-wait-pulse 1.2s ease-in-out infinite}
+#radio-dialog[data-radio="waiting"] .radio-wait{display:block}
+@keyframes radio-wait-pulse{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:1;transform:scale(1.08)}}
+.radio-timer{position:relative;width:64px;height:64px;margin:0;flex:none}
+.radio-timer-ring{width:64px;height:64px;transform:rotate(-90deg)}
+.radio-timer-track{fill:none;stroke:#f0dee6;stroke-width:6}
+.radio-timer-arc{fill:none;stroke:#e05a4f;stroke-width:6;stroke-linecap:round;stroke-dasharray:163.4;transition:stroke-dashoffset .25s linear}
+.radio-play-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px}
+.radio-play-art{display:block;width:46px;height:32px;background:center/contain no-repeat url(icons/radio-normal.webp)}
+.radio-play-caption{font-size:11px;color:#6b5a86}
+.mini-pet-wrap{display:block;position:relative;width:56px;height:56px}
+.pet.mini-pet{position:absolute;left:0;top:0;width:230px;height:260px;transform:scale(.28);transform-origin:0 0;pointer-events:none}
+/* ふわ（.pet-2）の浮遊アニメは :not の連打で強いので、id を足して確実に止める（止めないと縮小が消えて絵がはみ出す） */
+#radio-dialog .pet.mini-pet,#mic-gate .pet.mini-pet{animation:none}
+/* 許可を待つ間は、押せないボタンが「押せそう」に見えないように薄くする（設計書：押せるものを置かない） */
+#radio-dialog[data-radio="waiting"] .radio-record-button,#radio-dialog[data-radio="waiting"] #radio-close{opacity:.4}
+/* ミニペットの色。本物の #pet / #pet-2 と同じ data-life・data-white・--pet-hue を JS で写す（世代交代・色替えについていく） */
+.mini-pet:where([data-life]) .pet-body{background:linear-gradient(140deg,hsl(var(--pet-hue,340) 81% 86%),hsl(var(--pet-hue,340) 69% 75%) 65%,hsl(var(--pet-hue,340) 47% 60%));outline-color:hsl(var(--pet-hue,340) 44% 45% / .2)}
+.mini-pet:where([data-life]) .ear{background:hsl(var(--pet-hue,340) 66% 75%)}
+.mini-pet:where([data-life]) .ear::after{background:hsl(var(--pet-hue,340) 81% 86%)}
+.mini-pet:where([data-life]) .cheek{background:hsl(var(--pet-hue,340) 66% 75%)}
+.mini-pet:where([data-life]) .paw{background:hsl(var(--pet-hue,340) 69% 75%)}
+.mini-pet:where([data-life]) .mouth{--mouth-color:hsl(var(--pet-hue,340) 44% 45%)}
+.mini-pet[data-white="true"][data-life] .pet-body{background:linear-gradient(140deg,#ffffff,#f1eff5 65%,#d9d5df);outline-color:rgba(120,116,128,.25)}
+.mini-pet[data-white="true"][data-life] .ear{display:none}
+.mini-pet[data-white="true"][data-life] .cheek{background:#f6cdd7}
+.mini-pet[data-white="true"][data-life] .paw{background:#ece9f1}
+.mini-pet[data-white="true"][data-life="adult"] .pet-body{left:41px;right:41px;height:189px;border-radius:46% 46% 50% 50% / 60% 60% 57% 57%;background:linear-gradient(140deg,#ffffff,#f1eff5 65%,#d9d5df)}
+.mini-pet[data-white="true"][data-life="adult"] .face{left:-7px;right:-7px;top:-88px;height:150px;background:linear-gradient(165deg,#ffffff,#efedf3);border-radius:50%;box-shadow:0 3px 10px rgba(90,86,110,.14);z-index:1}
+.mini-pet[data-white="true"][data-life="adult"] .eye{top:43px}
+.mini-pet[data-white="true"][data-life="adult"] .eye-left{left:31px}
+.mini-pet[data-white="true"][data-life="adult"] .eye-right{right:31px}
+.mini-pet[data-white="true"][data-life="adult"] .cheek{top:75px}
+.mini-pet[data-white="true"][data-life="adult"] .mouth{top:88px}
+.mini-pet[data-white="true"][data-life="adult"] .belly{width:74px;height:68px;margin-left:-37px}
+.mini-pet[data-white="true"][data-life="adult"] .paw{width:31px;height:24px}
+@media (prefers-reduced-motion:reduce){.radio-wait,#radio-dialog[data-radio="recording"] .radio-record-button{animation:none!important}}
+
+/* マイクの前置きの画面（👍）とブロック中の絵（🎤🚫）。ろくおん・まねっこ共通でこの1枚だけを使う */
+.mic-gate{border:0;padding:0;background:transparent;width:100vw;height:100vh;max-width:100vw;max-height:100vh}
+.mic-gate[open]{display:grid;place-items:center}
+.mic-gate::backdrop{background:rgba(40,30,62,.86)}
+/* 2026-10-06：後ろの画面と重なって分かりにくかったので、白い札に絵を大きく載せる（字が読めない子向け） */
+.mic-gate-inner{display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;width:min(92vw,380px);color:#3a2f55;text-align:center;padding:26px 20px 22px;background:#fff;border-radius:30px;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.mic-gate[data-mode="ask"] .mic-gate-ask{display:flex}
+.mic-gate[data-mode="denied"] .mic-gate-denied{display:flex}
+.mic-gate-art{display:flex;align-items:center;justify-content:center;height:140px}
+.mic-gate-radio-art{display:none;width:300px;height:140px;background:center/300px auto no-repeat url(icons/radio-normal.webp)}
+.mic-gate-art .mini-pet-wrap{display:none;transform:scale(3);transform-origin:50% 50%}
+.mic-gate[data-kind="radio"] .mic-gate-radio-art{display:block}
+.mic-gate[data-kind="echo"] .mic-gate-art .mini-pet-wrap{display:block}
+.mic-gate-family{margin:0;font-size:88px;line-height:1.1}
+.mic-gate-ok{width:124px;height:124px;min-height:124px;border:0;border-radius:50%;background:#ffd76a;font-size:64px;line-height:1;box-shadow:0 10px 26px rgba(214,150,20,.45);animation:mic-gate-pulse 1.4s ease-in-out infinite}
+@keyframes mic-gate-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@media (prefers-reduced-motion:reduce){.mic-gate-ok{animation:none}}
+.mic-gate-ok:focus-visible{outline:4px solid rgba(214,150,20,.6)}
+.mic-gate-denied-art{margin:10px 0 0;font-size:96px;line-height:1;position:relative}
+.mic-gate-denied-art span{position:absolute;right:-30px;bottom:-6px;font-size:56px}
+.mic-gate-note{margin:0;font-size:12px;color:#7a6f92;max-width:34ch;line-height:1.7}
+.mic-gate-close{margin-top:6px}
+
+/* --- おんがく（発注書AE・設計書 おんがくv1）。♪ボタン・絵のカード7枚・大きな■ --- */
+/* ♪は「押せるボタン」なので aria-pressed="false" で薄くしない（🔊の薄めは音オフの見せ方） */
+#music-open[aria-pressed="false"]{opacity:1}
+#music-open[aria-pressed="true"]{animation:music-note-sway .9s ease-in-out infinite}
+@keyframes music-note-sway{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+.music-dialog{width:calc(100% - 16px);max-width:calc(100% - 16px)}
+.music-dialog form{padding:24px 8px}
+.music-record-tools{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0;margin-left:auto}
+.music-record-button{min-height:44px;border:2px solid #e05a4f;border-radius:12px;padding:5px 8px;background:#fff7f5;color:#a65069;font:inherit;font-size:12px;font-weight:700;white-space:nowrap}
+.music-record-button:disabled{opacity:.55;cursor:not-allowed}
+.music-record-button[data-recording="true"]{background:#a65069;border-color:#a65069;color:#fff}
+.music-record-status-row{display:flex;align-items:center;gap:8px;min-height:24px;margin:4px 4px 0;padding:0 4px}
+.music-record-status{display:-webkit-box;flex:1;min-width:0;min-height:18px;margin:0;overflow:hidden;color:var(--muted);font-size:11px;line-height:1.35;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.music-record-remaining{flex:0 0 auto;font-size:12px;font-weight:700;color:#a65069;white-space:nowrap}
+.music-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.music-card{position:relative;display:grid;justify-items:center;gap:4px;min-height:86px;border:2px solid #ded4f1;border-radius:18px;padding:12px 8px 9px;background:#fff;color:var(--ink)}
+.music-card:focus-visible{outline:3px solid rgba(128,106,196,.3);border-color:var(--purple)}
+.music-card-art{font-size:34px;line-height:1}
+.music-card-name{max-width:100%;font-size:12px;line-height:1.35;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+/* 押したカードは光って ▶ が付く */
+.music-card-play{display:none;position:absolute;top:7px;right:10px;font-size:13px;color:var(--purple)}
+.music-card.is-playing{border-color:var(--purple);background:#f7f3ff;box-shadow:0 0 0 4px rgba(128,106,196,.16)}
+.music-card.is-playing .music-card-play{display:block}
+/* 大きな ■（とめる）。字なし・aria-labelだけ */
+.music-stop{display:grid;place-items:center;width:76px;height:76px;min-height:76px;margin:16px auto 0;border:0;border-radius:22px;background:var(--purple);color:#fff;font-size:26px;line-height:1;box-shadow:0 8px 22px rgba(128,106,196,.35)}
+.music-stop:focus-visible{outline:3px solid rgba(128,106,196,.4)}
+/* 音モードが「文字だけ」のときにカードを押した合図（🔇をふわっと） */
+.music-mute-hint{display:none;margin:10px 0 0;font-size:30px;text-align:center}
+.music-dialog[data-mute-hint="on"] .music-mute-hint{display:block;animation:music-mute-pop 1.6s ease-in-out 1}
+@keyframes music-mute-pop{0%{opacity:0;transform:scale(.6)}25%,70%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1)}}
+/* 流れている間、ぽこ・ふわが体を左右にゆらす。寝ている子・世話の演出中は既存の見た目を優先
+   （sleepy・sulk・away は外す。困りごと・まねっこなどの .pet 側のアニメとは重なっても軽いのでそのまま） */
+body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-away="true"]) .pet-body{animation:music-pet-sway 3s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes music-pet-sway{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+@media (max-width:400px){.music-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.music-card-art{font-size:28px}}
+
+/* おんがく学習v2。五線上の音高と長さバーを使い、音価を装飾記号だけで表さない。 */
+.music-mode-tabs{display:flex;gap:8px;margin:0 8px;padding:4px;background:#f3effb;border-radius:14px}
+.music-mode-tab{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-weight:700}
+.music-mode-tab[aria-selected="true"]{background:#fff;color:var(--purple);box-shadow:0 2px 8px rgba(73,54,117,.12)}
+#music-learn-panel{padding:0 0 24px}
+#music-learning-root{max-width:100%;min-width:0}
+.music-learning-picker{display:flex;align-items:center;gap:8px;margin-top:16px}
+.music-learning-picker label{font-size:13px;color:var(--muted);white-space:nowrap}
+.music-learning-picker select{min-width:0;flex:1;min-height:44px;border:2px solid #ded4f1;border-radius:12px;background:#fff;padding:8px;color:var(--ink);font:inherit}
+.music-learning-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;margin:12px 0 4px;color:var(--ink)}
+.music-learning-heading small{color:var(--muted);font-size:11px}
+.music-learning-empty{margin:28px 0;color:var(--muted);text-align:center}
+.music-learning-views{display:flex;gap:8px;margin:8px 0}
+.music-learning-view-toggle,.music-learning-repeat,.music-learning-speed button,.music-learning-phrases button{min-height:44px;border:2px solid #ded4f1;border-radius:12px;background:#fff;color:var(--ink);padding:7px 10px;font:inherit}
+.music-learning-view-toggle[aria-pressed="true"],.music-learning-repeat[aria-pressed="true"],.music-learning-speed button[aria-pressed="true"],.music-learning-phrases button[aria-pressed="true"]{border-color:var(--purple);background:#f7f3ff;color:var(--purple)}
+.music-staff{position:relative;display:flex;align-items:center;min-height:150px;overflow:hidden;border:1px solid #e7def4;border-radius:14px;background:linear-gradient(#fff,#fbf9ff);padding:10px}
+.music-staff:before{content:"";position:absolute;left:40px;right:10px;top:43px;height:72px;background:repeating-linear-gradient(to bottom,transparent 0 13px,#ac9bc9 13px 14px);opacity:.8}
+.music-clef{position:relative;z-index:1;width:32px;font-size:48px;line-height:1;color:#6f5b99}
+.music-note-row{position:relative;z-index:1;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 8px;min-width:0;padding:22px 10px 0}
+.music-note-item{position:relative;display:grid;justify-items:center;min-width:30px;min-height:85px;color:#4d3f70}
+.music-note-dot{display:block;font-size:22px;line-height:1;transform:translateY(calc((4 - var(--note-step)) * 6px))}
+.music-note-ledger{position:absolute;left:50%;top:24px;display:grid;gap:12px;transform:translateX(-50%);pointer-events:none}.music-note-ledger i{display:block;width:30px;height:1px;background:#8e7da8}
+.music-note-name{font-size:11px;white-space:nowrap;margin-top:4px}
+.music-note-bar{display:block;height:5px;width:var(--note-length);min-width:10px;margin-top:5px;border-radius:5px;background:#c7b9e2}
+.music-note-item.is-current{color:#d26e8c}.music-note-item.is-current .music-note-dot{filter:drop-shadow(0 0 5px #f0a1b9);font-size:26px}.music-note-item.is-current .music-note-bar{background:#e795af}
+.music-rest{color:var(--muted);padding:26px}
+.music-learning-keyboard-wrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid #e7def4;border-radius:14px;margin-top:10px;padding:4px;background:#fbf9ff}
+.music-keyboard{position:relative;align-items:flex-start;width:max(100%,var(--keyboard-min-width));min-width:var(--keyboard-min-width);height:112px}
+.music-key{position:absolute;top:0;display:flex;align-items:flex-end;justify-content:center;box-sizing:border-box;appearance:none;border:1px solid #a99bbf;border-radius:0 0 7px 7px;color:#6d6281;font:inherit;font-size:12px;line-height:1;padding:0 0 6px;cursor:pointer;touch-action:manipulation}
+.music-key.is-white{height:100px;background:#fff;z-index:1}.music-key.is-black{height:64px;margin:0;background:#45395d;color:#fff;z-index:2}
+.music-key.is-black span{font-size:10px;line-height:1;white-space:nowrap}
+.music-key.is-current{background:#f2b4c5!important;border-color:#c9587b;color:#3b294e;box-shadow:0 0 0 3px rgba(211,104,137,.3)}
+.music-key.is-manual{background:#a9dced!important;border-color:#2385a1;color:#173d4c;box-shadow:0 0 0 3px rgba(35,133,161,.25)}
+.music-key.is-c::before{content:"";position:absolute;top:0;left:3px;right:3px;height:3px;border-radius:0 0 3px 3px;background:#d39a35}
+.music-key:focus-visible{outline:3px solid #e59b24;outline-offset:2px}
+.music-key small{font-size:8px;margin-left:2px;color:inherit}
+.music-learning-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}.music-learning-play,.music-learning-stop{width:54px;height:48px;min-height:44px;border:0;border-radius:13px;background:var(--purple);color:#fff;font-size:21px}.music-learning-stop{background:#8d7ba9;font-size:18px}.music-learning-speed,.music-learning-phrases{display:flex;gap:4px;flex-wrap:wrap}.music-learning-speed button,.music-learning-phrases button{font-size:12px;padding:6px 8px}.music-learning-position{margin:8px 0 0;text-align:right;color:var(--muted);font-size:12px}.music-learning-error{min-height:18px;margin:6px 0 0;color:#a65069;font-size:12px;text-align:center}
+.music-learning-guide{margin:4px 0 6px;color:var(--muted);font-size:12px;text-align:center}
+.music-learning-keyboard-guide{margin:8px 0 4px;color:var(--muted);font-size:13px;text-align:center}
+.music-staff{display:block;overflow-x:auto;overflow-y:hidden;padding:0;background:#fff}.music-staff:before{display:none}.music-staff-svg{display:block;min-width:360px;color:#8e7da8}.music-staff-svg line:not(.music-stem):not(.music-ledger){stroke:#ac9bc9;stroke-width:1}.music-staff-svg .music-ledger{stroke:#8e7da8;stroke-width:1}.music-svg-clef{font-size:47px;fill:#6f5b99}.music-svg-note ellipse{fill:#6f5b99;stroke:#4d3f70;stroke-width:1}.music-svg-note .music-stem{stroke:#4d3f70;stroke-width:2}.music-svg-name{font-size:14px;font-weight:700;fill:#4d3f70}.music-svg-name-octave{font-size:9px;font-weight:400}.music-accidental{font-size:18px;fill:#4d3f70}.music-length-bar{fill:#c7b9e2}.music-svg-note.is-current ellipse{fill:#e795af;stroke:#c9587b;stroke-width:2}.music-svg-note.is-current .music-svg-name,.music-svg-note.is-current .music-accidental{fill:#a65069}.music-svg-note.is-current .music-length-bar{fill:#e795af}
+.music-key{font-size:12px}
+.music-dialog{max-height:92svh;overflow:auto}
+@media (max-width:400px){#music-learn-panel{padding-left:8px;padding-right:8px}.music-learning-picker{margin-top:12px}.music-staff{min-height:136px}.music-note-row{gap:6px}.music-note-item{min-width:25px}}
+@media (max-width:520px){.music-record-tools{gap:3px}.music-record-button{max-width:150px;overflow:hidden;text-overflow:ellipsis;padding-inline:6px;font-size:11px}.music-record-status-row{margin-top:2px;padding-inline:2px}.music-record-status{font-size:11px;line-height:1.3}}
+@media (max-width:520px) and (orientation:portrait){.music-dialog form{padding:10px 8px}}
+@media (prefers-reduced-motion:reduce){.music-note-item.is-current .music-note-dot{filter:none}}
+
+/* 横向きの低い画面は、横幅を使いながら上下の余白を詰める。操作対象の高さは維持する。 */
+@media (orientation:landscape) and (max-height:500px){
+  .music-record-tools{gap:3px}.music-record-button{min-height:44px;max-width:170px;padding:4px 6px;font-size:11px}
+  .music-dialog{max-height:96svh}
+  .music-dialog form{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 24px minmax(0,1fr);padding:8px 12px 10px;overflow:hidden}
+  .music-dialog .dialog-head{grid-column:1;grid-row:1;min-height:44px}
+  .music-dialog .music-mode-tabs{grid-column:2;grid-row:1;align-self:center;margin:0 0 0 8px;padding:3px}
+  .music-dialog .music-record-status-row{grid-column:1/-1;grid-row:2;min-width:0;min-height:24px;margin:0;padding:0 2px}
+  .music-dialog #music-learn-panel,.music-dialog #music-listen-panel{grid-column:1/-1;grid-row:3;min-height:0;overflow:auto}
+  #music-learn-panel{padding:0}
+  #music-learning-root{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:44px 96px 104px 44px;grid-template-areas:"picker views" "score score" "keyboard keyboard" "controls controls";gap:0;min-height:0;overflow:hidden}
+  .music-learning-picker{grid-area:picker;margin:0;min-width:0}
+  .music-learning-picker select{min-height:44px;padding:5px 8px}
+  .music-learning-heading{display:none}
+  .music-learning-views{grid-area:views;margin:0 0 0 6px;gap:4px;align-self:center}
+  .music-learning-view-toggle{min-height:44px;padding:5px 8px}
+  .music-learning-score{grid-area:score;height:96px;min-height:0;overflow-y:auto;overflow-x:hidden}
+  .music-learning-guide,.music-learning-keyboard-guide{display:none}
+  .music-staff{min-height:150px;height:150px;overflow-x:auto;overflow-y:auto}
+  .music-learning-keyboard-wrap{grid-area:keyboard;height:104px;min-height:104px;margin:0;padding:1px 0;overflow-x:auto;overflow-y:hidden}
+  .music-keyboard{height:100px}
+  .music-learning-controls{grid-area:controls;min-width:0;min-height:44px;height:44px;margin:0;gap:5px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden}
+  .music-learning-controls button{flex:0 0 auto}
+  .music-learning-play,.music-learning-stop{height:44px}
+  .music-learning-position{display:none}
+  .music-learning-error{display:block;position:absolute;top:46px;right:0;z-index:5;max-width:45%;max-height:22px;overflow:hidden;margin:0;padding:2px 6px;border:1px solid #f2ccd5;border-radius:6px;background:#fff8fa;color:#a65069;text-align:left;pointer-events:none}
+  .music-learning-error:empty{display:none}
+}
