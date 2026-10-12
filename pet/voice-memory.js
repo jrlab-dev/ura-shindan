@@ -500,6 +500,8 @@
     this.playback = null;
     if (!current) return;
     this.clearTimeout(current.timer);
+    this.clearTimeout(current.scheduleTimer);
+    if (current.cancelPreparation) current.cancelPreparation();
     current.sources.forEach(source => { try { source.stop(); } catch (_) {} try { source.disconnect(); } catch (_) {} });
     try { current.context.close().catch(() => {}); } catch (_) {}
   };
@@ -1249,13 +1251,22 @@
     const stillCurrent = async () => capturedSession === this.sessionToken && capturedPlayback === this.playbackToken && !this.destructiveOps;
     let context = null;
     const sources = [];
+    let current = null;
+    let preparationTimer = null;
     try {
       try {
         context = new this.AudioContext();
-        if (context.state === 'suspended') await context.resume();
+        let cancelPreparation;
+        const preparation = new Promise((_, reject) => {
+          cancelPreparation = () => reject(new Error('invalidated'));
+          preparationTimer = this.setTimeout(() => reject(new Error('prepare-timeout')), 15000);
+        });
+        current = { context, sources, timer:null, scheduleTimer:null, cancelPreparation };
+        this.playback = current;
+        if (context.state === 'suspended') await Promise.race([context.resume(), preparation]);
         if (!await stillCurrent()) throw new Error('invalidated');
-        const bytes = await blob.arrayBuffer();
-        const audio = await context.decodeAudioData(bytes.slice(0));
+        const bytes = await Promise.race([blob.arrayBuffer(), preparation]);
+        const audio = await Promise.race([context.decodeAudioData(bytes.slice(0)), preparation]);
         if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) throw new Error('invalid-audio');
         if (audio.duration * 1000 > RADIO_PLAY_MAX_MS) throw new Error('invalid-radio-clip');
         if (!await stillCurrent()) throw new Error('invalidated');
@@ -1299,23 +1310,34 @@
           const baseTime = context.currentTime + .02;
           if (settings.timingMode === 'preserve') {
             const plan = grainPlan(durationSeconds, settings.pitchRate, RADIO_MAX_DURATION_MS, RADIO_MAX_GRAINS);
-            let audibleEnd = 0;
-            plan.forEach(grain => {
-              const source = context.createBufferSource();
-              const windowGain = context.createGain();
-              const scheduledOffset = grain.offset / settings.speedRate;
-              const when = baseTime + scheduledOffset;
-              const audibleGrainDuration = grain.duration / settings.pitchRate;
-              audibleEnd = Math.max(audibleEnd, scheduledOffset + audibleGrainDuration);
-              source.buffer = audio;
-              source.playbackRate.value = settings.pitchRate;
-              windowGain.gain.setValueAtTime(0, when);
-              windowGain.gain.linearRampToValueAtTime(1, when + audibleGrainDuration / 2);
-              windowGain.gain.linearRampToValueAtTime(0, when + audibleGrainDuration);
-              source.connect(windowGain); windowGain.connect(high);
-              sources.push(source);
-              source.start(when, grain.offset, grain.duration);
-            });
+            const audibleEnd = plan.reduce((end, grain) => Math.max(end, grain.offset / settings.speedRate + grain.duration / settings.pitchRate), 0);
+            let nextGrain = 0;
+            const schedule = () => {
+              if (this.playback !== current || capturedPlayback !== this.playbackToken) return;
+              while (nextGrain < plan.length && baseTime + plan[nextGrain].offset / settings.speedRate < context.currentTime + .3) {
+                const grain = plan[nextGrain++];
+                const source = context.createBufferSource();
+                const windowGain = context.createGain();
+                const scheduledOffset = grain.offset / settings.speedRate;
+                const when = baseTime + scheduledOffset;
+                const audibleGrainDuration = grain.duration / settings.pitchRate;
+                source.buffer = audio;
+                source.playbackRate.value = settings.pitchRate;
+                windowGain.gain.setValueAtTime(0, when);
+                windowGain.gain.linearRampToValueAtTime(1, when + audibleGrainDuration / 2);
+                windowGain.gain.linearRampToValueAtTime(0, when + audibleGrainDuration);
+                source.connect(windowGain); windowGain.connect(high);
+                sources.push(source);
+                source.onended = () => {
+                  const index = sources.indexOf(source);
+                  if (index >= 0) sources.splice(index, 1);
+                  try { source.disconnect(); windowGain.disconnect(); } catch (_) {}
+                };
+                source.start(when, grain.offset, grain.duration);
+              }
+              if (nextGrain < plan.length) current.scheduleTimer = this.setTimeout(schedule, 80);
+            };
+            schedule();
             durationMs = Math.ceil(audibleEnd * 1000);
           } else {
             const source = context.createBufferSource();
@@ -1328,21 +1350,24 @@
           }
         }
         if (!await stillCurrent()) throw new Error('invalidated');
-        const current = { context, sources, timer:null };
-        this.playback = current;
+        this.clearTimeout(preparationTimer);
+        current.cancelPreparation = null;
         current.timer = this.setTimeout(() => {
           if (this.playback === current) this.playback = null;
+          this.clearTimeout(current.scheduleTimer);
           sources.forEach(source => { try { source.stop(); } catch (_) {} try { source.disconnect(); } catch (_) {} });
           try { context.close().catch(() => {}); } catch (_) {}
         }, durationMs + 400);
         if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection(durationMs + 370);
         return { ok:true, durationMs, peak, gainValue };
-      } catch (_) {
+      } catch (error) {
+        this.clearTimeout(preparationTimer);
+        if (current) { this.clearTimeout(current.scheduleTimer); current.cancelPreparation = null; }
         if (this.playback && this.playback.context === context) this.playback = null;
         sources.forEach(source => { try { source.stop(); } catch (_) {} try { source.disconnect(); } catch (_) {} });
         if (context) try { context.close().catch(() => {}); } catch (_) {}
         if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection();
-        return { ok:false, reason:'process-failed' };
+        return { ok:false, reason:error.message === 'prepare-timeout' ? 'prepare-timeout' : error.message === 'invalidated' ? 'invalidated' : 'process-failed' };
       }
     } catch (_) {
       if (resumeLiveAfterPlayback) this.resumeLiveEchoDetection();

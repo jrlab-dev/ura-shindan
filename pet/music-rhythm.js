@@ -10,7 +10,8 @@
   const NICE_MS = 250;
   const TIMING_EPSILON_MS = 0.000001;
   const LOOK_AHEAD_SECONDS = 3;
-  const KEY_DURATION = 0.42;
+  const KEY_TAP_SECONDS = 0.25;
+  const KEY_RELEASE_SECONDS = 0.08;
   const MAX_VOICES = 6;
   const PITCH_NAMES = ['ド','ド♯','レ','レ♯','ミ','ファ','ファ♯','ソ','ソ♯','ラ','ラ♯','シ'];
   const SPEEDS = Object.freeze({ slow:0.5, gentle:0.75, normal:1 });
@@ -41,6 +42,7 @@
     return Object.assign({}, score, { notes, duration });
   }
   function difficultyFor(id) { return DIFFICULTY_TABLE[id] || { group:'normal', reason:'音数・音域を基準に分類' }; }
+  function scorePoints(total, perfect, nice) { return total > 0 ? Math.max(0, Math.min(100, Math.round((perfect + nice * .7) / total * 100))) : 0; }
   function isBlack(midi) { return PITCH_CLASSES.includes(((Math.round(midi) % 12) + 12) % 12); }
   function keyboardLayout(score) {
     if (!score || !score.notes || !score.notes.length) return { min:0, max:0, whiteCount:0, keys:[] };
@@ -101,6 +103,9 @@
     this.message = '';
     this.error = '';
     this.voices = new Map();
+    this.heldInputs = new Map();
+    this.volume = .9;
+    this.keyOutput = null;
     this.renderSignature = '';
   }
   MusicRhythmController.prototype.emit = function () { if (this.onChange) this.onChange(this.getState()); this.render(); };
@@ -143,6 +148,7 @@
     this.countdownTimer = null; this.timer = null;
   };
   MusicRhythmController.prototype.clearVoices = function () {
+    this.heldInputs.clear();
     Array.from(this.voices.values()).forEach(entry => this.releaseVoice(entry));
     this.voices.clear();
   };
@@ -154,6 +160,37 @@
     if (stopNode) { try { entry.oscillator.stop(); } catch (_) {} }
     try { entry.oscillator.disconnect(); } catch (_) {}
     try { entry.gain.disconnect(); } catch (_) {}
+  };
+  MusicRhythmController.prototype.setVolume = function (value) {
+    this.volume = Math.max(0, Math.min(1, number(value, this.volume)));
+    if (this.keyOutput) {
+      const gain = this.keyOutput.gain;
+      if (gain.setTargetAtTime) gain.setTargetAtTime(this.volume, this.audioTime(), .015);
+      else gain.setValueAtTime(this.volume, this.audioTime());
+    }
+    this.paint();
+  };
+  MusicRhythmController.prototype.endVoice = function (entry, at = this.audioTime()) {
+    if (!entry || entry.released || Number.isFinite(entry.noteOffAt)) return;
+    entry.noteOffAt = at;
+    at = Math.max(at, entry.startedAt + .008);
+    const gain = entry.gain.gain;
+    if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(at);
+    else if (gain.cancelScheduledValues) gain.cancelScheduledValues(at);
+    const elapsed = Math.max(0, at - entry.startedAt);
+    const level = elapsed < .008 ? .0001 + (.16 - .0001) * elapsed / .008 : elapsed < .12 ? .16 * Math.pow(.13/.16, (elapsed-.008)/.112) : .13;
+    // 離鍵時の値を明示し、消音ランプが保持区間まで遡らないようにする。
+    gain.setValueAtTime(level, at);
+    gain.exponentialRampToValueAtTime(.0001, at + KEY_RELEASE_SECONDS);
+    entry.oscillator.stop(at + KEY_RELEASE_SECONDS + .01);
+    const timer = this.setTimeout(() => { this.releaseVoice(entry, false); this.emit(); }, Math.max(0, at - this.audioTime()) * 1000 + 160);
+    entry.timer = timer; if (timer && typeof timer.unref === 'function') timer.unref();
+  };
+  MusicRhythmController.prototype.releaseKey = function (inputId) {
+    const input = this.heldInputs.get(inputId); if (!input) return;
+    this.heldInputs.delete(inputId);
+    if (![...this.heldInputs.values()].some(other => other.midi === input.midi)) this.endVoice(this.voices.get(input.midi));
+    this.emit();
   };
   MusicRhythmController.prototype.stop = function (emit = true) {
     this.generation += 1;
@@ -220,40 +257,54 @@
       this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1;
     }
   };
-  MusicRhythmController.prototype.playKeySound = function (midi, at) {
+  MusicRhythmController.prototype.playKeySound = function (midi, at, held = false) {
     const ctx = this.ctx || this.audio(); if (!ctx || !ctx.createOscillator || !ctx.createGain) return false;
     const old = this.voices.get(midi); if (old) this.releaseVoice(old);
     while (this.voices.size >= MAX_VOICES) { const oldest = this.voices.values().next().value; this.releaseVoice(oldest); }
     try {
+      if (!this.keyOutput) { this.keyOutput = ctx.createGain(); this.keyOutput.gain.setValueAtTime(this.volume, at); this.keyOutput.connect(this.outputNode || ctx.destination); }
       const oscillator = ctx.createOscillator(); const gain = ctx.createGain();
-      const frequency = 440 * Math.pow(2, (midi - 69) / 12); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(frequency, at);
-      gain.gain.setValueAtTime(.0001, at); gain.gain.exponentialRampToValueAtTime(.16, at + .025); gain.gain.exponentialRampToValueAtTime(.0001, at + KEY_DURATION);
-      oscillator.connect(gain); gain.connect(this.outputNode || ctx.destination); oscillator.start(at); oscillator.stop(at + KEY_DURATION + .02);
-      const entry = { midi, oscillator, gain, timer:null }; this.voices.set(midi, entry);
-      const release = () => this.releaseVoice(entry, false);
+      const frequency = 440 * Math.pow(2, (midi - 69) / 12); oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(frequency, at);
+      gain.gain.setValueAtTime(.0001, at);
+      if (gain.gain.linearRampToValueAtTime) gain.gain.linearRampToValueAtTime(.16, at + .008);
+      else gain.gain.exponentialRampToValueAtTime(.16, at + .008);
+      gain.gain.exponentialRampToValueAtTime(.13, at + .12);
+      oscillator.connect(gain); gain.connect(this.keyOutput); oscillator.start(at);
+      const entry = { midi, oscillator, gain, timer:null, startedAt:at, noteOffAt:Infinity }; this.voices.set(midi, entry);
+      const release = () => { this.releaseVoice(entry, false); this.emit(); };
       if (oscillator.addEventListener) oscillator.addEventListener('ended', release);
-      const timer = this.setTimeout(release, (KEY_DURATION + .15) * 1000); entry.timer = timer; if (timer && typeof timer.unref === 'function') timer.unref();
+      if (!held) this.endVoice(entry, at + KEY_TAP_SECONDS);
       return true;
     } catch (_) { return false; }
   };
-  MusicRhythmController.prototype.pressKey = async function (midi, atTime = null) {
+  MusicRhythmController.prototype.pressKey = async function (midi, atTime = null, inputId = null) {
     if (!this.score) return { ok:false, reason:'inactive' };
+    midi = Math.round(number(midi, -1));
+    if (midi < 0 || midi > 127) return { ok:false, reason:'invalid' };
+    if (inputId != null && this.heldInputs.has(inputId)) return { ok:false, reason:'repeat' };
+    if (this.beforePlay && this.beforePlay() === false) { this.error = '音がオフだよ。上の🔊でオンにしてね'; this.emit(); return { ok:false, reason:'muted' }; }
+    const token = this.generation; const ctx = this.ctx || this.audio(); if (!ctx) return { ok:false, reason:'unsupported' };
+    const input = { midi };
+    if (inputId != null) this.heldInputs.set(inputId, input);
+    try { if (ctx.state === 'suspended' && ctx.resume) await ctx.resume(); } catch (_) {
+      if (this.heldInputs.get(inputId) === input) this.heldInputs.delete(inputId);
+      return { ok:false, reason:'resume-failed' };
+    }
+    if (token !== this.generation || (inputId != null && this.heldInputs.get(inputId) !== input)) return { ok:false, reason:'stale' };
+    this.error = '';
+    const at = atTime == null ? this.audioTime() : Number(atTime);
+    this.playKeySound(midi, this.audioTime(), inputId != null);
     /* 最初の光だけは判定線の手前250msから受け付け、演奏時計は予告終了時刻を保つ。 */
     if (this.phase === 'countdown') {
-      const earlyAt = atTime == null ? this.audioTime() : Number(atTime);
-      if (earlyAt < this.countdownEnd - (NICE_MS + TIMING_EPSILON_MS) / 1000) return { ok:false, reason:'inactive' };
+      if (at < this.countdownEnd - (NICE_MS + TIMING_EPSILON_MS) / 1000) { this.emit(); return { ok:true, reason:'preview' }; }
       if (!this.begin(this.generation)) return { ok:false, reason:'stale' };
-      atTime = earlyAt;
     }
-    if (this.phase !== 'playing') return { ok:false, reason:'inactive' };
-    const token = this.generation; const ctx = this.ctx || this.audio(); if (!ctx) return { ok:false, reason:'unsupported' };
-    try { if (ctx.state === 'suspended' && ctx.resume) await ctx.resume(); } catch (_) { return { ok:false, reason:'resume-failed' }; }
-    if (token !== this.generation || this.phase !== 'playing') return { ok:false, reason:'stale' };
-    const at = atTime == null ? this.audioTime() : Number(atTime); const missedBefore = this.missed; this.markMissed(at); if (this.nextIndex >= this.score.notes.length) {
+    if (this.phase !== 'playing') { this.emit(); return { ok:true, reason:'preview' }; }
+    const missedBefore = this.missed; this.markMissed(at); if (this.nextIndex >= this.score.notes.length) {
       if (at >= this.startedAt + this.score.duration / this.speed) this.finish();
       else if (this.missed > missedBefore) { this.message = 'つぎの光をみてね'; this.emit(); }
-      return { ok:false, reason:'finished' };
-    } if (this.missed > missedBefore) { this.message = 'つぎの光をみてね'; this.emit(); } this.playKeySound(Math.round(number(midi, -1)), at);
+      this.emit(); return { ok:false, reason:'finished' };
+    } if (this.missed > missedBefore) { this.message = 'つぎの光をみてね'; this.emit(); }
     const target = this.score.notes[this.nextIndex]; if (!target) return { ok:false, reason:'finished' };
     const diff = (at - this.dueTime(target)) * 1000;
     if (Math.round(number(midi, -1)) !== target.midi) { this.message = 'おしい！ つぎの光をみてね'; this.emit(); return { ok:false, reason:'wrong', diffMs:diff }; }
@@ -263,17 +314,25 @@
   MusicRhythmController.prototype.finish = function () {
     if (this.phase !== 'playing') return;
     while (this.nextIndex < (this.score ? this.score.notes.length : 0)) { this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1; }
-    this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = `${this.hits} / ${this.score.notes.length} おん あたったよ。もういちど？`; this.emit();
+    this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = 'おつかれさま！ もういちど あそぼう'; this.emit();
   };
   MusicRhythmController.prototype.getState = function () {
     const now = this.audioTime();
     const scheduled = (this.phase === 'countdown' || this.phase === 'playing') && this.score ? this.score.notes.map((note, index) => ({ note, index, due:this.dueTime(note) })) : [];
     const activeNotes = scheduled.filter(item => now >= item.due && now < item.due + item.note.duration / this.speed).map(item => Object.assign({}, item.note, { index:item.index }));
     const visibleNotes = scheduled.filter(item => now < item.due + item.note.duration / this.speed && item.due - now <= LOOK_AHEAD_SECONDS).map(item => Object.assign({}, item.note, { index:item.index, untilMs:(item.due - now) * 1000 }));
-    return { trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing', speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
+    return { trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
   };
   MusicRhythmController.prototype.mount = function (rootNode) {
     if (this.resizeObserver) this.resizeObserver.disconnect();
+    if (typeof window !== 'undefined') {
+      if (this.blurHandler) window.removeEventListener('blur', this.blurHandler);
+      this.blurHandler = () => {
+        if (this.phase === 'playing' || this.phase === 'countdown') this.stop();
+        else { this.generation += 1; this.clearVoices(); this.emit(); }
+      };
+      window.addEventListener('blur', this.blurHandler);
+    }
     this.root = rootNode; this.render(); this.scrollToFirstNote();
     if (rootNode && typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => {
@@ -306,6 +365,10 @@
       this.root.querySelector('.music-rhythm-picker').insertAdjacentHTML('beforeend', `<select class="music-edition" aria-label="リズムの演奏版"><option value="tablet">タブレット版</option><option value="original">原曲版</option></select>`);
       const edition = this.root.querySelector('.music-edition'); edition.value = this.edition; edition.addEventListener('change', () => this.setEdition(edition.value));
       this.root.querySelector('.music-rhythm-stage').insertAdjacentHTML('beforebegin', '<p class="music-rhythm-width-hint" role="status">横向きにすると、全部のけんばんが見えるよ</p>');
+      this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<div class="music-rhythm-result" role="status" aria-live="polite" hidden><div><span>今回のスコア</span><strong class="music-rhythm-points"></strong></div><p class="music-rhythm-breakdown"></p></div>');
+      this.root.querySelector('.music-rhythm-controls').insertAdjacentHTML('beforeend', '<label class="music-rhythm-volume">音量<input type="range" min="0" max="100" step="5" aria-label="鍵盤の音量"><output></output></label>');
+      const volume = this.root.querySelector('.music-rhythm-volume input'); volume.value = String(this.volume * 100);
+      volume.addEventListener('input', () => this.setVolume(Number(volume.value) / 100));
       this.root.querySelector('.music-rhythm-start')?.addEventListener('click', () => this.start());
       this.root.querySelector('.music-rhythm-stop')?.addEventListener('click', () => this.stop());
       this.root.querySelectorAll('[data-rhythm-speed]').forEach(button => button.addEventListener('click', () => this.setSpeed(button.dataset.rhythmSpeed)));
@@ -316,8 +379,25 @@
   MusicRhythmController.prototype.bindKeyboard = function () {
     const keyboard = this.root && this.root.querySelector('.music-rhythm-keyboard'); if (!keyboard) return;
     keyboard.querySelectorAll('.music-rhythm-key').forEach(button => {
-      const press = event => { if (event.type === 'keydown' && event.repeat) return; if (event.cancelable) event.preventDefault(); this.pressKey(Number(button.dataset.midi)); };
-      button.addEventListener('pointerdown', press); button.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') press(event); });
+      if (button.dataset.bound) return; button.dataset.bound = 'true';
+      const midi = Number(button.dataset.midi);
+      button.addEventListener('pointerdown', event => {
+        if (event.button != null && event.button !== 0) return;
+        if (event.cancelable) event.preventDefault();
+        try { button.setPointerCapture(event.pointerId); } catch (_) {}
+        this.pressKey(midi, null, `pointer:${event.pointerId}`);
+      });
+      for (const type of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(type, event => this.releaseKey(`pointer:${event.pointerId}`));
+      button.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault(); if (!event.repeat) this.pressKey(midi, null, `key:${midi}:${event.key}`);
+      });
+      button.addEventListener('keyup', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault(); this.releaseKey(`key:${midi}:${event.key}`);
+      });
+      button.addEventListener('blur', () => { this.releaseKey(`key:${midi}:Enter`); this.releaseKey(`key:${midi}: `); });
+      button.addEventListener('click', event => { if (event.detail === 0) this.pressKey(midi); });
     });
   };
   MusicRhythmController.prototype.paint = function () {
@@ -327,17 +407,30 @@
     const fits = this.fitsViewport();
     this.root.classList.toggle('is-tablet', this.edition === 'tablet');
     this.root.classList.toggle('is-width-blocked', !fits);
-    const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + 'けんばんが光ったら おしてね。長い音も おしはじめだけだよ';
+    const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + '光ったら おしてね。おしているあいだ 音がのびるよ';
     const start = this.root.querySelector('.music-rhythm-start'); if (start) { start.disabled = state.phase === 'countdown' || state.phase === 'playing'; start.textContent = state.phase === 'finished' ? '▶ もういちど' : '▶ はじめる'; }
     if (start && !fits) start.disabled = true;
-    const status = this.root.querySelector('.music-rhythm-status'); if (status) status.textContent = state.error || state.message || (state.phase === 'idle' ? '曲をえらんで はじめよう' : '');
+    const status = this.root.querySelector('.music-rhythm-status'); if (status) status.textContent = state.error || state.message || (state.phase === 'idle' ? 'はじめる前も けんばんで あそべるよ' : '');
+    const volume = this.root.querySelector('.music-rhythm-volume input');
+    if (volume) { volume.value = String(Math.round(this.volume * 100)); volume.nextElementSibling.textContent = `${Math.round(this.volume * 100)}%`; }
+    const result = this.root.querySelector('.music-rhythm-result');
+    if (result) {
+      result.hidden = state.phase !== 'finished';
+      const signature = `${state.points}|${state.perfect}|${state.nice}|${state.missed}`;
+      if (!result.hidden && result.dataset.result !== signature) {
+        result.dataset.result = signature;
+        result.querySelector('.music-rhythm-points').innerHTML = `${state.points}<small>点 / 100</small>`;
+        result.querySelector('.music-rhythm-breakdown').textContent = `ぴったり ${state.perfect}　いいね ${state.nice}　みおくり ${state.missed}`;
+      }
+    }
     this.root.querySelectorAll('[data-rhythm-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(SPEEDS[button.dataset.rhythmSpeed]) === this.speed)));
     const layout = keyboardLayout(this.score); const keyboard = this.root.querySelector('.music-rhythm-keyboard');
     if (keyboard && !keyboard.dataset.layout) { keyboard.dataset.layout = `${layout.min}:${layout.max}`; keyboard.style.setProperty('--rhythm-min-width', `${layout.whiteCount * 44}px`); keyboard.innerHTML = layout.keys.map(key => { const pos = keyPosition(layout, key.midi); const label = `${PITCH_NAMES[((key.midi % 12) + 12) % 12]}${Math.floor(key.midi / 12) - 1}`; const cClass = !key.black && key.midi % 12 === 0 ? ' is-c' : ''; return `<button type="button" class="music-rhythm-key ${key.black ? 'is-black' : 'is-white'}${cClass}" data-midi="${key.midi}" style="left:${pos.left}%;width:${pos.width}%" aria-label="${label}のけんばん"><span>${label}</span></button>`; }).join(''); this.bindKeyboard(); }
     const cues = new Map(state.activeNotes.map(note => [note.midi, note.index]));
     keyboard?.querySelectorAll('.music-rhythm-key').forEach(button => {
       const midi = Number(button.dataset.midi); const cue = cues.get(midi);
-      button.classList.toggle('is-manual', this.voices.has(midi));
+      const voice = this.voices.get(midi);
+      button.classList.toggle('is-manual', Boolean(voice && this.audioTime() < voice.noteOffAt));
       button.classList.toggle('is-cue', cue != null);
       if (cue != null && button.dataset.cue !== String(cue)) {
         button.dataset.pulse = button.dataset.pulse === 'a' ? 'b' : 'a';
@@ -348,5 +441,5 @@
     if (lane) lane.style.setProperty('--rhythm-lane-width', `${layout.whiteCount * 44}px`);
     if (notes) { const laneHeight = lane && lane.clientHeight || 150; const hitY = laneHeight - 9; if (lane) lane.dataset.hitlineY = String(hitY); notes.innerHTML = state.visibleNotes.map(note => { const pos = keyPosition(layout, note.midi); const progress = Math.min(LOOK_AHEAD_SECONDS, note.untilMs / 1000); const height = Math.max(10, note.duration / this.speed / LOOK_AHEAD_SECONDS * laneHeight); const top = hitY - progress / LOOK_AHEAD_SECONDS * laneHeight - height; return `<span class="music-rhythm-note" data-index="${note.index}" data-until-ms="${Math.round(note.untilMs)}" style="left:${pos.left}%;width:${pos.width}%;top:${Math.round(top)}px;height:${Math.round(height)}px"><span class="music-rhythm-leading" aria-hidden="true"></span></span>`; }).join(''); }
   };
-  return { COUNTDOWN_MS, PERFECT_MS, NICE_MS, SPEEDS, SPEED_LABELS, DIFFICULTIES, DIFFICULTY_TABLE, normalizeScore, difficultyFor, keyboardLayout, keyPosition, MusicRhythmController };
+  return { COUNTDOWN_MS, PERFECT_MS, NICE_MS, SPEEDS, SPEED_LABELS, DIFFICULTIES, DIFFICULTY_TABLE, scorePoints, normalizeScore, difficultyFor, keyboardLayout, keyPosition, MusicRhythmController };
 }));

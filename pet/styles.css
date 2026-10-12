@@ -421,6 +421,7 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 .pet:where([data-life="adult"][data-adult="genki"]) .cheek{top:50px;width:18px;height:10px}
 /* ねこの口（2026-09-12 利用者が口エディタで確定）：Uを2つ、内側の線がまんなかで重なる。頂点に鼻 */
 .pet:where([data-life="adult"][data-adult="genki"]) .mouth{top:42px;width:52px;height:25px;margin-left:-26px;border-bottom:0;background:none}
+.pet:where([data-life="adult"][data-adult="genki"])[data-state="happy"] .mouth{top:42px;width:52px;height:25px;margin-left:-26px;border:0;background:none}
 /* 鼻は独立部品で最前面（Uの線を隠す。2026-09-12 利用者の指示） */
 .pet:where([data-life="adult"][data-adult="genki"]) .cat-nose{position:absolute;left:19.5px;top:2.5px;width:17px;height:17px;border-radius:50%;background:#9c6b52;z-index:2}
 .pet:where([data-life="adult"][data-adult="genki"]) .mouth::before,.pet:where([data-life="adult"][data-adult="genki"]) .mouth::after{content:"";position:absolute;border:3.5px solid var(--mouth-color);border-top:0;border-radius:0 0 999px 999px}
@@ -527,7 +528,11 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 @keyframes record-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 #radio-dialog[data-radio="waiting"] .radio-face{background-image:url(icons/radio-recording.webp)}
 .radio-wait{display:none;margin:0;font-size:36px;animation:radio-wait-pulse 1.2s ease-in-out infinite}
-#radio-dialog[data-radio="waiting"] .radio-wait{display:block}
+#radio-dialog[data-radio="preparing"] .radio-face{background-image:url(icons/radio-normal.webp)}
+#radio-dialog[data-radio="waiting"] .radio-wait{display:none}
+[data-waiting="true"]::before{content:"";display:inline-block;width:18px;height:18px;margin-right:8px;vertical-align:-3px;border:3px solid #e4dce9;border-top-color:#876090;border-radius:50%;animation:audio-wait-spin .85s linear infinite}
+@keyframes audio-wait-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){[data-waiting="true"]::before{animation:none}}
 @keyframes radio-wait-pulse{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:1;transform:scale(1.08)}}
 .radio-timer{position:relative;width:64px;height:64px;margin:0;flex:none}
 .radio-timer-ring{width:64px;height:64px;transform:rotate(-90deg)}
@@ -669,6 +674,16 @@ body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-aw
 #music-rhythm-panel{padding:0 0 24px}
 .music-rhythm-picker select.music-edition,.music-learning-picker select.music-edition{flex:0 0 132px;width:132px;min-height:44px}
 .music-rhythm-stage .music-rhythm-lane{overflow:hidden}
+.music-rhythm-controls .music-rhythm-volume{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;margin:0 0 0 auto;min-height:44px}
+.music-rhythm-volume input{width:110px;min-width:80px;height:44px;accent-color:var(--purple);padding:0;margin:0;touch-action:pan-x}
+.music-rhythm-volume output{width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.music-rhythm-lane .music-rhythm-result{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;gap:28px;padding:4px 12px;background:linear-gradient(135deg,#fff6e5,#f9efff);text-align:center;color:var(--purple)}
+.music-rhythm-result[hidden]{display:none!important}
+.music-rhythm-result span{display:block;font-size:11px;line-height:1.2}
+.music-rhythm-points{display:block;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums}
+.music-rhythm-points small{font-size:13px;margin-left:6px}
+.music-rhythm-breakdown{font-size:12px;line-height:1.4;margin:0}
+@media(max-width:600px) and (orientation:portrait){.music-rhythm-controls{flex-wrap:wrap}.music-rhythm-controls .music-rhythm-volume{margin-left:0;flex-basis:100%;justify-content:center}.music-rhythm-lane .music-rhythm-result{flex-direction:column;gap:8px}}
 .music-rhythm-key.is-cue{background:#f6a8c3!important;border-color:#b43d72;color:#542039;box-shadow:inset 0 0 0 3px #d34f87,inset 0 0 22px #ffe6a3,0 0 13px #f3a4c1}
 .music-rhythm-key.is-black.is-cue{background:#c94c83!important;color:#fff;box-shadow:inset 0 0 0 2px #ffdd97,inset 0 0 16px #ec92b7}
 .music-rhythm-key.is-cue.is-manual{box-shadow:inset 0 0 0 4px #2385a1,inset 0 0 22px #ffe6a3,0 0 13px #f3a4c1}

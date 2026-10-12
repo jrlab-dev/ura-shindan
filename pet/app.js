@@ -329,6 +329,9 @@
       const imitatorName = petInfo(echoSession.imitatorPetId).name;
       $('echo-session-message').textContent = echoSession.inputMode === 'press' ? (state.echoRecording === 'pending' ? `${imitatorName} がマイクを待ってるよ` : state.echoRecording === 'speaking' ? `${imitatorName} がまねしてるよ` : echoSession.liveFallback ? 'うまく聞こえないから「はなす」をおしてね' : echoSession.source === 'spontaneous' ? `${imitatorName} がおしたときだけ きくよ` : 'この端末では「はなす」をおしてね') : (echoSession.phase === 'calibrating' ? 'マイク準備中・しずかに1秒まってね' : state.echoRecording === 'speaking' ? `${imitatorName} がまねしてるよ` : `${imitatorName} がいま きいてるよ。はなしてね`);
     }
+    const echoWaiting = Boolean(echoSession && (['thinking', 'calibrating'].includes(echoSession.phase) || state.echoRecording === 'pending'));
+    audioWaitDisplay('echo-session-message', echoWaiting, echoSession && echoSession.phase === 'thinking' ? 'こえを じゅんびちゅう' : 'マイクを じゅんびちゅう');
+    if (echoWaiting) { $('echo-live-status').textContent = 'もうすこし まってね'; if (echoSession.inputMode === 'press') $('echo-press-button').textContent = 'じゅんびちゅう'; }
     $('voice-memory-status').textContent = `声の記憶 ${state.voiceCount}/20件`;
     const tuning = echoTuning(selectedTuningPetId()); const fastTuning = tuning.timingMode === 'fast'; $('tuning-pitch').value = String(Math.round(tuning.pitchRate * 100)); $('tuning-speed').value = String(Math.round((tuning.speedRate || 1) * 100)); $('tuning-double').value = String(Math.round(tuning.doubleMix * 100)); $('tuning-brightness').value = String(tuning.brightness); $('tuning-timing-mode').value = fastTuning ? 'fast' : 'preserve'; $('tuning-pitch-value').textContent = `${Math.round(tuning.pitchRate * 100)}%`; $('tuning-speed-value').textContent = `${Math.round((tuning.speedRate || 1) * 100)}%`; $('tuning-double-value').textContent = `${Math.round(tuning.doubleMix * 100)}%`; $('tuning-brightness-value').textContent = String(tuning.brightness); $('tuning-speed').disabled = fastTuning; $('tuning-timing-note').textContent = fastTuning ? '高さと速さが連動します。速さの調整はおすすめ方式で使えます' : '高さと速さを別々に変えます。ゆっくりでも高い声のままです'; $('tuning-controls').hidden = !state.tuningBlob; const tuningBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording)); $('tuning-record-button').disabled = state.data.voiceMemoryEnabled !== true || tuningBusy; if (!state.tuningBlob && !tuningBusy) { if (state.data.voiceMemoryEnabled !== true) $('tuning-status').textContent = '上の「教えた声をこのブラウザに覚える」をオンにしてください'; else if ($('tuning-status').textContent.startsWith('上の「教えた声')) $('tuning-status').textContent = '試験録音はこのページを離れると消えます'; }
     $('camera-toggle').checked = state.data.cameraEnabled;
@@ -580,18 +583,24 @@
           if (Date.now() - relayStartedAt > ECHO_RELAY_MAX_MS) break;  /* 安全網。ふつうは当たらない */
         }
         const step = relaying ? plan[index] : { petId:echoSession.imitatorPetId, tuning:null };
+        if (!state.echoSession || state.echoSession.token !== token) break;
+        state.echoSession.phase = 'thinking';
         if (relaying) {
           /* 鳴っている子を画面に出す。imitatorPetId は書き換えない（次に子どもがしゃべるときの担当が変わるため） */
           state.echoSession.relayPetId = step.petId;
-          setState('copy-speaking', 0);
+          setState('copy-thinking', 0);
           /* 鳴っていない側の子を笑わせる（既存の data-state="happy" を使い回す。CSSは足さない） */
           const listener = otherPetId(step.petId);
           if (petNode(listener)) setPetState(listener, 'happy');
         }
         /* 1回目は今までどおり、まねる子自身の声。2回目以降は掛け合わせた声。音のもと（blob・pcm16）は毎回同じものを使い回す */
         const tuning = index === 0 ? echoTuning(state.echoSession.imitatorPetId) : step.tuning;
+        updateScreen();
         let result = { ok:false };
         try { result = await play(Object.assign({}, source, { tuning })) || { ok:false }; } catch (_) {}
+        if (!state.echoSession || state.echoSession.token !== token) break;
+        state.echoSession.phase = 'speaking';
+        setState('copy-speaking', 0); updateScreen();
         if (index === 0) ok = Boolean(result && result.ok);
         if (!result || !result.ok) break;  /* 1回目の失敗は今までどおりの失敗。途中からの失敗は、鳴ったぶんで正常終了 */
         hops += 1; durationMs = Number(result.durationMs) || 0; playedMs = durationMs;
@@ -1052,7 +1061,27 @@
   function radioEnabled() { return Boolean(state.data && state.data.radioPlayEnabled === true); }
   /* ほかの仕組み（まねっこ・なかよし場面・2匹場面・困りごと）がラジカセくんと重ならないための印 */
   function radioBusy() { const dialog = $('radio-dialog'); return Boolean(state.radioRecording || state.radioPlaying || (dialog && dialog.open)); }
-  function radioFace(name) { const dialog = $('radio-dialog'); if (dialog) dialog.dataset.radio = name; }
+  const audioWaitDisplays = new Map();
+  function audioWaitDisplay(id, waiting, label = '') {
+    const node = $(id); if (!node) return;
+    const previous = audioWaitDisplays.get(id);
+    if (previous && (!waiting || previous.label !== label)) { window.clearInterval(previous.timer); audioWaitDisplays.delete(id); }
+    node.dataset.waiting = String(waiting);
+    node.setAttribute('aria-busy', String(waiting));
+    if (!waiting) return;
+    let entry = audioWaitDisplays.get(id);
+    if (!entry) {
+      entry = { label, startedAt:Date.now(), timer:null };
+      entry.timer = window.setInterval(() => { node.textContent = `${label}（${Math.floor((Date.now() - entry.startedAt) / 1000)}びょう）`; }, 1000);
+      audioWaitDisplays.set(id, entry);
+    }
+    node.textContent = `${label}（${Math.floor((Date.now() - entry.startedAt) / 1000)}びょう）`;
+  }
+  function radioFace(name) {
+    const dialog = $('radio-dialog'); if (dialog) dialog.dataset.radio = name;
+    if (name === 'preparing' || name === 'playing' || name === 'normal') $('radio-record-button').disabled = name !== 'normal';
+    audioWaitDisplay('radio-message', name === 'waiting' || name === 'preparing', name === 'waiting' ? 'マイクを じゅんびちゅう' : 'こえを じゅんびちゅう');
+  }
   async function refreshRadioPanel() {
     const clip = state.radioEngine ? await state.radioEngine.load() : null;
     state.radioClip = clip;
@@ -1069,6 +1098,7 @@
     button.setAttribute('aria-label', recording ? 'とめる' : 'ろくおん');
   }
   function stopRadioActivities() {
+    audioWaitDisplay('radio-message', false);
     hideMicGate();  /* 前置きの画面が出ているときに閉じられたら、待ちごと取りやめる */
     window.clearInterval(state.radioCountdownTimer); state.radioCountdownTimer = null;
     if (state.radioRecording || state.radioPlaying) { if (state.voice) { state.voice.stopRecording(); state.voice.stopPlayback(); } }
@@ -1169,22 +1199,26 @@
   /* もう一度押すと止まる。許可待ちの間（まだ録音が始まっていない）に押されたら、要求ごと取り消す */
   function stopRadioRecord() { if (!state.voice) return; if (!state.voice.finishRadioRecording()) state.voice.stopRecording(); }
   async function playRadio(kind) {
-    if (!state.voice || state.radioRecording) return;
+    if (!state.voice || state.radioRecording || !$('radio-dialog').open) return;
+    const token = ++state.radioPlayToken;
+    state.voice.stopPlayback();
+    state.radioPlaying = true;
+    radioFace('preparing');
     const clip = state.radioClip || await refreshRadioPanel();
-    if (!clip) return;
+    if (token !== state.radioPlayToken || !$('radio-dialog').open) return;
+    if (!clip) { state.radioPlaying = false; radioFace('normal'); $('radio-message').textContent = 'まず ろくおんしてね'; return; }
     stopPetAudio();
     if (speechAvailable) window.speechSynthesis.cancel();
     state.voice.stopPlayback();  /* 再生中に別のボタン → 前のを止めて新しい方を流す */
-    const token = ++state.radioPlayToken;
-    state.radioPlaying = true;
-    radioFace('playing');
-    $('radio-message').textContent = kind === 'normal' ? 'ふつうの こえ' : kind === 'pet-1' ? `${petInfo('pet-1').name}の こえ` : `${petInfo('pet-2').name}の こえ`;
     /* ぽこ・ふわはまねっこと同じ echoTuning の設定で加工。静かな時間は半分の音量（playRadioClip の中） */
     const result = await state.voice.playRadioClip({ blob:clip.blob, tuning:kind === 'normal' ? null : echoTuning(kind), quiet:Life.isQuietTime(new Date()) });
+    if (token !== state.radioPlayToken || state.radioRecording || !$('radio-dialog').open) return;
     if (!result || !result.ok) {
       if (token !== state.radioPlayToken || state.radioRecording) return;
-      state.radioPlaying = false; radioFace('normal'); $('radio-message').textContent = 'ならせなかった。もういちど おしてね'; return;
+      state.radioPlaying = false; radioFace('normal'); $('radio-message').textContent = result && result.reason === 'prepare-timeout' ? 'じゅんびに じかんが かかったよ。もういちど おしてね' : 'ならせなかった。もういちど おしてね'; return;
     }
+    radioFace('playing');
+    $('radio-message').textContent = kind === 'normal' ? 'ふつうの こえ' : kind === 'pet-1' ? `${petInfo('pet-1').name}の こえ` : `${petInfo('pet-2').name}の こえ`;
     window.setTimeout(() => { if (token !== state.radioPlayToken || state.radioRecording) return; state.radioPlaying = false; radioFace('normal'); if ($('radio-dialog').open) $('radio-message').textContent = 'もういちど きく？'; }, Math.max(0, Number(result.durationMs) || 0) + 500);
   }
   /* --- おんがく（music-player.js・設計書 おんがくv1）。♪から絵のカードで曲を選ぶ。ダイアログを閉じても流れ続ける --- */
