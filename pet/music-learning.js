@@ -2,9 +2,9 @@
    音符データを持たずに仮の音を作らない。score-data.js が提供する音符を、
    Web Audio の予約と画面表示の両方で共有する。 */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.LittleCompanionMusicLearning = factory();
-}(typeof self !== 'undefined' ? self : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'));
+  else root.LittleCompanionMusicLearning = factory(root.LittleCompanionMusicTablet);
+}(typeof self !== 'undefined' ? self : this, function (Tablet) {
   'use strict';
 
   const SPEEDS = Object.freeze({ slow: 0.5, gentle: 0.75, normal: 1 });
@@ -19,6 +19,7 @@
   /* 学習画面は、カードの短い呼び名ではなく原曲名を見出しにする。 */
   const LEARNING_TITLES = Object.freeze({
     twinkle: 'きらきら星',
+    joy: 'よろこびのうた',
     ofuro: '人形の夢（抜粋）',
     canon: 'カノン（メインから）',
     jesu: '主よ、人の望みの喜びよ',
@@ -115,6 +116,7 @@
     this.root = null;
     this.score = null;
     this.trackId = '';
+    this.edition = 'tablet';
     this.phraseIndex = 0;
     this.position = 0;
     this.speed = 0.75;
@@ -154,16 +156,24 @@
   MusicLearningController.prototype.select = function (id) {
     this.stop();
     this.trackId = id || '';
-    this.score = getScore(this.data, this.trackId);
+    this.score = normalizeScore(Tablet.arrange(getScoreMap(this.data)[this.trackId], this.edition));
+    this.renderSignature = '';
     this.phraseIndex = 0;
     this.position = 0;
     this.emit();
     return this.score;
   };
   MusicLearningController.prototype.setData = function (data) {
+    this.stop();
     this.data = data || null;
-    if (this.trackId) this.score = getScore(this.data, this.trackId);
+    if (this.trackId) this.score = normalizeScore(Tablet.arrange(getScoreMap(this.data)[this.trackId], this.edition));
+    this.renderSignature = '';
     this.emit();
+  };
+  MusicLearningController.prototype.setEdition = function (edition) {
+    const next = edition === 'original' ? 'original' : 'tablet';
+    if (next === this.edition) return;
+    this.edition = next; this.select(this.trackId);
   };
   MusicLearningController.prototype.audio = function () {
     if (this.ctx) return this.ctx;
@@ -441,19 +451,21 @@
     const score = this.score;
     const pos = this.getPosition();
     const current = this.playing ? getCurrentNote(score, pos) : null;
-    const signature = [this.trackId, this.phraseIndex, this.showNotes, this.showKeyboard, this.repeat, this.speed, score && score.id || ''].join('|');
+    const signature = [this.trackId, this.edition, this.phraseIndex, this.showNotes, this.showKeyboard, this.repeat, this.speed, score && score.id || ''].join('|');
     if (this.renderSignature === signature && this.root.querySelector('.music-learning-play')) { this.paint(); return; }
     this.renderSignature = signature;
     const phrase = phraseAt(score, this.phraseIndex);
     const phraseNotes = score && phrase ? score.notes.filter(note => note.start >= phrase.start && note.start < phrase.end) : [];
     const options = this.data && getScoreMap(this.data) || {};
     const ids = (this.trackIds.length ? this.trackIds : Object.keys(options)).filter(id => getScore(this.data, id));
-    this.root.innerHTML = `<div class="music-learning-picker"><label for="music-learning-track">曲をえらぶ</label><select id="music-learning-track"><option value="">${ids.length ? '曲をえらんでね' : '準備中'}</option>${ids.map(id => { const item = getScore(this.data, id); return `<option value="${escapeHtml(id)}">${escapeHtml(item.title || id)}</option>`; }).join('')}</select></div>`;
+    this.root.innerHTML = `<div class="music-learning-picker"><label for="music-learning-track">曲をえらぶ</label><select id="music-learning-track"><option value="">${ids.length ? '曲をえらんでね' : '準備中'}</option>${ids.map(id => { const item = Tablet.arrange(getScoreMap(this.data)[id], this.edition) || getScore(this.data, id); return `<option value="${escapeHtml(id)}">${escapeHtml(item.title || id)}</option>`; }).join('')}</select></div>`;
     const select = this.root.querySelector('#music-learning-track');
     if (select) { select.value = this.trackId; select.addEventListener('change', () => this.select(select.value)); }
+    this.root.querySelector('.music-learning-picker').insertAdjacentHTML('beforeend', '<select class="music-edition" aria-label="おぼえる演奏版"><option value="tablet">タブレット版</option><option value="original">原曲版</option></select>');
+    const edition = this.root.querySelector('.music-edition'); edition.value = this.edition; edition.addEventListener('change', () => this.setEdition(edition.value));
     if (!score) { this.root.insertAdjacentHTML('beforeend', '<p class="music-learning-empty" role="status">曲をえらんでね</p>'); return; }
     // 技術的な出典はデータに保持するが、子ども向け画面には学習の目的だけを表示する。
-    const source = '<small>メロディーをおぼえよう</small>';
+    const source = `<small>${this.edition === 'tablet' ? (score.arranged ? 'タブレット版の編曲をおぼえよう' : 'タブレット版・メロディーをおぼえよう') : '原曲版・メロディーをおぼえよう'}</small>`;
     this.root.insertAdjacentHTML('beforeend', `<div class="music-learning-heading"><strong>${escapeHtml(learningTitle(score))}</strong>${source}</div><div class="music-learning-views"><button type="button" class="music-learning-view-toggle" data-view="notes" aria-pressed="${this.showNotes}">おんぷ</button><button type="button" class="music-learning-view-toggle" data-view="keyboard" aria-pressed="${this.showKeyboard}">けんばん</button></div><div class="music-learning-score" ${this.showNotes ? '' : 'hidden'}><p class="music-learning-guide">音のならび・線が長いほど長く鳴るよ</p><div class="music-staff" aria-label="音のならび"><span class="music-clef" aria-hidden="true">𝄞</span><div class="music-note-row">${phraseNotes.map(note => `<span class="music-note-item${current === note ? ' is-current' : ''}" data-midi="${note.midi}" data-start="${note.start}" data-accidental="${note.accidental || ''}" style="--note-step:${staffStep(note)}"><span class="music-note-ledger" aria-hidden="true">${'<i></i>'.repeat(ledgerLineCount(note))}</span><span class="music-note-dot">●</span><span class="music-note-name">${escapeHtml(displayNoteName(note))}</span><span class="music-note-bar" style="--note-length:${Math.max(1, Math.round(note.duration * 22))}px"></span></span>`).join('') || '<span class="music-rest">おやすみ</span>'}</div></div></div><p class="music-learning-keyboard-guide" ${this.showKeyboard ? '' : 'hidden'}>けんばんを さわって ひいてみよう</p><div class="music-learning-keyboard-wrap" ${this.showKeyboard ? '' : 'hidden'}>${keyboardHtml(score, current)}</div><div class="music-learning-controls"><button type="button" class="music-learning-play" aria-label="${this.playing ? '一時停止' : '再生'}">${this.playing ? 'Ⅱ' : '▶'}</button><button type="button" class="music-learning-stop" aria-label="先頭へ戻して停止">■</button><button type="button" class="music-learning-repeat" aria-pressed="${this.repeat}">ここをくりかえす</button><div class="music-learning-speed" role="group" aria-label="速さ">${Object.keys(SPEEDS).map(key => `<button type="button" data-speed="${key}" aria-pressed="${this.speed === SPEEDS[key]}">${SPEED_LABELS[key]}</button>`).join('')}</div><div class="music-learning-phrases" role="group" aria-label="フレーズ"><button type="button" data-phrase="${Math.max(0, this.phraseIndex - 1)}" aria-label="まえのフレーズ"${this.phraseIndex <= 0 ? ' disabled' : ''}>‹</button><span class="music-learning-phrase-count">${this.phraseIndex + 1} / ${score.phrases.length}</span><button type="button" data-phrase="${Math.min(score.phrases.length - 1, this.phraseIndex + 1)}" aria-label="つぎのフレーズ"${this.phraseIndex >= score.phrases.length - 1 ? ' disabled' : ''}>›</button></div></div><p class="music-learning-position" aria-live="polite">${this.playing ? '♪' : '■'} ${Math.floor(pos)} / ${Math.ceil(score.duration)}秒</p>`);
     const staff = this.root.querySelector('.music-staff');
     if (staff) staff.outerHTML = staffSvgHtml(phraseNotes, current);
@@ -574,8 +586,8 @@
     if (!score || !Array.isArray(score.notes) || !score.notes.length) return { min: 0, max: 0, whiteCount: 0, keys: [] };
     const minNote = Math.min(...score.notes.map(note => Math.round(number(note.midi, 60))));
     const maxNote = Math.max(...score.notes.map(note => Math.round(number(note.midi, 60))));
-    const min = Math.max(0, Math.floor(minNote / 12) * 12);
-    const max = Math.min(127, Math.ceil(maxNote / 12) * 12);
+    const min = score.keyboardRange ? score.keyboardRange[0] : Math.max(0, Math.floor(minNote / 12) * 12);
+    const max = score.keyboardRange ? score.keyboardRange[1] : Math.min(127, Math.ceil(maxNote / 12) * 12);
     const isBlack = midi => [1, 3, 6, 8, 10].includes(((midi % 12) + 12) % 12);
     const whiteCount = Array.from({ length: max - min + 1 }, (_, index) => min + index).filter(midi => !isBlack(midi)).length;
     let whiteIndex = 0;

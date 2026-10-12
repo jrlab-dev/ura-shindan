@@ -12,6 +12,7 @@
   /* 曲の一覧（原曲限定・設計書どおりの順・絵・名前）。足す・消すのはこの1行だけ */
   const TRACKS = [
     { id:'twinkle', file:'twinkle.mp3',          art:'⭐', name:'きらきらぼし' },
+    { id:'joy',     file:'joy.mp3',              art:'🌞', name:'よろこびのうた' },
     { id:'ofuro',    file:'ofuro.mp3',           art:'🛁', name:'にんぎょうの ゆめ' },
     { id:'canon',    file:'canon.mp3',           art:'🎼', name:'かのん' },
     { id:'jesu',     file:'jesu.mp3',            art:'🎹', name:'しゅよ ひとの のぞみの よろこびよ' },

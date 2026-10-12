@@ -1281,6 +1281,14 @@
   function setMusicMode(mode) {
     const learn = mode === 'learn';
     const rhythm = mode === 'rhythm';
+    const wasRhythm = $('music-rhythm-mode')?.getAttribute('aria-selected') === 'true';
+    const wasLearn = $('music-learn-mode')?.getAttribute('aria-selected') === 'true';
+    const previousPractice = state.musicPracticeMode || (wasRhythm ? 'rhythm' : wasLearn ? 'learn' : '');
+    if (state.musicLearning && state.musicRhythm) {
+      if (learn && previousPractice === 'rhythm') { state.musicLearning.setEdition(state.musicRhythm.edition); state.musicLearning.select(state.musicRhythm.trackId); }
+      if (rhythm && previousPractice === 'learn') { state.musicRhythm.setEdition(state.musicLearning.edition); state.musicRhythm.select(state.musicLearning.trackId); }
+    }
+    if (learn || rhythm) state.musicPracticeMode = mode;
     const listenPanel = $('music-listen-panel'); const learnPanel = $('music-learn-panel'); const rhythmPanel = $('music-rhythm-panel');
     if (listenPanel) listenPanel.hidden = learn || rhythm;
     if (learnPanel) learnPanel.hidden = !learn;
@@ -1302,7 +1310,7 @@
     state.musicLearning.toggle();
     document.body.classList.toggle('music-learning-playing', Boolean(state.musicLearning.playing));
   }
-  function openMusicDialog() { const dialog = $('music-dialog'); if (dialog && !dialog.open) dialog.showModal(); setMusicMode('learn'); musicRecordingUi(); musicRefresh(); }
+  function openMusicDialog() { const dialog = $('music-dialog'); if (dialog && !dialog.open) dialog.showModal(); setMusicMode('rhythm'); musicRecordingUi(); musicRefresh(); }
   function clearSpontaneous() { window.clearTimeout(state.spontaneousTimer); window.clearTimeout(state.monologueTimer); window.clearTimeout(state.initialPromptTimer); window.clearTimeout(state.echoInviteTimer); state.spontaneousTimer = null; state.monologueTimer = null; state.initialPromptTimer = null; state.echoInviteTimer = null; }
   function scheduleEchoInvite() {
     window.clearTimeout(state.echoInviteTimer); state.echoInviteTimer = null;
@@ -1985,7 +1993,7 @@
       $('music-learn-mode').addEventListener('click', () => setMusicMode('learn'));
       $('music-rhythm-mode').addEventListener('click', () => setMusicMode('rhythm'));
       $('music-dialog').addEventListener('close', () => { cancelMusicRecording('closed'); musicLearningStop(); if (state.musicRhythm) state.musicRhythm.stop(); });
-      setMusicMode('learn');
+      setMusicMode('rhythm');
       musicRecordingUi();
     }
     /* マイクの前置きの画面（👍）とブロック中の絵（🎤🚫）。👍で進む・とじるで戻る・Escや画面の裏で取りやめ */
