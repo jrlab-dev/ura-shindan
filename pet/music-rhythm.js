@@ -12,6 +12,8 @@
   const LOOK_AHEAD_SECONDS = 3;
   const KEY_TAP_SECONDS = 0.25;
   const KEY_RELEASE_SECONDS = 0.08;
+  const KEY_DECAY_SECONDS = 6;
+  const KEY_END_SECONDS = 8;
   const MAX_VOICES = 6;
   const PITCH_NAMES = ['ド','ド♯','レ','レ♯','ミ','ファ','ファ♯','ソ','ソ♯','ラ','ラ♯','シ'];
   const SPEEDS = Object.freeze({ slow:0.5, gentle:0.75, normal:1 });
@@ -65,6 +67,12 @@
     return { left:(key.black ? key.boundary - .33 : key.boundary) * unit, width:(key.black ? .66 : 1) * unit };
   }
   function nowMs() { return Date.now(); }
+  function keyLevel(elapsed) {
+    if (elapsed < .008) return .0001 + (.16 - .0001) * Math.max(0, elapsed) / .008;
+    if (elapsed < .12) return .16 * Math.pow(.13 / .16, (elapsed - .008) / .112);
+    if (elapsed < KEY_DECAY_SECONDS) return .13 * Math.pow(.02 / .13, (elapsed - .12) / (KEY_DECAY_SECONDS - .12));
+    return .02 * Math.pow(.0001 / .02, Math.min(1, (elapsed - KEY_DECAY_SECONDS) / (KEY_END_SECONDS - KEY_DECAY_SECONDS)));
+  }
 
   function MusicRhythmController(options = {}) {
     this.data = options.scoreData || null;
@@ -171,18 +179,19 @@
     this.paint();
   };
   MusicRhythmController.prototype.endVoice = function (entry, at = this.audioTime()) {
-    if (!entry || entry.released || Number.isFinite(entry.noteOffAt)) return;
+    if (!entry || entry.released || Number.isFinite(entry.noteOffAt) || at >= entry.naturalEndAt) return;
     entry.noteOffAt = at;
     at = Math.max(at, entry.startedAt + .008);
     const gain = entry.gain.gain;
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(at);
     else if (gain.cancelScheduledValues) gain.cancelScheduledValues(at);
     const elapsed = Math.max(0, at - entry.startedAt);
-    const level = elapsed < .008 ? .0001 + (.16 - .0001) * elapsed / .008 : elapsed < .12 ? .16 * Math.pow(.13/.16, (elapsed-.008)/.112) : .13;
+    const level = keyLevel(elapsed);
     // 離鍵時の値を明示し、消音ランプが保持区間まで遡らないようにする。
     gain.setValueAtTime(level, at);
     gain.exponentialRampToValueAtTime(.0001, at + KEY_RELEASE_SECONDS);
     entry.oscillator.stop(at + KEY_RELEASE_SECONDS + .01);
+    if (entry.timer != null) this.clearTimeout(entry.timer);
     const timer = this.setTimeout(() => { this.releaseVoice(entry, false); this.emit(); }, Math.max(0, at - this.audioTime()) * 1000 + 160);
     entry.timer = timer; if (timer && typeof timer.unref === 'function') timer.unref();
   };
@@ -269,10 +278,15 @@
       if (gain.gain.linearRampToValueAtTime) gain.gain.linearRampToValueAtTime(.16, at + .008);
       else gain.gain.exponentialRampToValueAtTime(.16, at + .008);
       gain.gain.exponentialRampToValueAtTime(.13, at + .12);
+      gain.gain.exponentialRampToValueAtTime(.02, at + KEY_DECAY_SECONDS);
+      gain.gain.exponentialRampToValueAtTime(.0001, at + KEY_END_SECONDS);
       oscillator.connect(gain); gain.connect(this.keyOutput); oscillator.start(at);
-      const entry = { midi, oscillator, gain, timer:null, startedAt:at, noteOffAt:Infinity }; this.voices.set(midi, entry);
+      oscillator.stop(at + KEY_END_SECONDS + .01);
+      const entry = { midi, oscillator, gain, timer:null, startedAt:at, naturalEndAt:at + KEY_END_SECONDS, noteOffAt:Infinity }; this.voices.set(midi, entry);
       const release = () => { this.releaseVoice(entry, false); this.emit(); };
       if (oscillator.addEventListener) oscillator.addEventListener('ended', release);
+      entry.timer = this.setTimeout(release, Math.max(0, at - this.audioTime() + KEY_END_SECONDS) * 1000 + 160);
+      if (entry.timer && typeof entry.timer.unref === 'function') entry.timer.unref();
       if (!held) this.endVoice(entry, at + KEY_TAP_SECONDS);
       return true;
     } catch (_) { return false; }
@@ -407,7 +421,7 @@
     const fits = this.fitsViewport();
     this.root.classList.toggle('is-tablet', this.edition === 'tablet');
     this.root.classList.toggle('is-width-blocked', !fits);
-    const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + '光ったら おしてね。おしているあいだ 音がのびるよ';
+    const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + '光ったら おしてね。長くおすと 音の余韻がつづくよ';
     const start = this.root.querySelector('.music-rhythm-start'); if (start) { start.disabled = state.phase === 'countdown' || state.phase === 'playing'; start.textContent = state.phase === 'finished' ? '▶ もういちど' : '▶ はじめる'; }
     if (start && !fits) start.disabled = true;
     const status = this.root.querySelector('.music-rhythm-status'); if (status) status.textContent = state.error || state.message || (state.phase === 'idle' ? 'はじめる前も けんばんで あそべるよ' : '');
@@ -430,7 +444,7 @@
     keyboard?.querySelectorAll('.music-rhythm-key').forEach(button => {
       const midi = Number(button.dataset.midi); const cue = cues.get(midi);
       const voice = this.voices.get(midi);
-      button.classList.toggle('is-manual', Boolean(voice && this.audioTime() < voice.noteOffAt));
+      button.classList.toggle('is-manual', Boolean(voice && this.audioTime() < Math.min(voice.noteOffAt, voice.naturalEndAt)));
       button.classList.toggle('is-cue', cue != null);
       if (cue != null && button.dataset.cue !== String(cue)) {
         button.dataset.pulse = button.dataset.pulse === 'a' ? 'b' : 'a';
