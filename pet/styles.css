@@ -745,3 +745,7 @@ body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-aw
 @media(max-width:480px){.train-toybox{left:calc(50% - 40px);bottom:calc(55.5556% - 22px);width:80px;}.pet-stage[data-timeofday="night"] .train-toybox{left:0;}.train-toybox-label{font-size:8px;left:0;transform:none;}}
 @media(max-width:360px){.topbar .top-actions{gap:4px;}.topbar .profile-switch select{width:74px;max-width:74px;padding:0 3px;}}
 @media(prefers-reduced-motion:reduce){.train-toybox svg{transition:none;}.train-toybox:hover svg,.train-toybox:focus-visible svg{transform:none;}}
+
+.puni[data-puni-sleep="true"]::after{content:"ZZZ";position:absolute;top:12px;right:-40px;font-size:17px;font-weight:700;line-height:1;color:#76519f;animation:puni-zz-float 3s ease-in-out infinite;pointer-events:none;text-shadow:0 1px 3px #fff}
+@media(prefers-reduced-motion:reduce){.puni[data-puni-sleep="true"]::after{animation:none;opacity:1}}
+@keyframes puni-zz-float{0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}

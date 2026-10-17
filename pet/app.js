@@ -1525,7 +1525,7 @@
     const allowTextMode = options.allowTextMode === true;
     const modalOpen = Boolean(($('setup-dialog') && $('setup-dialog').open) || ($('parent-dialog') && $('parent-dialog').open) || !$('forget-confirm-box').hidden || !$('voice-clear-confirm-box').hidden);
     const voiceBusy = Boolean(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording));
-    const storyBusy = Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
+    const storyBusy = !options.allowStoryWaiting && Boolean(Story && Story.isActive(state.data) && state.data.bondStory && state.data.bondStory.beat !== 'idle');
     return Boolean(!state.data || document.hidden || (!allowTextMode && state.data.soundMode === 'text') || Life.isSafetyPaused(state.data) || modalOpen || state.game || state.recognizing || state.director || storyBusy || voiceBusy || Boolean(state.tuningBlob) || Boolean(state.echoSession) || companionActive() || twoPetActive() || Boolean(state.activityLock && state.activityLock.snapshot().owner));
   }
   function ritualTick(now = new Date()) {
@@ -1613,7 +1613,7 @@
     const petId = ['pet-1', 'pet-2'].find(id => Ritual.canTuckIn(state.data, id, new Date()));
     if (!petId) return false;
     /* 寝かしつけも音オフで受け付ける。playPetSound/speak 側が無音を守る */
-    if (ritualAcceptBlocked({ allowTextMode:true })) return false;
+    if (ritualAcceptBlocked({ allowTextMode:true, allowStoryWaiting:true })) return false;
     const entry = Ritual.tuckIn(state.data, petId, new Date());
     if (!entry) return false;
     save();
