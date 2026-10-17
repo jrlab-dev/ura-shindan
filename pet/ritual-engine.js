@@ -6,7 +6,7 @@
   'use strict';
   const WINDOWS = { 'pet-1': { wakeFrom: 8, wakeTo: 12, tuckFrom: 21, tuckTo: 22 }, 'pet-2': { wakeFrom: 7, wakeTo: 12, tuckFrom: 19.5, tuckTo: 20.5 } };
   const MEAL_WINDOW = { from: 7, to: 19 };
-  const CLOCK_SLEEP = { 'pet-1': { sleep: 22 * 60, wake: 8 * 60 }, 'pet-2': { sleep: 20 * 60 + 30, wake: 5 * 60 + 30 } };
+  const CLOCK_SLEEP = { 'pet-1': { sleep: 22 * 60, wake: 8 * 60 }, 'pet-2': { sleep: 20 * 60 + 30, wake: 7 * 60 } };
   const PET_IDS = ['pet-1', 'pet-2'];
   /* ごはんの好き嫌い（v1）。食べ物は data-food 属性と同じ文字列で持つ */
   const FOODS = ['apple', 'onigiri'];
@@ -87,6 +87,22 @@
     return true;
   }
   /* 寝ぼけている（①を待っている）か */
+  function isEarlyAwake(data, petId, now) {
+    const ritual = ritualOf(data);
+    if (petId !== 'pet-2' || !ritual || ritual.date !== today(now) || !inWindow(6, 7, now)) return false;
+    const morning = morningOf(ritual, petId);
+    const at = new Date(morning.at);
+    return morning.woke === true && Number.isFinite(at.getTime()) && today(at) === today(now) && inWindow(6, 7, at) && at.getTime() <= timeOf(now);
+  }
+  function canWakeEarly(data, petId, now) {
+    return petId === 'pet-2' && Boolean(ritualOf(data)) && inWindow(6, 7, now) && !isEarlyAwake(data, petId, now);
+  }
+  function wakeEarly(data, petId, now) {
+    if (!canWakeEarly(data, petId, now)) return false;
+    ritualDailyReset(data, now);
+    data.ritual.morning[petId] = {woke:true, at:stamp(now), tries:2};
+    return true;
+  }
   function isDrowsy(data, petId, now) {
     const window = WINDOWS[petId];
     if (!window) return false;
@@ -196,6 +212,7 @@
   }
   /* 今日③で眠り、まだその子の起きる時刻前か（日付をまたいだ深夜も） */
   function isTuckedAsleep(data, petId, now) {
+    if (isEarlyAwake(data, petId, now)) return false;
     const window = WINDOWS[petId];
     if (!window) return false;
     const ritual = ritualOf(data);
@@ -263,5 +280,5 @@
       tucked: PET_IDS.filter(id => nightOf(ritual, id).tucked === true).length
     };
   }
-  return { WINDOWS, MEAL_WINDOW, FOODS, foodLabel, phrases, withName, ritualDailyReset, isDrowsy, wake, autoWake, mealReady, feed, mealPrefOnOpen, canTuckIn, tuckIn, isTuckedAsleep, yawnDue, noteYawn, morningMood, openingPhrase, todaySummary };
+  return { WINDOWS, MEAL_WINDOW, FOODS, foodLabel, phrases, withName, ritualDailyReset, isDrowsy, wake, autoWake, canWakeEarly, wakeEarly, isEarlyAwake, mealReady, feed, mealPrefOnOpen, canTuckIn, tuckIn, isTuckedAsleep, yawnDue, noteYawn, morningMood, openingPhrase, todaySummary };
 }));
