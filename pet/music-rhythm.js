@@ -6,8 +6,9 @@
   'use strict';
 
   const COUNTDOWN_MS = 3000;
-  const PERFECT_MS = 120;
-  const NICE_MS = 250;
+  const PERFECT_MS = 180;
+  const NICE_MS = 400;
+  const HIT_FEEDBACK_SECONDS = .65;
   const TIMING_EPSILON_MS = 0.000001;
   const LOOK_AHEAD_SECONDS = 3;
   const KEY_TAP_SECONDS = 0.25;
@@ -22,7 +23,10 @@
   /* 標準速度の密度・黒鍵・音域・跳躍を見比べた初版の分類表。曲データの音を変更しない。 */
   const DIFFICULTY_TABLE = Object.freeze({
     twinkle:{ group:'easy', reason:'白鍵中心・単旋律・6音の入口' },
+    kakkou:{ group:'easy', reason:'白鍵5音・3拍子・短い旋律で長音を練習' },
+    chouchou:{ group:'step', reason:'白鍵5音・同音反復と順次進行' },
     joy:{ group:'step', reason:'白鍵の単旋律で付点と八分音符に進む' },
+    musunde:{ group:'step', reason:'白鍵6音・八分音符のリズムをゆったり練習' },
     ofuro:{ group:'normal', reason:'音域と跳躍が中程度' },
     masu:{ group:'hard', reason:'黒鍵が多く音域も広い' },
     jesu:{ group:'hard', reason:'音数と跳躍が多い' },
@@ -50,8 +54,9 @@
     if (!score || !score.notes || !score.notes.length) return { min:0, max:0, whiteCount:0, keys:[] };
     const minNote = Math.min(...score.notes.map(note => note.midi));
     const maxNote = Math.max(...score.notes.map(note => note.midi));
-    const min = score.keyboardRange ? score.keyboardRange[0] : Math.max(0, Math.floor(minNote / 12) * 12);
-    const max = score.keyboardRange ? score.keyboardRange[1] : Math.min(127, Math.ceil(maxNote / 12) * 12);
+    const range = Tablet.schoolKeyboardRange(score) || score.keyboardRange;
+    const min = range ? range[0] : Math.max(0, Math.floor(minNote / 12) * 12);
+    const max = range ? range[1] : Math.min(127, Math.ceil(maxNote / 12) * 12);
     let whiteIndex = 0;
     const keys = [];
     for (let midi = min; midi <= max; midi += 1) {
@@ -108,6 +113,11 @@
     this.perfect = 0;
     this.nice = 0;
     this.missed = 0;
+    this.combo = 0;
+    this.maxCombo = 0;
+    this.hitSequence = 0;
+    this.lastGrade = '';
+    this.lastHit = null;
     this.message = '';
     this.error = '';
     this.voices = new Map();
@@ -206,6 +216,8 @@
     this.clearTimers(); this.clearVoices();
     this.phase = 'idle'; this.startedAt = 0; this.countdownEnd = 0; this.nextIndex = 0;
     this.judged = []; this.hits = 0; this.perfect = 0; this.nice = 0; this.missed = 0;
+    this.combo = 0; this.maxCombo = 0; this.hitSequence = 0; this.lastGrade = '';
+    this.lastHit = null;
     this.message = ''; this.error = '';
     if (emit) this.emit();
   };
@@ -264,6 +276,7 @@
   MusicRhythmController.prototype.markMissed = function (at) {
     while (this.nextIndex < this.score.notes.length && at - this.dueTime(this.score.notes[this.nextIndex]) > (NICE_MS + TIMING_EPSILON_MS) / 1000) {
       this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1;
+      this.combo = 0; this.lastGrade = ''; this.message = 'つぎの光をみてね';
     }
   };
   MusicRhythmController.prototype.playKeySound = function (midi, at, held = false) {
@@ -308,7 +321,7 @@
     this.error = '';
     const at = atTime == null ? this.audioTime() : Number(atTime);
     this.playKeySound(midi, this.audioTime(), inputId != null);
-    /* 最初の光だけは判定線の手前250msから受け付け、演奏時計は予告終了時刻を保つ。 */
+    /* 初音もGOODの受付幅を使い、演奏時計は予告終了時刻を保つ。 */
     if (this.phase === 'countdown') {
       if (at < this.countdownEnd - (NICE_MS + TIMING_EPSILON_MS) / 1000) { this.emit(); return { ok:true, reason:'preview' }; }
       if (!this.begin(this.generation)) return { ok:false, reason:'stale' };
@@ -321,13 +334,21 @@
     } if (this.missed > missedBefore) { this.message = 'つぎの光をみてね'; this.emit(); }
     const target = this.score.notes[this.nextIndex]; if (!target) return { ok:false, reason:'finished' };
     const diff = (at - this.dueTime(target)) * 1000;
-    if (Math.round(number(midi, -1)) !== target.midi) { this.message = 'おしい！ つぎの光をみてね'; this.emit(); return { ok:false, reason:'wrong', diffMs:diff }; }
-    if (Math.abs(diff) > NICE_MS + TIMING_EPSILON_MS) { this.message = diff < 0 ? 'ちょっと はやいよ' : 'つぎは もうすこし はやく'; this.emit(); return { ok:false, reason:diff < 0 ? 'early' : 'late', diffMs:diff }; }
-    const grade = Math.abs(diff) <= PERFECT_MS + TIMING_EPSILON_MS ? 'perfect' : 'nice'; this.judged[this.nextIndex] = grade; this.nextIndex += 1; this.hits += 1; if (grade === 'perfect') this.perfect += 1; else this.nice += 1; this.message = grade === 'perfect' ? 'ぴったり！' : 'いいね！'; this.emit(); return { ok:true, grade, diffMs:diff, index:this.nextIndex - 1 };
+    if (Math.round(number(midi, -1)) !== target.midi) { this.combo = 0; this.lastGrade = ''; this.message = 'おしい！ つぎの光をみてね'; this.emit(); return { ok:false, reason:'wrong', diffMs:diff }; }
+    if (Math.abs(diff) > NICE_MS + TIMING_EPSILON_MS) { this.combo = 0; this.lastGrade = ''; this.message = diff < 0 ? 'ちょっと はやいよ' : 'つぎは もうすこし はやく'; this.emit(); return { ok:false, reason:diff < 0 ? 'early' : 'late', diffMs:diff }; }
+    const grade = Math.abs(diff) <= PERFECT_MS + TIMING_EPSILON_MS ? 'perfect' : 'nice';
+    this.judged[this.nextIndex] = grade; this.nextIndex += 1; this.hits += 1;
+    if (grade === 'perfect') this.perfect += 1; else this.nice += 1;
+    this.combo += 1; this.maxCombo = Math.max(this.maxCombo, this.combo); this.hitSequence += 1;
+    this.lastGrade = grade; this.message = grade === 'perfect' ? 'GREAT' : 'GOOD';
+    this.lastHit = { midi, grade, sequence:this.hitSequence, at:this.audioTime() };
+    this.emit(); return { ok:true, grade, diffMs:diff, index:this.nextIndex - 1 };
   };
   MusicRhythmController.prototype.finish = function () {
     if (this.phase !== 'playing') return;
-    while (this.nextIndex < (this.score ? this.score.notes.length : 0)) { this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1; }
+    while (this.nextIndex < (this.score ? this.score.notes.length : 0)) { this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1; this.combo = 0; }
+    this.lastGrade = '';
+    this.lastHit = null;
     this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = 'おつかれさま！ もういちど あそぼう'; this.emit();
   };
   MusicRhythmController.prototype.getState = function () {
@@ -335,7 +356,8 @@
     const scheduled = (this.phase === 'countdown' || this.phase === 'playing') && this.score ? this.score.notes.map((note, index) => ({ note, index, due:this.dueTime(note) })) : [];
     const activeNotes = scheduled.filter(item => now >= item.due && now < item.due + item.note.duration / this.speed).map(item => Object.assign({}, item.note, { index:item.index }));
     const visibleNotes = scheduled.filter(item => now < item.due + item.note.duration / this.speed && item.due - now <= LOOK_AHEAD_SECONDS).map(item => Object.assign({}, item.note, { index:item.index, untilMs:(item.due - now) * 1000 }));
-    return { trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
+    const hitFeedback = this.phase === 'playing' && this.lastHit && now - this.lastHit.at < HIT_FEEDBACK_SECONDS ? this.lastHit : null;
+    return { hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
   };
   MusicRhythmController.prototype.mount = function (rootNode) {
     if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -380,8 +402,10 @@
       const edition = this.root.querySelector('.music-edition'); edition.value = this.edition; edition.addEventListener('change', () => this.setEdition(edition.value));
       this.root.querySelector('.music-rhythm-stage').insertAdjacentHTML('beforebegin', '<p class="music-rhythm-width-hint" role="status">横向きにすると、全部のけんばんが見えるよ</p>');
       this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<div class="music-rhythm-result" role="status" aria-live="polite" hidden><div><span>今回のスコア</span><strong class="music-rhythm-points"></strong></div><p class="music-rhythm-breakdown"></p></div>');
+      this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<strong class="music-rhythm-key-feedback" aria-hidden="true" hidden></strong>');
       this.root.querySelector('.music-rhythm-controls').insertAdjacentHTML('beforeend', '<label class="music-rhythm-volume">音量<input type="range" min="0" max="100" step="5" aria-label="鍵盤の音量"><output></output></label>');
       const volume = this.root.querySelector('.music-rhythm-volume input'); volume.value = String(this.volume * 100);
+      this.root.querySelector('.music-rhythm-status').innerHTML = '<span class="music-rhythm-feedback"></span><strong class="music-rhythm-combo" hidden></strong>';
       volume.addEventListener('input', () => this.setVolume(Number(volume.value) / 100));
       this.root.querySelector('.music-rhythm-start')?.addEventListener('click', () => this.start());
       this.root.querySelector('.music-rhythm-stop')?.addEventListener('click', () => this.stop());
@@ -424,22 +448,33 @@
     const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + '光ったら おしてね。長くおすと 音の余韻がつづくよ';
     const start = this.root.querySelector('.music-rhythm-start'); if (start) { start.disabled = state.phase === 'countdown' || state.phase === 'playing'; start.textContent = state.phase === 'finished' ? '▶ もういちど' : '▶ はじめる'; }
     if (start && !fits) start.disabled = true;
-    const status = this.root.querySelector('.music-rhythm-status'); if (status) status.textContent = state.error || state.message || (state.phase === 'idle' ? 'はじめる前も けんばんで あそべるよ' : '');
+    const status = this.root.querySelector('.music-rhythm-status');
+    if (status) {
+      const feedback = status.querySelector('.music-rhythm-feedback');
+      const combo = status.querySelector('.music-rhythm-combo');
+      const message = state.error || state.message || (state.phase === 'idle' ? 'はじめる前も けんばんで あそべるよ' : '');
+      if (feedback.textContent !== message) feedback.textContent = message;
+      status.dataset.grade = state.error ? '' : state.lastGrade;
+      status.dataset.pulse = String(this.hitSequence % 2);
+      combo.hidden = !state.playing;
+      const comboText = `${state.combo} COMBO`;
+      if (combo.textContent !== comboText) combo.textContent = comboText;
+    }
     const volume = this.root.querySelector('.music-rhythm-volume input');
     if (volume) { volume.value = String(Math.round(this.volume * 100)); volume.nextElementSibling.textContent = `${Math.round(this.volume * 100)}%`; }
     const result = this.root.querySelector('.music-rhythm-result');
     if (result) {
       result.hidden = state.phase !== 'finished';
-      const signature = `${state.points}|${state.perfect}|${state.nice}|${state.missed}`;
+      const signature = `${state.points}|${state.perfect}|${state.nice}|${state.missed}|${state.maxCombo}`;
       if (!result.hidden && result.dataset.result !== signature) {
         result.dataset.result = signature;
         result.querySelector('.music-rhythm-points').innerHTML = `${state.points}<small>点 / 100</small>`;
-        result.querySelector('.music-rhythm-breakdown').textContent = `ぴったり ${state.perfect}　いいね ${state.nice}　みおくり ${state.missed}`;
+        result.querySelector('.music-rhythm-breakdown').textContent = `GREAT ${state.perfect}　GOOD ${state.nice}　みおくり ${state.missed}\n最大 ${state.maxCombo} COMBO`;
       }
     }
     this.root.querySelectorAll('[data-rhythm-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(SPEEDS[button.dataset.rhythmSpeed]) === this.speed)));
     const layout = keyboardLayout(this.score); const keyboard = this.root.querySelector('.music-rhythm-keyboard');
-    if (keyboard && !keyboard.dataset.layout) { keyboard.dataset.layout = `${layout.min}:${layout.max}`; keyboard.style.setProperty('--rhythm-min-width', `${layout.whiteCount * 44}px`); keyboard.innerHTML = layout.keys.map(key => { const pos = keyPosition(layout, key.midi); const label = `${PITCH_NAMES[((key.midi % 12) + 12) % 12]}${Math.floor(key.midi / 12) - 1}`; const cClass = !key.black && key.midi % 12 === 0 ? ' is-c' : ''; return `<button type="button" class="music-rhythm-key ${key.black ? 'is-black' : 'is-white'}${cClass}" data-midi="${key.midi}" style="left:${pos.left}%;width:${pos.width}%" aria-label="${label}のけんばん"><span>${label}</span></button>`; }).join(''); this.bindKeyboard(); }
+    if (keyboard && !keyboard.dataset.layout) { keyboard.dataset.layout = `${layout.min}:${layout.max}`; keyboard.style.setProperty('--rhythm-min-width', `${layout.whiteCount * 44}px`); keyboard.innerHTML = layout.keys.map(key => { const pos = keyPosition(layout, key.midi); const label = `${PITCH_NAMES[((key.midi % 12) + 12) % 12]}${Math.floor(key.midi / 12) - 1}`; const cClass = !key.black && key.midi % 12 === 0 ? ' is-c' : ''; return `<button type="button" class="music-rhythm-key ${key.black ? 'is-black' : 'is-white'}${cClass}" data-midi="${key.midi}" style="left:${pos.left}%;width:${pos.width}%" aria-label="${label}のけんばん"><span>${label}</span>${key.midi === Math.ceil(layout.min / 12) * 12 ? '<i class="music-c-sticker" aria-hidden="true" title="一番低いドの目印">★</i>' : ''}</button>`; }).join(''); this.bindKeyboard(); }
     const cues = new Map(state.activeNotes.map(note => [note.midi, note.index]));
     keyboard?.querySelectorAll('.music-rhythm-key').forEach(button => {
       const midi = Number(button.dataset.midi); const cue = cues.get(midi);
@@ -452,6 +487,19 @@
       button.dataset.cue = cue == null ? '' : String(cue);
     });
     const lane = this.root.querySelector('.music-rhythm-lane'); const notes = this.root.querySelector('.music-rhythm-notes');
+    const keyFeedback = this.root.querySelector('.music-rhythm-key-feedback');
+    if (keyFeedback) {
+      const hit = state.hitFeedback;
+      keyFeedback.hidden = !hit;
+      if (hit) {
+        const position = keyPosition(layout, hit.midi);
+        keyFeedback.style.left = `clamp(48px, ${position.left + position.width / 2}%, calc(100% - 48px))`;
+        keyFeedback.dataset.midi = String(hit.midi);
+        keyFeedback.dataset.grade = hit.grade;
+        keyFeedback.dataset.pulse = String(hit.sequence % 2);
+        keyFeedback.textContent = hit.grade === 'perfect' ? 'GREAT' : 'GOOD';
+      }
+    }
     if (lane) lane.style.setProperty('--rhythm-lane-width', `${layout.whiteCount * 44}px`);
     if (notes) { const laneHeight = lane && lane.clientHeight || 150; const hitY = laneHeight - 9; if (lane) lane.dataset.hitlineY = String(hitY); notes.innerHTML = state.visibleNotes.map(note => { const pos = keyPosition(layout, note.midi); const progress = Math.min(LOOK_AHEAD_SECONDS, note.untilMs / 1000); const height = Math.max(10, note.duration / this.speed / LOOK_AHEAD_SECONDS * laneHeight); const top = hitY - progress / LOOK_AHEAD_SECONDS * laneHeight - height; return `<span class="music-rhythm-note" data-index="${note.index}" data-until-ms="${Math.round(note.untilMs)}" style="left:${pos.left}%;width:${pos.width}%;top:${Math.round(top)}px;height:${Math.round(height)}px"><span class="music-rhythm-leading" aria-hidden="true"></span></span>`; }).join(''); }
   };

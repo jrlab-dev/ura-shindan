@@ -571,7 +571,7 @@
       const left = black ? (boundary - 0.33) * unit : boundary * unit;
       const width = black ? 0.66 * unit : unit;
       const cKey = !black && midi % 12 === 0;
-      keys.push(`<button type="button" class="music-key ${black ? 'is-black' : 'is-white'}${cKey ? ' is-c' : ''}${active ? ' is-current' : ''}" style="left:${left}%;width:${width}%" data-midi="${midi}" aria-label="${escapeHtml(label)}のけんばん"><span>${escapeHtml(keyboardLabel(midi, current))}</span>${cKey ? `<small>${Math.floor(midi / 12) - 1}</small>` : ''}</button>`);
+      keys.push(`<button type="button" class="music-key ${black ? 'is-black' : 'is-white'}${cKey ? ' is-c' : ''}${active ? ' is-current' : ''}" style="left:${left}%;width:${width}%" data-midi="${midi}" aria-label="${escapeHtml(label)}のけんばん"><span>${escapeHtml(keyboardLabel(midi, current))}</span>${cKey ? `<small>${Math.floor(midi / 12) - 1}</small>` : ''}${midi === Math.ceil(layout.min / 12) * 12 ? '<i class="music-c-sticker" aria-hidden="true" title="一番低いドの目印">★</i>' : ''}</button>`);
     });
     return `<div class="music-keyboard" style="--keyboard-min-width:${layout.whiteCount * 44}px" aria-label="ピアノ鍵盤">${keys.join('')}</div>`;
   }
@@ -586,8 +586,9 @@
     if (!score || !Array.isArray(score.notes) || !score.notes.length) return { min: 0, max: 0, whiteCount: 0, keys: [] };
     const minNote = Math.min(...score.notes.map(note => Math.round(number(note.midi, 60))));
     const maxNote = Math.max(...score.notes.map(note => Math.round(number(note.midi, 60))));
-    const min = score.keyboardRange ? score.keyboardRange[0] : Math.max(0, Math.floor(minNote / 12) * 12);
-    const max = score.keyboardRange ? score.keyboardRange[1] : Math.min(127, Math.ceil(maxNote / 12) * 12);
+    const range = Tablet.schoolKeyboardRange(score) || score.keyboardRange;
+    const min = range ? range[0] : Math.max(0, Math.floor(minNote / 12) * 12);
+    const max = range ? range[1] : Math.min(127, Math.ceil(maxNote / 12) * 12);
     const isBlack = midi => [1, 3, 6, 8, 10].includes(((midi % 12) + 12) % 12);
     const whiteCount = Array.from({ length: max - min + 1 }, (_, index) => min + index).filter(midi => !isBlack(midi)).length;
     let whiteIndex = 0;

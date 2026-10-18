@@ -33,6 +33,10 @@
     return max - min <= 24 ? [min, max] : null;
   }
   const cache = new WeakMap();
+  function schoolKeyboardRange(score) {
+    if (!score || !['twinkle','kakkou','chouchou','joy','musunde','ofuro'].includes(score.id)) return null;
+    return score.notes?.length && score.notes.every(note => note.midi >= 53 && note.midi <= 77) ? [53,77] : null;
+  }
   function arrange(score, edition = 'tablet') {
     if (!score || edition === 'original') return score;
     if (cache.has(score)) return cache.get(score);
@@ -47,11 +51,11 @@
       const octave = note.octave == null ? Math.floor(midi / 12) - 1 : note.octave + (midi - note.midi) / 12;
       return { ...note, midi, octave, name:note.name ? note.name.replace(/\d+$/, String(octave)) : '' };
     });
-    const range = plan ? plan.range : rangeFor(notes);
+    const range = schoolKeyboardRange(score) || (plan ? plan.range : rangeFor(notes));
     if (!range || notes.some(n => n.midi < range[0] || n.midi > range[1])) return null;
     const result = { ...score, notes, edition:'tablet', arranged:Boolean(plan), keyboardRange:range.slice(), title:score.title?.replace(/（原曲）/g, '') };
     cache.set(score, result);
     return result;
   }
-  return { arrange, rangeFor, isBlack };
+  return { arrange, rangeFor, isBlack, schoolKeyboardRange };
 }));
