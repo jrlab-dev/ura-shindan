@@ -278,6 +278,10 @@ button { cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:m
 /* 浮遊を止めて呼吸へ。pet-2 の float-blue（:not 連打で強い）と ritual-lean（#pet）に勝てるよう id で書く。
    困りごとの揺れ・一時の反応（body-react など）の間は data-trouble / その data-state に譲る */
 #pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])),#pet-2[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-state="body-react"]):not([data-state="reply-wait-quick"]):not([data-ritual="drowsy"]):not([data-trouble])){animation:sulk-breath 7s ease-in-out infinite}
+/* The back surface covers ear roots inside the transformed body. */
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .pet-body::before{content:"";position:absolute;inset:0;border-radius:inherit;background:inherit;box-shadow:inset -13px -16px 0 rgba(166,65,105,.16);pointer-events:none}
+.pet.pet-2[data-sulk="away"] .pet-body::before{box-shadow:inset -13px -16px 0 rgba(47,111,158,.16)}
+.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .ear::after,.pet[data-sulk="away"]:where(:not([data-state="happy"]):not([data-state^="copy-"]):not([data-state="talking"]):not([data-state="listening"]):not([data-state="thinking"]):not([data-state="sleepy"]):not([data-ritual="drowsy"])) .belly{opacity:0}
 /* half：戻る瞬間の3秒だけ。横顔（傾き3度・うっすら顔） */
 .pet[data-sulk="half"] .face{opacity:.55}
 .pet[data-sulk="half"] .pet-body{transform:rotate(3deg);transform-origin:50% 100%}

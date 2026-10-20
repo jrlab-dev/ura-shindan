@@ -1610,7 +1610,7 @@
     const awake = ritualAwakePetIds(now);
     if (!Ritual.mealReady(state.data, { awakePetIds: awake }, now)) return false;
     /* 手で選ぶごはんは音オフでも受け付ける。playPetSound/speak 側が無音を守る */
-    if (ritualAcceptBlocked({ allowTextMode:true })) return false;
+    if (ritualAcceptBlocked({ allowTextMode:true, allowStoryWaiting:true })) return false;
     const petIds = Ritual.feed(state.data, awake, now, food);
     save();
     noteSulkCare();
@@ -2086,7 +2086,7 @@
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     schedulePuniWander();
     window.setInterval(() => { if (state.data && !document.hidden) { ritualTick(); sulkTick(); puniWakeCheck(); } }, 60000);
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=pianica-98').catch(() => {}));
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=back-ears-99').catch(() => {}));
   }
   function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2200); }
   initialize();
