@@ -1,15 +1,15 @@
-/* おんがく（♪）v1（設計書 おんがくv1）。上の帯の ♪ から絵のカードで曲を選んで流す。
-   音楽は HTMLAudioElement 1つを使い回す（preload="none"・押したときに src を入れる・音量は控えめ）。
-   ここが持つのは曲の一覧（TRACKS・1か所だけ）と、押したときの次の状態を決める純粋な計算（nextState）。
-   DOM には触れない形にして、Node（tests/music-player.test.js）でも検査できるようにする
-   （radio-recorder.js と同じ書き方）。再生の失敗は握りつぶさず、状態を止めに戻す。 */
+
+
+
+
+
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.LittleCompanionMusicPlayer = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  /* 曲の一覧（原曲限定・設計書どおりの順・絵・名前）。足す・消すのはこの1行だけ */
+
   const TRACKS = [
     { id:'twinkle', file:'twinkle.mp3',          art:'⭐', name:'きらきらぼし' },
     { id:'kakkou', file:'kakkou.mp3',            art:'🐦', name:'かっこう' },
@@ -24,7 +24,7 @@
     { id:'masu',     file:'masu.mp3',             art:'🐟', name:'ます' },
     { id:'donau',    file:'donau.mp3',            art:'🌊', name:'あおき ドナウ' }
   ];
-  const VOLUME = 0.6;              /* 音量は控えめ（設計書） */
+  const VOLUME = 0.6;
   const BASE = 'music/';           /* app/music/ への相対パス */
 
   const trackById = id => TRACKS.find(track => track.id === id) || null;

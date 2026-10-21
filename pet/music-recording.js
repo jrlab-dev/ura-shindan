@@ -1,6 +1,6 @@
-/* おんがくの直接録音（設計書 ラジカセくん録音v1）。
-   マイクを使わずMusicAudioBusのMediaStreamDestinationだけを録る。
-   既存radio-recorder.jsへ保存し、録音は常に1件だけにする。 */
+
+
+
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.LittleCompanionMusicRecording = factory();

@@ -1,6 +1,6 @@
-/* 写真立てv1（設計書 写真立てv1）。子どもが撮った写真を、同じ公開URLのIndexedDBだけに保存する（声の記憶と同じ考え方）。
-   写真の中身は判定・解析しない（顔検出・タグ付け・分類なし・外部送信なし）。
-   保存するのは { id, dataUrl, createdAt } の3つだけ。ほかの情報（場所・分類など）は足さない。 */
+
+
+
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.LittleCompanionPhotoFrame = factory();

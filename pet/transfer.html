@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>引っ越し・機種変更｜ちいさなともだち</title>
+  <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="transfer.css?v=101">
+  <script src="voice-memory.js?v=101" defer></script>
+  <script src="radio-recorder.js?v=101" defer></script>
+  <script src="transfer-core.js?v=101" defer></script>
+  <script src="transfer-page.js?v=101" defer></script>
+</head>
+<body>
+  <main class="transfer-card">
+    <a class="back" href="./" id="back-link">‹ ぽこ・ふわに もどる</a>
+    <p class="eyebrow">ちいさなともだち</p>
+    <h1>引っ越し・機種変更</h1>
+    <p>ぽこ・ふわとの思い出を、新しい場所や端末へ。</p>
+    <p class="note">保護者の方と操作してください。ほかのタブで開いているこのゲームは閉じてください。</p>
+    <p id="old-save-link" class="note" hidden>前の住所で遊んでいた方は、まず <a href="https://ura.jr-genius.jp/pet/transfer.html">前の住所で記録を保存</a> してください。そのあと、このページで読み込めます。</p>
+    <p id="transfer-status" role="status" aria-live="polite">記録を確認しています…</p>
+    <section aria-labelledby="save-title">
+      <h2 id="save-title"><span>1</span> いまの端末で保存</h2>
+      <p>育てた記録、覚えた言葉と声、ラジカセの録音、かべの写真を、1つのファイルにまとめます。</p>
+      <p id="current-summary" class="summary"></p>
+      <button id="save-transfer" type="button" disabled>引き継ぎファイルを保存</button>
+      <p class="small">元の端末の記録は消えません。ファイルには名前・声・写真が入ります。公開せず、自分の端末へ渡して保管してください。</p>
+    </section>
+    <section aria-labelledby="load-title">
+      <h2 id="load-title"><span>2</span> 新しい場所で読み込む</h2>
+      <p>新しい端末では <a href="https://pokofuwa.jr-genius.jp/transfer.html">pokofuwa.jr-genius.jp</a> を開き、保存したファイルを選んでください。ファイルの内容はサーバーへ送りません。</p>
+      <label class="file-label" for="transfer-file">引き継ぎファイルを選ぶ</label>
+      <input id="transfer-file" type="file" accept=".json,application/json" disabled>
+      <div id="import-preview" hidden>
+        <h3>読み込む思い出</h3>
+        <p id="incoming-summary" class="summary"></p>
+        <p id="audio-compatibility" class="note" hidden>この端末では再生できない形式の録音が含まれています。ファイルと元の端末の録音は残しておいてください。</p>
+        <p id="replace-note" class="note" hidden>この端末の記録を置き換えます。先に上のボタンで、いまの記録も保存してください。</p>
+        <label class="confirm"><input id="restore-confirm" type="checkbox"> この内容を読み込みます</label>
+        <button id="restore-transfer" type="button" disabled>この内容で引き継ぐ</button>
+      </div>
+    </section>
+    <a id="play-after-transfer" class="play-link" href="./" hidden>ぽこ・ふわに会う →</a>
+    <button id="retry-recovery" type="button" hidden>元の記録への復旧をもう一度ためす</button>
+    <p class="small">マイクやカメラの許可は引き継がれません。新しい場所で使うときに確認します。</p>
+  </main>
+</body>
+</html>

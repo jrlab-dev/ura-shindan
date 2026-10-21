@@ -37,9 +37,9 @@
   }
   function defaultSulk() { return { enabled:true, level:0, sinceDate:'', lastVisitDate:'', talkCount:0 }; }
   function defaultGrowth() { return { enabled:true, stage:0, weekStartDate:'', weekStartHelpTotal:0, unlockedAt:[] }; }
-  /* 世代交代（設計書13章）。generation-engine.js の defaultGeneration と同じ形。pet-life は他のエンジンを読まず単独で動かすので同形を手元に持ち、一致は generation-engine.test.js で固定する */
+
   function defaultGeneration() { return { generation:1, lifeStage:'baby', adultType:'', stageStartDate:'', stageStartCare:0, childrenBorn:0, away:false, parents:[], hue:340, highVoiceColor:'pink' }; }
-  /* おとなの型（設計書6章）。generation-engine.js の adultTypeOf と同じ規則（同点は calm 優先・壊れたらあまえんぼ） */
+
   function adultTypeFromTraits(traits) {
     const source = traits && typeof traits === 'object' ? traits : null;
     if (!source) return 'amaenbo';
@@ -244,8 +244,8 @@
     normalizeActivePetIds(data);
     applyDeletionLedger(data);
     delete data.soundEnabled; if (!data.growth || typeof data.growth !== 'object') data.growth = defaultGrowth(); data.puniAsleep = data.puniAsleep === true; if (!data.mealPref || typeof data.mealPref !== 'object') data.mealPref = { favorite:'apple', weekStartDate:'', hits:0 }; data.mealPref = { favorite:data.mealPref.favorite === 'onigiri' ? 'onigiri' : 'apple', weekStartDate:typeof data.mealPref.weekStartDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.mealPref.weekStartDate) ? data.mealPref.weekStartDate : '', hits:Math.max(0, Math.floor(Number(data.mealPref.hits) || 0)) };
-    /* v12以前 → v13：世代交代（設計書12章）。すでに遊んでいる子は「おとな」として引き継ぐ（最初からにしない）。
-       型は今の traits から決め、段の計測を今日から始める。旧 growth は消さずそのまま残す。v14は白い子の色を追加 */
+
+
     data.generation = old.generation && typeof old.generation === 'object' ? normalizeGeneration(old.generation) : { ...defaultGeneration(), lifeStage:'adult', adultType:adultTypeFromTraits(data.traits), stageStartDate:today(now), stageStartCare:careGenerationTotal(data.careCount) };
     data.version = 14; data.bondStage = Math.max(Number(old.bondStage) || 0, bondStage(data.bond));
     return data;

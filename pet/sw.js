@@ -1,5 +1,5 @@
-const CACHE = 'little-companion-shell-v91-back-ears';
-const ASSETS = ['./', './index.html', './styles.css?v=back-ears-100', './brain.js?v=90', './pet-life.js?v=wake-96', './story-engine.js?v=90', './week-engine.js?v=90', './voice-memory.js?v=90', './photo-frame.js?v=90', './radio-recorder.js?v=90', './music-audio-bus.js?v=90', './music-recording.js?v=90', './music-score-data.js?v=90', './music-player.js?v=90', './music-tablet.js?v=pianica-98', './music-learning.js?v=pianica-98', './music-rhythm.js?v=pianica-98', './companion-scenes.js?v=90', './companion-director.js?v=90', './activity-lock.js?v=90', './pet-presentations.js?v=90', './echo-relay.js?v=90', './pet-speech.js?v=90', './two-pet-scenes.js?v=90', './two-pet-director.js?v=90', './speech-arbiter.js?v=90', './room-background.js?v=90', './trouble-engine.js?v=90', './sulk-engine.js?v=90', './growth-engine.js?v=90', './generation-engine.js?v=90', './ritual-engine.js?v=wake-96', './app.js?v=back-ears-100', './manifest.webmanifest', './sw.js', './icons/poko.svg', './icons/radio-normal.webp', './icons/radio-recording.webp', './icons/radio-playing.webp'];
+const CACHE = 'little-companion-shell-v92-pokofuwa';
+const ASSETS = ['./transfer.html', './transfer.css?v=101', './transfer-core.js?v=101', './transfer-page.js?v=101', './', './index.html', './styles.css?v=101', './brain.js?v=101', './pet-life.js?v=101', './story-engine.js?v=101', './week-engine.js?v=101', './voice-memory.js?v=101', './photo-frame.js?v=101', './radio-recorder.js?v=101', './music-audio-bus.js?v=101', './music-recording.js?v=101', './music-score-data.js?v=101', './music-player.js?v=101', './music-tablet.js?v=101', './music-learning.js?v=101', './music-rhythm.js?v=101', './companion-scenes.js?v=101', './companion-director.js?v=101', './activity-lock.js?v=101', './pet-presentations.js?v=101', './echo-relay.js?v=101', './pet-speech.js?v=101', './two-pet-scenes.js?v=101', './two-pet-director.js?v=101', './speech-arbiter.js?v=101', './room-background.js?v=101', './trouble-engine.js?v=101', './sulk-engine.js?v=101', './growth-engine.js?v=101', './generation-engine.js?v=101', './ritual-engine.js?v=101', './app.js?v=101', './manifest.webmanifest', './sw.js', './icons/poko.svg', './icons/radio-normal.webp', './icons/radio-recording.webp', './icons/radio-playing.webp'];
 /* music の mp3 は ASSETS に入れない（重いので最初に全部落とさない） */
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
@@ -10,8 +10,8 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(event.request));
     return;
   }
-  /* /music/ の取得と Range 付きの取得はキャッシュせず、そのまま fetch に流す
-     （音声の 206 部分応答で cache.put が失敗するため。設計書 おんがくv1） */
+
+
   if (requestUrl.pathname.includes('/music/') || event.request.headers.has('range')) {
     event.respondWith(fetch(event.request));
     return;

@@ -1,7 +1,7 @@
-/* ラジカセくん録音v1（設計書 ラジカセくん録音v1）。子どもの声の録音を1つだけ、同じ公開URLのIndexedDBだけに保存する
-   （写真立て・声の記憶と同じ考え方。外部送信なし・録音の中身は判定しない）。
-   マイクの録音・加工再生は voice-memory.js の recordRadio／playRadioClip が担う（マイクの持ち主を1つに保つため）。
-   ここが持つのは「1本だけの保存」と、保存してよい録音かの純粋な判定。 */
+
+
+
+
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.LittleCompanionRadioRecorder = factory();

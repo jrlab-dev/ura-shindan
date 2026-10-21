@@ -1,6 +1,13 @@
 (() => {
   'use strict';
 
+  const TRANSFER_PENDING = 'little-companion-transfer-pending';
+  try { if (localStorage.getItem(TRANSFER_PENDING)) { window.location.replace('./transfer.html'); return; } } catch (_) {}
+  window.addEventListener('storage', event => { if (event.key === TRANSFER_PENDING && event.newValue) window.location.replace('./transfer.html'); });
+  window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
+  const oldAddress = document.getElementById('old-address');
+  if (oldAddress) oldAddress.hidden = window.location.hostname !== 'ura.jr-genius.jp';
+
   const STORAGE_KEY = 'little-companion-v1';
   const Brain = window.LittleCompanionBrain;
   const Life = window.LittleCompanionLife;
@@ -18,26 +25,26 @@
   const Sulk = window.LittleCompanionSulk;
   const Growth = window.LittleCompanionGrowth;
   const Generation = window.LittleCompanionGeneration;
-  /* 段の日本語（発注書Z。上がったときの一言と保護者画面の「N代目・こども」で使う） */
+
   const LIFE_STAGE_LABELS = { baby:'あかちゃん', child:'こども', big:'おおきいこども', adult:'おとな' };
   const Relay = window.LittleCompanionEchoRelay;
-  /* 壁の写真立て（設計書 写真立てv1）。枚数の上限はこの1か所（写真は6枚まで・7枚目は「はがしてから」で案内し、自動では消さない） */
+
   const PhotoFrame = window.LittleCompanionPhotoFrame;
   const PHOTO_MAX = PhotoFrame && PhotoFrame.MAX_PHOTOS || 6;
   const PHOTO_LIMIT_HINT = PhotoFrame && PhotoFrame.LIMIT_HINT || 'はがしてから、もう1まい とれるよ';
   const PHOTO_CAMERA_HINT = PhotoFrame && PhotoFrame.CAMERA_HINT || 'カメラは使えないよ';
-  /* ラジカセくん（設計書 ラジカセくん録音v1）。録音は1つだけ・この端末のIndexedDBのみ。
-     マイクと加工再生は voice-memory.js のろくおん専用経路（recordRadio・playRadioClip）を使う（マイクの持ち主を1つに保つ） */
+
+
   const RadioBox = window.LittleCompanionRadioRecorder;
   const RADIO_MIC_HINT = RadioBox && RadioBox.MIC_HINT || 'マイクが つかえないみたい';
-  /* おんがく（設計書 おんがくv1）。♪から絵のカードで曲を流す。一覧と次の状態の決め方は music-player.js 持ち */
+
   const MusicBox = window.LittleCompanionMusicPlayer;
   const MusicLearning = window.LittleCompanionMusicLearning;
   const MusicRhythm = window.LittleCompanionMusicRhythm;
   const MusicBus = window.LittleCompanionMusicAudioBus;
   const MusicRecording = window.LittleCompanionMusicRecording;
-  /* マイクの許可を待つ上限（voice-memory.js・設計書 字が読めなくても使えるマイク）。
-     permissions が prompt（👍のあと Chrome の許可の画面で大人が押す）は60秒・granted なのに返事が来ない端末の不調は15秒のまま */
+
+
   const MIC_PERMISSION_PROMPT_MS = VoiceMemory && VoiceMemory.MIC_PERMISSION_PROMPT_TIMEOUT_MS || 60000;
   const MIC_PERMISSION_GRANTED_MS = VoiceMemory && VoiceMemory.MIC_PERMISSION_TIMEOUT_MS || 15000;
   const micPermissionTimeout = gate => gate === 'granted' ? MIC_PERMISSION_GRANTED_MS : MIC_PERMISSION_PROMPT_MS;
@@ -76,7 +83,7 @@
     } catch (_) { return null; }
   }
   function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); return true; } catch (_) { return false; }
+    try { if (localStorage.getItem(TRANSFER_PENDING)) return false; localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); return true; } catch (_) { return false; }
   }
   function applyElapsed() {
     if (!state.data) return;
@@ -145,7 +152,7 @@
     state.twoPetSession = session; state.twoPetProfileId = profileId;
     return session;
   }
-  function renderTwoPets() { if (!state.data) return; const relation = pairRelation(); const pets = state.data.pets || []; const active = visualPetId(); const guestSleeping = petAsleep('pet-2', new Date()) && active !== 'pet-2'; const stageNow = Life && Life.getStageState ? Life.getStageState(state.data, activeProfileId(), new Date()) : null; const showSecond = Boolean(relation && relation.phase === 'cohabiting') || Boolean(state.twoPetGuestVisible) || active === 'pet-2' || guestSleeping || (stageNow && stageNow.pairAvailable); ['pet-1','pet-2'].forEach(id => { const info = pets.find(item => item.id === id) || petInfo(id); const value = Life && Life.getProfilePetState ? Life.getProfilePetState(state.data, activeProfileId(), id) : null; const label = $(`${id}-name`); if (label) label.textContent = info.name; const node = petNode(id); const slot = node && node.closest('.pet-slot'); const isActive = id === active; const isSleeping = petAsleep(id, new Date()); if (slot) { slot.classList.toggle('is-active-pet', isActive); /* 奥行きは「寝ている＞起きている主役＞起きている見守り」の順（設計書「誰がどの段に入るか」）。寝ている子は主役でも奥 */ slot.dataset.depth = isSleeping ? 'far' : isActive ? 'near' : 'mid'; /* 奥の子ほど中央へ寄せる（far 22px・mid 10px・near 0px）。主役は order:-1 で必ず左＝＋、右席は−。pet-2-slot が隠れている（1体だけ）ときは寄せない */ const depthShift = isSleeping ? 44 : isActive ? 0 : 24; slot.style.setProperty('--depth-shift', !showSecond || depthShift === 0 ? '0px' : `${isActive ? '' : '-'}${depthShift}px`); if (isSleeping) slot.dataset.asleep = 'true'; else delete slot.dataset.asleep; } if (node) { const presentation=twoPetPresentation(id); node.dataset.presentation=presentation.visual||''; node.dataset.active = String(isActive); node.setAttribute('aria-label', value ? `${info.name}。気分${value.mood}、体力${value.energy}、表情${value.lastExpression}${isActive ? '、いま遊ぶ主役' : '、見守り中'}` : `${info.name}がこちらを見ている`); const isActiveInSession = state.echoSession && (state.echoSession.imitatorPetId === id || id === active); const isCopyState = String(node.dataset.state || '').indexOf('copy-') === 0; if (isSleeping) { node.dataset.state = 'sleepy'; const sleepBubble = $(`${id}-bubble`); if (sleepBubble) { sleepBubble.hidden = true; sleepBubble.textContent = ''; } } else if (!isActiveInSession && !isCopyState && node.dataset.state === 'sleepy') node.dataset.state = 'normal'; } }); $('pet-2-slot').hidden = !showSecond; const allAsleep = stageNow && stageNow.allAsleep; const status = $('two-pet-status'); if (status) { status.hidden = !showSecond; const friendshipStage = relation && relation.friendshipStage || 'together'; const friendshipLabel = friendshipStage === 'not-met' ? 'まだ あってない' : friendshipStage === 'visiting' ? 'あそびにきた' : friendshipStage === 'familiar' ? 'なかよし' : 'ずっといっしょ'; status.textContent = allAsleep ? 'ふたりとも ねんねしているよ' : guestSleeping ? `${petInfo('pet-2').name} は うしろで ねんねしているよ` : relation && relation.phase === 'cohabiting' ? `いまは ${petInfo(active).name} が主役・${friendshipLabel}` : active === 'pet-2' ? `${petInfo(active).name} が主役だよ` : 'ふわが あそびにきたよ'; } const note = $('welcome-note'); if (note) { if (typeof state.welcomeNoteDefault !== 'string') state.welcomeNoteDefault = note.textContent; note.hidden = Boolean(stageNow && stageNow.allAsleep); note.textContent = stageNow && stageNow.allAsleep ? (stageNow.pairAvailable ? 'ふたりとも ねてるよ' : `${petInfo('pet-1').name}は ねてるよ`) : (stageNow && stageNow.pairAvailable && stageNow.activePetId === 'pet-2') ? state.welcomeNoteDefault : state.welcomeNoteDefault; } if (stageNow && stageNow.allAsleep) { const mainBubble = $('bubble'); if (mainBubble) { mainBubble.hidden = true; mainBubble.textContent = ''; } } if ( $('puni')) $('puni').dataset.front = stageAsleep() ? 'true' : 'false'; refreshSulkVisual(); } function echoTuning(petId) { const presentation = twoPetPresentation(petId); const override = state.data && state.data.echoVoiceOverrides && state.data.echoVoiceOverrides[petId]; return override || { pitchRate:Number(presentation.pitchRate) || (petId === 'pet-2' ? .55 : 2.3), speedRate:Number(presentation.speedRate) || (petId === 'pet-2' ? .85 : 1.11), doubleMix:Number(presentation.doubleMix) || 0, brightness:Number(presentation.brightness) || (petId === 'pet-2' ? 35 : 70), timingMode:'preserve' }; }
+  function renderTwoPets() { if (!state.data) return; const relation = pairRelation(); const pets = state.data.pets || []; const active = visualPetId(); const guestSleeping = petAsleep('pet-2', new Date()) && active !== 'pet-2'; const stageNow = Life && Life.getStageState ? Life.getStageState(state.data, activeProfileId(), new Date()) : null; const showSecond = Boolean(relation && relation.phase === 'cohabiting') || Boolean(state.twoPetGuestVisible) || active === 'pet-2' || guestSleeping || (stageNow && stageNow.pairAvailable); ['pet-1','pet-2'].forEach(id => { const info = pets.find(item => item.id === id) || petInfo(id); const value = Life && Life.getProfilePetState ? Life.getProfilePetState(state.data, activeProfileId(), id) : null; const label = $(`${id}-name`); if (label) label.textContent = info.name; const node = petNode(id); const slot = node && node.closest('.pet-slot'); const isActive = id === active; const isSleeping = petAsleep(id, new Date()); if (slot) { slot.classList.toggle('is-active-pet', isActive);  slot.dataset.depth = isSleeping ? 'far' : isActive ? 'near' : 'mid'; /* 奥の子ほど中央へ寄せる（far 22px・mid 10px・near 0px）。主役は order:-1 で必ず左＝＋、右席は−。pet-2-slot が隠れている（1体だけ）ときは寄せない */ const depthShift = isSleeping ? 44 : isActive ? 0 : 24; slot.style.setProperty('--depth-shift', !showSecond || depthShift === 0 ? '0px' : `${isActive ? '' : '-'}${depthShift}px`); if (isSleeping) slot.dataset.asleep = 'true'; else delete slot.dataset.asleep; } if (node) { const presentation=twoPetPresentation(id); node.dataset.presentation=presentation.visual||''; node.dataset.active = String(isActive); node.setAttribute('aria-label', value ? `${info.name}。気分${value.mood}、体力${value.energy}、表情${value.lastExpression}${isActive ? '、いま遊ぶ主役' : '、見守り中'}` : `${info.name}がこちらを見ている`); const isActiveInSession = state.echoSession && (state.echoSession.imitatorPetId === id || id === active); const isCopyState = String(node.dataset.state || '').indexOf('copy-') === 0; if (isSleeping) { node.dataset.state = 'sleepy'; const sleepBubble = $(`${id}-bubble`); if (sleepBubble) { sleepBubble.hidden = true; sleepBubble.textContent = ''; } } else if (!isActiveInSession && !isCopyState && node.dataset.state === 'sleepy') node.dataset.state = 'normal'; } }); $('pet-2-slot').hidden = !showSecond; const allAsleep = stageNow && stageNow.allAsleep; const status = $('two-pet-status'); if (status) { status.hidden = !showSecond; const friendshipStage = relation && relation.friendshipStage || 'together'; const friendshipLabel = friendshipStage === 'not-met' ? 'まだ あってない' : friendshipStage === 'visiting' ? 'あそびにきた' : friendshipStage === 'familiar' ? 'なかよし' : 'ずっといっしょ'; status.textContent = allAsleep ? 'ふたりとも ねんねしているよ' : guestSleeping ? `${petInfo('pet-2').name} は うしろで ねんねしているよ` : relation && relation.phase === 'cohabiting' ? `いまは ${petInfo(active).name} が主役・${friendshipLabel}` : active === 'pet-2' ? `${petInfo(active).name} が主役だよ` : 'ふわが あそびにきたよ'; } const note = $('welcome-note'); if (note) { if (typeof state.welcomeNoteDefault !== 'string') state.welcomeNoteDefault = note.textContent; note.hidden = Boolean(stageNow && stageNow.allAsleep); note.textContent = stageNow && stageNow.allAsleep ? (stageNow.pairAvailable ? 'ふたりとも ねてるよ' : `${petInfo('pet-1').name}は ねてるよ`) : (stageNow && stageNow.pairAvailable && stageNow.activePetId === 'pet-2') ? state.welcomeNoteDefault : state.welcomeNoteDefault; } if (stageNow && stageNow.allAsleep) { const mainBubble = $('bubble'); if (mainBubble) { mainBubble.hidden = true; mainBubble.textContent = ''; } } if ( $('puni')) $('puni').dataset.front = stageAsleep() ? 'true' : 'false'; refreshSulkVisual(); } function echoTuning(petId) { const presentation = twoPetPresentation(petId); const override = state.data && state.data.echoVoiceOverrides && state.data.echoVoiceOverrides[petId]; return override || { pitchRate:Number(presentation.pitchRate) || (petId === 'pet-2' ? .55 : 2.3), speedRate:Number(presentation.speedRate) || (petId === 'pet-2' ? .85 : 1.11), doubleMix:Number(presentation.doubleMix) || 0, brightness:Number(presentation.brightness) || (petId === 'pet-2' ? 35 : 70), timingMode:'preserve' }; }
   function canSwitchActivePet() { const relation = pairRelation(); return Boolean(state.data && relation && ['visiting','cohabiting'].includes(relation.phase) && !document.hidden && !Life.isSafetyPaused(state.data) && !state.echoRecording && !state.tuningBlob && !(state.voice && (state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording || state.voice.playback)) && !state.audioNodes.length && !(speechAvailable && window.speechSynthesis.speaking)); }
   function switchActivePet(nextPetId, message = '') { const previous = activePetId(); if (!canSwitchActivePet() || !Life || !Life.setActivePetId || !Life.setActivePetId(state.data, nextPetId, activeProfileId())) return false; setPetState(previous, 'normal'); state.twoPetGuestVisible = pairRelation() && pairRelation().phase === 'visiting'; renderTwoPets(); const next = activePetId(); showPetBubble(next, message || `${petInfo(next).name} が こんどは主役だよ`); setPetState(next, 'listening'); window.setTimeout(() => { if (!state.echoSession) setPetState(next, 'normal'); }, 850); save(); return true; }
   function noteTwoPetCare(action) { const relation = pairRelation(); if (!relation || relation.phase !== 'solo') return; relation.soloCareCount = Math.max(0, Number(relation.soloCareCount) || 0) + 1; relation.soloCareKinds = [...new Set([...(relation.soloCareKinds || []), action])].filter(kind => ['tap','stroke','hold','play','sleep'].includes(kind)).slice(-5); if (action === 'play') relation.sharedToys = [{ toyId:'ball', petIds:['pet-1','pet-2'], firstAt:new Date().toISOString(), lastAt:new Date().toISOString(), playCount:1 }]; }
@@ -316,7 +323,7 @@
     $('main-controls').hidden = Boolean(echoSession);
     if (echoSession) {
       const pressMode = echoSession.inputMode === 'press';
-      /* 許可の画面（Chrome）が出ている間だけ押せるものを置かない（設計書）。許可済みでマイクの準備をしているだけの間は「やめる」を押せるままにする（2026-10-06：やめるが効かなかった） */
+
       const micWaiting = Boolean(state.micAsking && state.voice && state.voice.permissionInFlight);
       $('echo-press-button').hidden = !pressMode;
       $('echo-live-status').hidden = pressMode;
@@ -541,9 +548,9 @@
     echoSession.imitatorPetId = next; echoSession.switchAtRound = echoSession.rounds + 2 + Math.floor(Math.random() * 3); setState(echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); return true;
   }
   function echoSucceeded(token) { if (!state.echoSession || state.echoSession.token !== token) return; state.echoRecording = false; state.echoSession.phase = state.echoSession.inputMode === 'live' ? 'live' : 'ready'; state.echoSession.rounds += 1; state.echoSession.consecutiveFailures = 0; state.echoSession.lastActionAt = Date.now(); Life.recordEchoRound(state.data, new Date()); const changed = switchEchoImitator(state.echoSession); const companionHandled = companionAction('echo'); const reaction = companionHandled ? '' : echoReaction(); if (companionHandled && $('companion-moment').textContent) bubble($('companion-moment').textContent); save(); const reason = Life.echoShouldEnd(state.echoSession, Date.now()); if (reason === 'satisfied') finishEcho('satisfied'); else { if (!companionHandled && !changed) bubble(state.echoSession.inputMode === 'press' ? `${reaction}　もういっこ？ 「はなす」をおしてね` : `${reaction}　もういっこ、きくよ`); setState(state.echoSession.inputMode === 'press' ? 'copy-ready' : 'copy-live', 0); updateScreen(); } }
-  /* まねっこリレー（設計書 まねっこリレーv1）。音のもとは1回だけ受け取り、echo-relay.js の並びに沿って
-     同じ音に声の設定だけを掛け替えて順に鳴らす。相手がいない・文字モードのときは今までどおり1回だけ鳴る。
-     echoSucceeded・echoFailure はここでは呼ばない（呼び側の今までの流れで、リレー全体で1回だけ呼ぶ） */
+
+
+
   const ECHO_RELAY_HOPS = 5;
   /* 全体の安全網。ふつうは5回ぶん鳴り切るので当たらない（1回が最長でも約4.8秒・5回で約29秒） */
   const ECHO_RELAY_MAX_MS = 33000;
@@ -555,7 +562,7 @@
     if (!echoSession || echoSession.token !== token || !source || !play) return { ok:false, hops:0, durationMs:0 };
     const partnerPetId = echoSession.imitatorPetId === 'pet-1' ? 'pet-2' : 'pet-1';
     const partnerSlot = petNode(partnerPetId) && petNode(partnerPetId).closest('.pet-slot');
-    /* リレーの条件（設計書「やらない場合」）。1つでも欠けたら plan を作らない＝今までどおり1回だけ */
+
     let plan = null;
     if (echoSession.relayMode === true && state.data && state.data.soundMode !== 'text' && !petSleepingNow(partnerPetId) && partnerSlot && !partnerSlot.hidden && Relay && typeof Relay.relayPlan === 'function') {
       try { plan = Relay.relayPlan({ startPetId:echoSession.imitatorPetId, tunings:{ 'pet-1':echoTuning('pet-1'), 'pet-2':echoTuning('pet-2') }, hops:ECHO_RELAY_HOPS }); } catch (_) { plan = null; }
@@ -639,14 +646,14 @@
   }
   async function startEchoSession(source, selectedPetId = '') {
     if (stageAsleep()) return; if (!canStartEcho(source)) { if (state.data && state.data.soundMode === 'text') bubble('右上の音をオンにしてね'); return; }
-    /* マイクの状態を先に見る（設計書 字が読めなくても使えるマイク）。granted はすぐ・prompt は 👍 のあと・denied は getUserMedia を呼ばない */
+
     const gate = await micGateCheck('echo');
     if (gate !== 'granted' && gate !== 'approved') return;
     if (stageAsleep() || !canStartEcho(source)) return;  /* 前置きの画面を出している間に状況が変わったら始めない */
     if (source === 'manual') { cancelCompanionMoment(); cancelTwoPetMoment('echo'); }
     if (source === 'manual') interruptForManualEcho();
     const petInvited = source === 'spontaneous' || source === 'companion';
-    musicStop();  /* まねっこを始めたら音楽を止める（マイクが音楽を拾うため・設計書） */
+    musicStop();
     prepareEchoAudio(); const token = ++state.echoToken; const liveStart = source === 'manual' && liveEchoApi('startLiveEchoSession');
     /* 'both'＝2ひきで交互（リレー）。'pet-1'/'pet-2'＝その子だけ（今までどおり・リレーしない）。
        指定なし（画面の「まねっこ」ボタン・ペットからの誘い）＝リレー */
@@ -661,7 +668,7 @@
     Life.recordEchoSession(state.data, new Date()); save(); const sulkTalkWord = noteSulkTalk(); if (sulkTalkWord) showPetBubble(imitatorPetId, sulkTalkWord); setState(liveStart ? 'copy-calibrating' : (petInvited ? 'copy-invite' : 'copy-ready'), 0); bubble(liveStart ? 'マイク準備中・しずかに1秒まってね' : (petInvited ? '「はなす」をおして、なにか はなして' : 'この端末では「はなす」をおしてね')); if (petInvited) playPetSound('curious'); updateScreen(); armEchoEndChecks();
     if (!liveStart) return;
     const liveResultPromise = liveStart({ permissionTimeoutMs:micPermissionTimeout(gate), onReady:() => { if (state.echoSession && state.echoSession.token === token && state.echoSession.inputMode === 'live' && state.echoSession.phase === 'calibrating') { state.echoSession.phase = 'live'; state.echoRecording = false; bubble('いま きいてるよ。はなしてね'); setState('copy-live', 0); updateScreen(); } }, onSpeechStart:() => { if (state.echoSession && state.echoSession.token === token && state.echoSession.inputMode === 'live' && state.echoSession.phase === 'live') { state.echoSession.lastVoiceAt = Date.now(); state.echoRecording = true; setState('copy-listening', 0); updateScreen(); } }, onUtterance:utterance => playLiveEcho(utterance, token), onSilence:() => { if (state.echoSession && state.echoSession.token === token && state.echoSession.inputMode === 'live' && !['thinking','speaking'].includes(state.echoSession.phase)) { state.echoRecording = false; updateScreen(); } }, onError:() => recoverLiveEchoToPress(token) });
-    updateScreen();  /* 許可を待っている間は「やめる」も押せない（設計書：押せるものを画面に置かない） */
+    updateScreen();
     try {
       const liveResult = await liveResultPromise;
       if (!liveResult || !liveResult.ok) throw new Error('live-echo-unavailable');
@@ -675,7 +682,7 @@
       return;
     }
     if (state.echoRecording || state.voice.pendingRecording || state.voice.permissionInFlight || state.voice.recording) return;
-    /* 押して話すも、許可の状態を毎回見る（設計書 字が読めなくても使えるマイク）。denied なら getUserMedia を呼ばない */
+
     const pressGate = await micGateCheck('echo');
     if (pressGate !== 'granted' && pressGate !== 'approved') { if (pressGate === 'denied') finishEcho('stop', true); return; }
     if (!state.echoSession || !canStartEcho(state.echoSession.source)) return;  /* 前置きの間にまねっこが終わっていたら何もしない */
@@ -712,7 +719,7 @@
   function playPetSound(kind = 'normal') {
     if (!state.data || state.data.soundMode === 'text') return false;
     const context = unlockAudio(); if (!context) return false;
-    const proud = kind === 'happy' && Growth && Growth.getStage(state.data) >= 2 && Math.random() < 1 / 3; /* 段階2から、うれしい音に3回に1回だけ「えっへん（proud）」が混ざる（設計書 段階の中身2） */
+    const proud = kind === 'happy' && Growth && Growth.getStage(state.data) >= 2 && Math.random() < 1 / 3;
     const patterns = { happy:[660,880,1040], normal:[520,620], call:[760,520,760], thinking:[440,540], sleepy:[360,280], sad:[420,330], play:[700,820,700,920], danger:[300], curious:[580,760,680], proud:[520,780,980], quiet:[300,360], shy:[410,460], puni:[380,260,330] };
     try { stopPetAudio(); const frequencies = patterns[proud ? 'proud' : kind] || patterns.normal; const now = context.currentTime; frequencies.forEach((frequency, index) => { const oscillator=context.createOscillator(); const gain=context.createGain(); const start=now + index*.12; oscillator.type='triangle'; oscillator.frequency.value=frequency; gain.gain.setValueAtTime(.001,start); gain.gain.exponentialRampToValueAtTime(.13,start+.015); gain.gain.exponentialRampToValueAtTime(.001,start+.1); oscillator.connect(gain); gain.connect(context.destination); oscillator.start(start); oscillator.stop(start+.12); state.audioNodes.push(oscillator); }); state.audioTimer=window.setTimeout(stopPetAudio, frequencies.length*120+300); return true; } catch (_) { return false; }
   }
@@ -735,9 +742,9 @@
     if (!speechAvailable || state.data.soundMode === 'pet') { playPetSound(kind); return; }
     window.speechSynthesis.cancel(); const interruptToken=state.manualInterruptToken, speakingPetId=activePetId(); const started=PetSpeech&&PetSpeech.speakPetText&&PetSpeech.speakPetText({petId:speakingPetId,text,synth:window.speechSynthesis,getVoice:preferredVoice,onstart:()=>{if(interruptToken===state.manualInterruptToken&&!state.echoSession)setPetState(speakingPetId,'talking');},onend:()=>{clearSpeechWatchdog();if(interruptToken===state.manualInterruptToken&&!state.echoSession)setPetState(speakingPetId,state.data.energy<30?'sleepy':'normal');},onerror:()=>{clearSpeechWatchdog();if(interruptToken!==state.manualInterruptToken||state.echoSession)return;playPetSound(kind);setVoiceStatus('声の再生に失敗しました。ペット声を使います');showToast('声を出せなかったよ。ペット声にするね');setState('sad');}}); if(started)armSpeechWatchdog(kind); else playPetSound(kind);
   }
-  /* 名前鳴き（発注書E5・設計書「やること2」）。無音だった4場面（成長の到達・朝の自動起床・拗ねの第一声・拗ね中の小さな一言）で
-     ペット自身の名前を鳴き声ふうに読み上げる。「ペット声だけ」（既定）のときだけ鳴らし、「文字だけ」「自動」では何もしない
-     （「自動」は今までどおりの文章読み上げを優先し、名前鳴きは重ねない）。失敗しても電子音へフォールバックしない */
+
+
+
   function playNameCry(petId = activePetId()) {
     if (!state.data || state.data.soundMode !== 'pet' || !speechAvailable) return;
     const name = petInfo(petId).name;
@@ -820,7 +827,7 @@
     const reply = Brain.touchReply(kind, state.data.lastReplies); Life.applyAction(state.data, kind); noteTwoPetCare(kind); noteTwoPetAction(kind); state.data.lastReplies = [...state.data.lastReplies, reply.id].slice(-12); noteInteraction(); if (companionAction(kind)) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble(reply.text); setState(kind === 'hold' || kind === 'stroke' ? 'happy' : 'happy'); playPetSound(kind === 'hold' ? 'normal' : 'happy'); speak(reply.text, kind === 'hold' ? 'normal' : 'happy'); } setSeen(); updateScreen();
   }
   /* --- ぷにの居場所（data-spot 0〜8。0,1,2＝奥／3,4,5＝中／6,7,8＝手前）。見た目は styles.css 担当 --- */
-  /* 動き回り方（設計書）：12〜20秒に1回、同じ段に続けて行かないで移る。静かな時間・全員ねんね・困りごとで隠れている・みんなねんねで手前に出ているときは動かない */
+
   function puniSpotRow(spot) { return Math.floor(Math.max(0, Math.min(8, Math.round(Number(spot)) || 0)) / 3); }
   function nextPuniSpot(current) { const spot = Math.max(0, Math.min(8, Math.round(Number(current)) || 0)); const rows = [0,1,2].filter(row => row !== puniSpotRow(spot)); const row = rows[Math.floor(Math.random() * rows.length)]; return row * 3 + Math.floor(Math.random() * 3); }
   function puniWanderBlocked() { const puni = $('puni'); return Boolean(!state.data || document.hidden || stageAsleep() || (Life && Life.isQuietTime && Life.isQuietTime(new Date())) || (puni && (puni.dataset.hide || puni.dataset.front === 'true' || puni.dataset.puniSleep === 'true'))); }
@@ -857,11 +864,11 @@
   function care(action) {
     if (action === 'sleep' && stageAsleep() && state.data && !state.data.puniAsleep) { puniYawnThenSleep(); return; }
     if (stageAsleep()) return;
-    if (action === 'sleep') musicStop();  /* おやすみを始めたら音楽を止める（設計書） */ if (action === 'pet' || action === 'stroke') { performTouch('stroke'); return; }
+    if (action === 'sleep') musicStop();   if (action === 'pet' || action === 'stroke') { performTouch('stroke'); return; }
     if (action === 'play') { if (twoPetActive()) { noteTwoPetAction('play'); return; } openPlayMenu(); return; }
     if (action === 'sleep') { if (tryRitualTuckIn()) return; if (twoPetActive()) { noteTwoPetAction('sleep'); return; } Life.applyAction(state.data, 'sleep'); noteTwoPetCare('sleep'); noteTwoPetAction('sleep'); noteInteraction(); if (companionAction('sleep')) { setSeen(); updateScreen(); return; } const storyEvent = storyNoteUnrelated(); if (!storyEvent) { bubble('おやすみ。すやすや'); setState('sleepy', 2500); playPetSound('sleepy'); speak('おやすみ。すやすや', 'sleepy'); } setSeen(); updateScreen(); generationOnOpen(); }
   }
-  /* 発注書O：ぽこ・ふわが両方寝たあとの「おやすみ」で、ぷにだけ大きなあくびをして眠る（設計書 ぷにが寝る小ネタv1） */
+
   function puniYawnThenSleep() { const puni = $('puni'); if (!puni) return; puni.dataset.puniYawn = 'true'; window.clearTimeout(state.puniWanderTimer); window.setTimeout(() => { const p = $('puni'); if (p) delete p.dataset.puniYawn; if (!state.data) return; state.data.puniAsleep = true; save(); if (p) p.dataset.puniSleep = 'true'; }, 1200); }
   function puniWakeCheck() { if (!state.data || !state.data.puniAsleep) return; if (petAsleep('pet-2', new Date())) { const p = $('puni'); if (p && p.dataset.puniSleep !== 'true') { p.dataset.puniSleep = 'true'; window.clearTimeout(state.puniWanderTimer); } return; } state.data.puniAsleep = false; save(); const puni = $('puni'); if (puni) delete puni.dataset.puniSleep; schedulePuniWander(); }
   function moveGameTarget() { const board = $('game-board'); const target = $('game-target'); const maxX = Math.max(10, board.clientWidth - 78); const maxY = Math.max(10, board.clientHeight - 78); target.style.left = `${10 + Math.floor(Math.random() * maxX)}px`; target.style.top = `${10 + Math.floor(Math.random() * maxY)}px`; }
@@ -889,7 +896,7 @@
     catch (_) { state.data.cameraEnabled = false; $('camera-toggle').checked = false; $('camera-message').textContent = 'カメラは使わなくても、ぜんぶ遊べるよ。'; $('camera-box').hidden = false; save(); }
   }
   function stopCamera() { if (state.cameraStream) state.cameraStream.getTracks().forEach(track => track.stop()); state.cameraStream = null; $('camera-video').srcObject = null; $('camera-box').hidden = true; }
-  /* --- 壁の写真立て（photo-frame.js・設計書 写真立てv1）。写真は端末の中だけ・6枚まで・中身は判定しない --- */
+
   function photoEnabled() { return Boolean(state.data && state.data.photoFrameEnabled === true); }
   function refreshPhotoWall() {
     const enabled = photoEnabled();
@@ -1035,10 +1042,10 @@
       showToast('しゃしんを はがしたよ');
     });
   }
-  /* --- マイクの前置きの画面・ブロック中の絵（発注書AD・設計書 字が読めなくても使えるマイク）---
-         Chrome が許可の画面を「自動でブロック」する事故を二度と起こさない：
-         granted は前置きなしで始める・prompt は 👍 を押すまで getUserMedia を呼ばない・denied は1回も呼ばない。
-         待っている間は子どもが押すものを画面に置かない（押すと許可の画面の外をタップしたことになるため） */
+
+
+
+
   function micPermissionState() {
     if (!state.voice || typeof state.voice.micPermissionState !== 'function') return Promise.resolve('prompt');
     return Promise.resolve(state.voice.micPermissionState()).catch(() => 'prompt');
@@ -1081,8 +1088,8 @@
     state.micAsking = answer === 'approved';  /* このあと Chrome の許可の画面が出る */
     return answer;
   }
-  /* --- ラジカセくん（radio-recorder.js・設計書 ラジカセくん録音v1）。録音は1つだけ・この端末の中だけ。
-         録り直したら入れ替え・1秒未満や録音中に閉じたら前の録音を残す・まねっこと同じ声で聞き返す --- */
+
+
   function radioEnabled() { return Boolean(state.data && state.data.radioPlayEnabled === true); }
   /* ほかの仕組み（まねっこ・なかよし場面・2匹場面・困りごと）がラジカセくんと重ならないための印 */
   function radioBusy() { const dialog = $('radio-dialog'); return Boolean(state.radioRecording || state.radioPlaying || (dialog && dialog.open)); }
@@ -1115,7 +1122,7 @@
     syncMiniPet($('radio-poko-face'), 'pet-1'); syncMiniPet($('radio-fuwa-face'), 'pet-2');  /* 再生ボタンのぽこ・ふわは「いまの姿」の絵 */
     return clip;
   }
-  /* 録音ボタンは字なしの絵（設計書 字が読めなくても使えるマイク）。字のラベルは aria-label だけに残す */
+
   function radioRecordButtonVisual(recording) {
     const button = $('radio-record-button');
     if (!button) return;
@@ -1154,12 +1161,12 @@
   }
   async function runRadioRecord() {
     if (!state.voice || state.radioRecording || state.radioPlaying) return;
-    /* マイクの状態を先に見る（設計書 字が読めなくても使えるマイク）。granted はすぐ・prompt は 👍 のあと・denied は getUserMedia を呼ばない */
+
     const gate = await micGateCheck('radio');
     if (gate !== 'granted' && gate !== 'approved') return;
     musicStop();  /* ろくおんの録音を始めたら音楽を止める（マイクが音楽を拾うため） */
     state.radioRecording = true;
-    /* 許可を待つ間は、押せるボタンを1つも画面に置かない（設計書。子どもが許可の画面の外をタップしないように） */
+
     radioFace('waiting');
     $('radio-record-button').disabled = true;
     $('radio-close').disabled = true;
@@ -1246,7 +1253,7 @@
     $('radio-message').textContent = kind === 'normal' ? 'ふつうの こえ' : kind === 'pet-1' ? `${petInfo('pet-1').name}の こえ` : `${petInfo('pet-2').name}の こえ`;
     window.setTimeout(() => { if (token !== state.radioPlayToken || state.radioRecording) return; state.radioPlaying = false; radioFace('normal'); if ($('radio-dialog').open) $('radio-message').textContent = 'もういちど きく？'; }, Math.max(0, Number(result.durationMs) || 0) + 500);
   }
-  /* --- おんがく（music-player.js・設計書 おんがくv1）。♪から絵のカードで曲を選ぶ。ダイアログを閉じても流れ続ける --- */
+
   function musicPlayingId() { return state.musicPlayer ? state.musicPlayer.trackId : ''; }
   /* ♪の揺れ（aria-pressed）・body.music-playing（ぽこ・ふわの揺れ）・カードの光と▶は、全部この1つで描き直す */
   function musicRefresh() {
@@ -1692,7 +1699,7 @@
   function sulkingNow() { return Boolean(Sulk && state.data && Sulk.isSulking(state.data, new Date())); }
   /* 遊びの状態（この間は data-sulk の見た目を止める） */
   function sulkStatePlaying(value) { return ['happy', 'talking', 'listening', 'thinking'].includes(value) || String(value || '').indexOf('copy-') === 0; }
-  /* data-sulk の付け外し。JS は属性を付けるだけで、強さは CSS 側が持つ（設計書「表示の優先順位」） */
+
   function refreshSulkVisual() {
     if (!Sulk || !state.data) return;
     const sulking = Sulk.isSulking(state.data, new Date());
@@ -1740,7 +1747,7 @@
       playNameCry();
     }
   }
-  /* data-growth の付け外し。JS は属性を付けるだけで、見た目は CSS 側が持つ（設計書「見た目」） */
+
   function refreshGrowthVisual() {
     if (!Growth || !state.data) return;
     const stage = Growth.getStage(state.data);
@@ -1753,9 +1760,9 @@
     label.textContent = `段階 ${Growth.getStage(state.data)}/4`;
   }
   /* --- 世代交代（generation-engine.js が無くても落ちない。部品が無くても落ちない） --- */
-  /* 起動時と世話のあとの両方から呼ぶ（設計書の追記＝onOpen は初回に起点の日を決めるだけなので、
-     その日に1回しか開かないと最初の変化が翌日になる。世話のたびにも判定を回して初日に一度変える）。
-     エンジンは1回で最大1段しか進めないので、何度呼んでも飛び級しない */
+
+
+
   function generationOnOpen() {
     if (!Generation || !state.data) return;
     const result = Generation.onOpen(state.data, new Date());
@@ -1764,11 +1771,11 @@
     refreshGenerationVisual();
     updateGenerationPanel();
   }
-  /* 節目の知らせ（設計書9章「隠さないの原則」）。優先順は発注書Zの表の上から、1回の呼び出しで1つだけ。
-     段が上がったときだけは毎回（黙って上げない）。産み・旅立ちは advanced も true になるが段は上がっていないので、
-     段が上がった回＝advanced かつ産みでも旅立ちでもない回と読み分ける。
-     1日1回までの3つ（もうすぐ・ほしい・もうすこし）は、産み・旅立ちなど実際に何か起きた回には出さない
-     （1人めが生まれた直後は「次もほしい」状態になるので、出すと産みの知らせと名前を聞く箱を飲み込んでしまう） */
+
+
+
+
+
   function showGenerationEvent(result) {
     if (!Generation || !result || !state.data) return;
     const phrases = Generation.phrases || {};
@@ -1796,7 +1803,7 @@
     state.data.daily.seenReplyIds = [...seen, mark].slice(-50);
     return true;
   }
-  /* 名前を聞く箱（設計書「名前は毎回お子さんがつける」。ブラウザ標準の入力窓は使わずアプリ内の欄で聞く）。部品が無ければ何もしない */
+
   function openNewbornBox(bornChild) {
     const box = $('newborn-box'); if (!box) return;
     state.newbornIndex = Math.max(0, (Number(bornChild) || 1) - 1);
@@ -2086,7 +2093,7 @@
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     schedulePuniWander();
     window.setInterval(() => { if (state.data && !document.hidden) { ritualTick(); sulkTick(); puniWakeCheck(); } }, 60000);
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=back-ears-100').catch(() => {}));
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=101').catch(() => {}));
   }
   function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2200); }
   initialize();

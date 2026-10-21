@@ -4,11 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f5efff">
-  <meta name="description" content="端末の中で遊べる、ちいさな相棒">
+  <meta name="description" content="あなたの声を、ぽこ・ふわがかわいくまねっこ。なでたり、ごはんをあげたりして遊べる、ダウンロード不要の無料ペットゲームです。スマホ・タブレットのブラウザで楽しめます。">
+  <link rel="canonical" href="https://pokofuwa.jr-genius.jp/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="ちいさなともだち">
+  <meta property="og:title" content="声まねするペットゲーム｜ちいさなともだち「ぽこ・ふわ」">
+  <meta property="og:description" content="ぽこ・ふわと声まねやお世話で遊ぼう。スマホ・タブレットのブラウザで遊べる、ダウンロード不要の無料ペットゲーム。">
+  <meta property="og:url" content="https://pokofuwa.jr-genius.jp/">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=back-ears-100">
-  <title>ちいさな相棒</title>
+  <link rel="stylesheet" href="styles.css?v=101">
+  <title>声まねするペットゲーム｜ちいさなともだち「ぽこ・ふわ」</title>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ちいさなともだち","alternateName":"ぽこ・ふわ","url":"https://pokofuwa.jr-genius.jp/","inLanguage":"ja"}</script>
 </head>
 <body>
   <main id="app" class="app-shell" aria-live="polite">
@@ -148,13 +156,14 @@
   <dialog id="setup-dialog" class="dialog setup-dialog">
     <form id="setup-form" method="dialog">
       <div class="dialog-head"><span class="brand-dot" aria-hidden="true"></span><h1>はじめまして</h1></div>
-      <p>ちいさな相棒に名前をつけよう。</p>
+      <p>声まねであそぶ、ちいさなともだち。まずは名前をつけよう。</p>
       <label for="setup-pet-name">ペットの名前 <span class="optional">（あとで変更できるよ）</span></label>
       <input id="setup-pet-name" maxlength="12" value="ぽこ" autocomplete="off">
       <label for="setup-child-name">きみの呼ばれたい名前 <span class="optional">（任意）</span></label>
       <input id="setup-child-name" maxlength="12" autocomplete="off">
       <fieldset><legend>音を出す？</legend><label class="choice"><input name="setup-sound" type="radio" value="on" checked> だす</label><label class="choice"><input name="setup-sound" type="radio" value="off"> ださない</label></fieldset>
       <button class="primary-button" type="submit">はじめる</button>
+      <p class="version-note"><a href="transfer.html">今までの記録を引き継ぐ・機種変更</a></p>
     </form>
   </dialog>
 
@@ -198,8 +207,8 @@
     </form>
   </dialog>
 
-  <!-- マイクの前置きの画面・ブロック中の絵（発注書AD・設計書 字が読めなくても使えるマイク）。
-       Chrome が許可の画面を「自動でブロック」する事故を防ぐ：👍 を押すまで getUserMedia を呼ばない -->
+
+
   <dialog id="mic-gate" class="mic-gate" aria-labelledby="mic-gate-title">
     <p id="mic-gate-title" class="sr-only">マイクの許可</p>
     <div class="mic-gate-inner mic-gate-ask">
@@ -275,7 +284,10 @@
       </div>
       <div id="voice-clear-confirm-box" class="inline-confirm" hidden><p>声の記憶だけを、ぜんぶ消しますか？</p><div class="inline-actions"><button id="voice-clear-cancel" class="small-button" type="button">やめる</button><button id="voice-clear-confirm" class="danger-button" type="button">本当に消す</button></div></div>
       <div id="photo-clear-confirm-box" class="inline-confirm" hidden><p>かべの写真を、ぜんぶ消しますか？</p><div class="inline-actions"><button id="photo-clear-cancel" class="small-button" type="button">やめる</button><button id="photo-clear-confirm" class="danger-button" type="button">本当に消す</button></div></div>
-      <p class="version-note">ちいさな相棒・ブラウザ内会話</p>
+      <p class="version-note">ちいさなともだち「ぽこ・ふわ」</p>
+      <p id="old-address" hidden>新しい住所は <a href="https://pokofuwa.jr-genius.jp/">pokofuwa.jr-genius.jp</a> です。今までの記録は「引っ越し・機種変更」で保存してから、新しい住所で読み込めます。</p>
+      <p><a href="transfer.html">引っ越し・機種変更（記録・声・写真を保存）</a></p>
+      <details class="music-credits"><summary>このゲームについて</summary><p>ぽこ・ふわがあなたの声をまねする、無料のペットゲームです。なでる、ごはん、声まね、音楽の遊びを楽しめます。スマホ・タブレットのブラウザで、ダウンロードや会員登録なしで遊べます。</p><p>声まねにはマイクの許可が必要です。育てた記録や保存した録音・写真は、この端末のブラウザに保存されます。</p></details>
       <details class="music-credits"><summary>音楽の参考資料</summary><p>ちょうちょう：<a href="https://pianojuku.info/free-sheet-chouchou/" target="_blank" rel="noopener noreferrer">ピアノ塾</a><br>むすんでひらいて：<a href="https://kodomomusiq.com/score04-musunde/" target="_blank" rel="noopener noreferrer">こどもMusiQ♪</a></p><p>主旋律をもとに、練習用のピアノ音源を制作しています。</p></details>
     </form>
   </dialog>
@@ -299,35 +311,35 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="brain.js?v=90" defer></script>
-  <script src="room-background.js?v=90" defer></script>
-  <script src="pet-life.js?v=wake-96" defer></script>
-  <script src="story-engine.js?v=90" defer></script>
-  <script src="week-engine.js?v=90" defer></script>
-  <script src="voice-memory.js?v=90" defer></script>
-  <script src="photo-frame.js?v=90" defer></script>
-  <script src="radio-recorder.js?v=90" defer></script>
-    <script src="music-audio-bus.js?v=90" defer></script>
-    <script src="music-recording.js?v=90" defer></script>
-    <script src="music-score-data.js?v=90" defer></script>
-    <script src="music-player.js?v=90" defer></script>
-    <script src="music-tablet.js?v=pianica-98" defer></script>
-    <script src="music-learning.js?v=pianica-98" defer></script>
-    <script src="music-rhythm.js?v=pianica-98" defer></script>
-    <script src="companion-scenes.js?v=90" defer></script>
-    <script src="companion-director.js?v=90" defer></script>
-    <script src="activity-lock.js?v=90" defer></script>
-    <script src="pet-presentations.js?v=90" defer></script>
-    <script src="echo-relay.js?v=90" defer></script>
-    <script src="pet-speech.js?v=90" defer></script>
-    <script src="two-pet-scenes.js?v=90" defer></script>
-    <script src="two-pet-director.js?v=90" defer></script>
-    <script src="speech-arbiter.js?v=90" defer></script>
-    <script src="trouble-engine.js?v=90" defer></script>
-    <script src="ritual-engine.js?v=wake-96" defer></script>
-    <script src="sulk-engine.js?v=90" defer></script>
-    <script src="growth-engine.js?v=90" defer></script>
-    <script src="generation-engine.js?v=90" defer></script>
-    <script src="app.js?v=back-ears-100" defer></script>
+  <script src="brain.js?v=101" defer></script>
+  <script src="room-background.js?v=101" defer></script>
+  <script src="pet-life.js?v=101" defer></script>
+  <script src="story-engine.js?v=101" defer></script>
+  <script src="week-engine.js?v=101" defer></script>
+  <script src="voice-memory.js?v=101" defer></script>
+  <script src="photo-frame.js?v=101" defer></script>
+  <script src="radio-recorder.js?v=101" defer></script>
+    <script src="music-audio-bus.js?v=101" defer></script>
+    <script src="music-recording.js?v=101" defer></script>
+    <script src="music-score-data.js?v=101" defer></script>
+    <script src="music-player.js?v=101" defer></script>
+    <script src="music-tablet.js?v=101" defer></script>
+    <script src="music-learning.js?v=101" defer></script>
+    <script src="music-rhythm.js?v=101" defer></script>
+    <script src="companion-scenes.js?v=101" defer></script>
+    <script src="companion-director.js?v=101" defer></script>
+    <script src="activity-lock.js?v=101" defer></script>
+    <script src="pet-presentations.js?v=101" defer></script>
+    <script src="echo-relay.js?v=101" defer></script>
+    <script src="pet-speech.js?v=101" defer></script>
+    <script src="two-pet-scenes.js?v=101" defer></script>
+    <script src="two-pet-director.js?v=101" defer></script>
+    <script src="speech-arbiter.js?v=101" defer></script>
+    <script src="trouble-engine.js?v=101" defer></script>
+    <script src="ritual-engine.js?v=101" defer></script>
+    <script src="sulk-engine.js?v=101" defer></script>
+    <script src="growth-engine.js?v=101" defer></script>
+    <script src="generation-engine.js?v=101" defer></script>
+    <script src="app.js?v=101" defer></script>
 </body>
 </html>

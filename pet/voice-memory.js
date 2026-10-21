@@ -24,16 +24,16 @@
   const ECHO_MAX_DURATION_MS = 5000;
   const ECHO_STOP_MS = 4000;
   const ECHO_MAX_BYTES = 768 * 1024;
-  /* ろくおん（ラジカセくん・設計書 ラジカセくん録音v1）専用の上限。まねっこのTEST_*・ECHO_*は変えない */
+
   const MIC_PERMISSION_TIMEOUT_MS = 15000; /* マイクの許可の返事を待つ上限（既定。grantedなのに返事が来ない＝端末の不調のときの長さ） */
-  const MIC_PERMISSION_PROMPT_TIMEOUT_MS = 60000; /* permissions が prompt のときの上限（設計書 字が読めなくても使えるマイク）。👍のあと Chrome の許可の画面で大人が来て押す時間 */
+  const MIC_PERMISSION_PROMPT_TIMEOUT_MS = 60000;
   const RADIO_MAX_DURATION_MS = 30000;   /* 30秒で自動的に止まる */
   const RADIO_STOP_MS = 30000;
   const RADIO_TOLERANCE_MS = 800;        /* 自動停止タイマーのぶれぶん。30秒ちょうどの録音が上限判定に引っかからないように */
   const RADIO_PLAY_MAX_MS = RADIO_MAX_DURATION_MS + RADIO_TOLERANCE_MS;
   const RADIO_MAX_BYTES = 3072 * 1024;
   const RADIO_MAX_GRAINS = 1800;         /* 30秒を18ms間隔で鳴らすのに必要な粒（1667）より余裕を持たせた数 */
-  /* 再生前の正規化と音量の上限（設計書「音量」）。目標peakは効果音（.13〜.16）より大きくならない値 */
+
   const RADIO_TARGET_PEAK = .16;
   const RADIO_MAX_GAIN = 10;             /* 無音まぎれの録音を持ち上げすぎない上限 */
   const RADIO_QUIET_SCALE = .5;          /* 静かな時間（Life.isQuietTime）は半分の音量 */
@@ -86,7 +86,7 @@
       maxBytes:bounded(maxBytes, RADIO_MAX_BYTES, 1, RADIO_MAX_BYTES)
     };
   };
-  /* 再生前の正規化（設計書「音量」）。peakから目標peakへそろえる倍率を出す。大きな声は下げ・小さな声は上げ（上げはRADIO_MAX_GAINまで） */
+
   const radioOutputGain = (peak, quiet = false) => {
     const value = Number(peak);
     const clipped = Number.isFinite(value) && value > 0 ? Math.min(1, value) : 0;
@@ -437,10 +437,10 @@
     return next;
   };
 
-  /* マイクの許可を聞く。返事が来ないまま待ち続けると permissionInFlight が立ちっぱなしになり、
-     まねっこ・ろくおん・声の記録が「使えない」まま戻らなくなる（2026-10-04に検査用ブラウザで実際に起きた）。
-     上限で諦めて「使えない」扱いにする。遅れて許可が来たら、そのマイクはすぐ止める。
-     timeoutMs は呼び出し側が permissions の状態に合わせて選ぶ（prompt は60秒・granted は15秒・設計書 字が読めなくても使えるマイク） */
+
+
+
+
   VoiceMemory.prototype._askMic = function (constraints, timeoutMs) {
     const timeout = Math.max(1000, Math.min(120000, Math.round(Number(timeoutMs) || MIC_PERMISSION_TIMEOUT_MS)));
     const request = this.mediaDevices.getUserMedia(constraints);
@@ -455,8 +455,8 @@
     });
   };
 
-  /* マイクの許可の状態を先に見る（設計書 字が読めなくても使えるマイク）。
-     granted／prompt／denied を返し、permissions.query が無い・落ちる端末では「prompt」扱い */
+
+
   VoiceMemory.prototype.micPermissionState = function () {
     const permissions = this.permissions;
     if (!permissions || typeof permissions.query !== 'function') return Promise.resolve('prompt');
@@ -756,7 +756,7 @@
   };
 
   VoiceMemory.prototype.recordTemporary = function ({ stopMs, maxDurationMs, maxBytes, permissionTimeoutMs, onPending, onStart, onStop } = {}) {
-    /* 試験録音（まねっこ・声づくり）。上限はTEST_*・ECHO_*のまま（設計書 ラジカセくん録音v1「まねっこの上限は変えず」） */
+
     return this._recordWithLimits(normalizeTemporaryLimits({ stopMs, maxDurationMs, maxBytes }), { permissionTimeoutMs, onPending, onStart, onStop });
   };
 
@@ -1237,9 +1237,9 @@
     }
   };
 
-  /* ろくおん（ラジカセくん）専用の再生（設計書 ラジカセくん録音v1）。まねっこのplayProcessedの上限（TEST_*）は変えず、
-     30秒の録音を通す道をここに持つ。tuningなし＝「ふつう」（録った声をそのまま。正規化と音量上限だけ）。
-     tuningあり＝まねっこと同じ粒の加工（app.js の echoTuning と同じ設定）。戻るのは鳴らし始めた時点（playProcessedと同じ） */
+
+
+
   VoiceMemory.prototype.playRadioClip = async function ({ blob, tuning, quiet } = {}) {
     if (!this.AudioContext || this.destructiveOps) return { ok:false, reason:'missing' };
     if (!isBlob(blob) || !blob.size || blob.size > RADIO_MAX_BYTES || !supportedMime(blob.type)) return { ok:false, reason:'invalid-radio-clip' };
@@ -1270,14 +1270,14 @@
         if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) throw new Error('invalid-audio');
         if (audio.duration * 1000 > RADIO_PLAY_MAX_MS) throw new Error('invalid-radio-clip');
         if (!await stillCurrent()) throw new Error('invalidated');
-        /* 再生前の正規化（設計書「音量」）。小声でも大声でも同じくらいで聞こえ・効果音より大きくならない・静かな時間は半分 */
+
         const peak = audioPeak(audio);
         const gainValue = radioOutputGain(peak, quiet === true);
         if (!(gainValue > 0)) throw new Error('silent-clip');
         const settings = usesTuning ? normalizeTuning(tuning) : null;
         let durationMs;
         if (!settings) {
-          /* ふつう：録った声をそのまま流す（声まねv1の「生音を出さない」方針の例外・設計書「生の声」） */
+
           const gain = context.createGain();
           gain.gain.value = gainValue;
           const source = context.createBufferSource();
