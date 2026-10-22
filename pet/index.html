@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://pokofuwa.jr-genius.jp/">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=instruments-102">
+  <link rel="stylesheet" href="styles.css?v=video-103">
   <title>声まねするペットゲーム｜ちいさなともだち「ぽこ・ふわ」</title>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ちいさなともだち","alternateName":"ぽこ・ふわ","url":"https://pokofuwa.jr-genius.jp/","inLanguage":"ja"}</script>
 </head>
@@ -203,11 +203,18 @@
       <div class="music-record-status-row"><p id="music-record-message" class="music-record-status" role="status" aria-live="polite">30秒まで。前のろくおんと入れかわるよ</p><span id="music-record-remaining" class="music-record-remaining" hidden></span></div>
       <section id="music-learn-panel" aria-label="おぼえる" hidden><p class="music-mute-hint music-learning-mute-hint" aria-hidden="true">🔇 音がオフだよ</p><div id="music-learning-root"></div></section>
       <section id="music-listen-panel" aria-label="きく" hidden><div id="music-cards" class="music-cards" aria-label="曲をえらぶ"></div><p id="music-mute-hint" class="music-mute-hint" aria-hidden="true">🔇</p><button id="music-stop" class="music-stop" type="button" aria-label="とめる">■</button></section>
-      <section id="music-rhythm-panel" aria-label="リズム"><div id="music-rhythm-root"></div></section>
+      <section id="music-rhythm-panel" aria-label="リズム"><div id="music-rhythm-root"></div><div class="music-auto-video-bar"><label><input id="music-auto-video" type="checkbox" checked> 自動録画</label><p id="music-video-status" role="status">高得点の2件を自動更新。声やカメラは録りません</p><button id="music-videos-open" class="small-button" type="button">ベスト動画を見る</button></div></section>
     </form>
   </dialog>
 
 
+
+  <dialog id="music-videos-dialog" class="dialog music-videos-dialog" aria-labelledby="music-videos-title">
+    <form method="dialog"><div class="dialog-head"><h2 id="music-videos-title">ベスト動画</h2><button class="close-button" value="close" aria-label="動画一覧を閉じる">×</button></div></form>
+    <p class="music-video-description">全曲共通の上位2件。同点は新しい演奏に入れかわるよ。気に入ったら「動画を保存」で端末に残してね。</p>
+    <div id="music-videos-list"></div>
+    <p class="music-video-description">このブラウザだけに保存しています。機種変更の前は動画を別に保存してね。引き継ぎファイルには入りません。</p>
+  </dialog>
 
   <dialog id="mic-gate" class="mic-gate" aria-labelledby="mic-gate-title">
     <p id="mic-gate-title" class="sr-only">マイクの許可</p>
@@ -326,7 +333,7 @@
     <script src="music-tablet.js?v=101" defer></script>
     <script src="music-instruments.js?v=instruments-102" defer></script>
     <script src="music-learning.js?v=instruments-102" defer></script>
-    <script src="music-rhythm.js?v=instruments-102" defer></script>
+    <script src="music-rhythm.js?v=video-103" defer></script>
     <script src="companion-scenes.js?v=101" defer></script>
     <script src="companion-director.js?v=101" defer></script>
     <script src="activity-lock.js?v=101" defer></script>
@@ -341,6 +348,7 @@
     <script src="sulk-engine.js?v=101" defer></script>
     <script src="growth-engine.js?v=101" defer></script>
     <script src="generation-engine.js?v=101" defer></script>
-    <script src="app.js?v=instruments-102" defer></script>
+    <script src="music-video.js?v=video-103" defer></script>
+    <script src="app.js?v=video-103" defer></script>
 </body>
 </html>

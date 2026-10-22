@@ -87,6 +87,9 @@
     this.audioContextFactory = options.audioContextFactory || null;
     this.beforePlay = typeof options.beforePlay === 'function' ? options.beforePlay : null;
     this.onChange = typeof options.onChange === 'function' ? options.onChange : null;
+    this.onRunStart = options.onRunStart || null;
+    this.onRunFinish = options.onRunFinish || null;
+    this.onRunCancel = options.onRunCancel || null;
     this.now = options.now || nowMs;
     this.setTimeout = options.setTimeout || ((fn, ms) => setTimeout(fn, ms));
     this.clearTimeout = options.clearTimeout || (id => clearTimeout(id));
@@ -223,6 +226,7 @@
     this.emit();
   };
   MusicRhythmController.prototype.stop = function (emit = true) {
+    if (this.onRunCancel) this.onRunCancel();
     this.generation += 1;
     this.clearTimers(); this.clearVoices();
     this.phase = 'idle'; this.startedAt = 0; this.countdownEnd = 0; this.nextIndex = 0;
@@ -250,6 +254,7 @@
     if (token !== this.generation) return false;
     if (!this.fitsViewport()) { this.emit(); return false; }
     this.phase = 'countdown'; this.error = ''; this.message = 'じゅんび… 3'; this.countdownEnd = this.audioTime() + COUNTDOWN_MS / 1000;
+    if (this.onRunStart) this.onRunStart(this);
     this.timer = this.setInterval(() => this.tick(), 50);
     this.countdownTimer = this.setTimeout(() => this.begin(token), COUNTDOWN_MS + 20);
     if (this.requestFrame) {
@@ -360,7 +365,9 @@
     while (this.nextIndex < (this.score ? this.score.notes.length : 0)) { this.judged[this.nextIndex] = 'missed'; this.missed += 1; this.nextIndex += 1; this.combo = 0; }
     this.lastGrade = '';
     this.lastHit = null;
-    this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = 'おつかれさま！ もういちど あそぼう'; this.emit();
+    this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = 'おつかれさま！ もういちど あそぼう';
+    if (this.onRunFinish) this.onRunFinish(this.getState());
+    this.emit();
   };
   MusicRhythmController.prototype.getState = function () {
     const now = this.audioTime();

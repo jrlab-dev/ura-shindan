@@ -1,4 +1,25 @@
 :root { color-scheme: light; --ink:#443b57; --muted:#827890; --lavender:#f5efff; --purple:#806ac4; --purple-dark:#614ba0; --mint:#dff6ed; --peach:#ffe5d6; --white:#fff; --shadow:0 10px 34px rgba(80,60,120,.13); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; }
+.music-auto-video-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #eee7f5;margin-top:8px;padding-top:8px;font-size:12px;color:var(--muted)}
+.music-auto-video-bar label{display:flex;align-items:center;gap:5px;margin:0;min-height:44px;white-space:nowrap}
+.music-auto-video-bar input{width:19px;height:19px;accent-color:var(--purple)}
+.music-auto-video-bar p{flex:1;min-width:160px;margin:0;line-height:1.5}
+.music-auto-video-bar [data-recording="true"]{color:#b64472}
+.music-auto-video-bar .small-button{min-height:44px;font-size:13px;white-space:nowrap}
+.dialog.music-videos-dialog{width:calc(100% - 24px);max-width:860px;max-height:90dvh;overflow:auto;padding:20px;box-sizing:border-box}
+.dialog.music-videos-dialog>form{padding:0;margin:0}
+.music-videos-dialog .dialog-head{gap:12px;padding:0;margin:0 0 12px}
+.music-video-description{font-size:13px;line-height:1.7;color:var(--muted);margin:10px 0 16px}
+#music-videos-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.music-video-card{min-width:0;border:1px solid #e8e0f2;border-radius:16px;padding:14px;background:#faf8fe}
+.music-video-card h3{font-size:17px;margin:0 0 7px;overflow-wrap:anywhere}
+.music-video-meta{font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 10px}
+.music-video-card video{display:block;width:100%;aspect-ratio:16/9;background:#f7f3fc;border-radius:9px}
+.music-video-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.music-video-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;text-decoration:none;box-sizing:border-box}
+.music-video-actions button,.music-video-confirm button{min-height:44px}
+.music-video-notice,.music-video-confirm p,.music-video-empty{font-size:13px;line-height:1.6}
+.music-video-confirm button{margin:4px}
+@media(max-width:600px){#music-videos-list{grid-template-columns:1fr}.dialog.music-videos-dialog{padding:14px}.music-auto-video-bar{gap:6px}.music-auto-video-bar p{order:3;flex-basis:100%}}
 .music-rhythm-picker label.music-instrument-label,.music-learning-picker label.music-instrument-label{display:flex;align-items:center;gap:5px;flex:0 0 auto;margin:0;color:var(--muted);font-size:12px;white-space:nowrap}
 .music-rhythm-picker select.music-instrument,.music-learning-picker select.music-instrument{width:122px;flex:0 0 122px;font-size:14px}
 @media(max-width:520px){#music-rhythm-track,#music-learning-track{flex:1 0 100%;width:100%}}
