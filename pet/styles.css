@@ -1,4 +1,7 @@
 :root { color-scheme: light; --ink:#443b57; --muted:#827890; --lavender:#f5efff; --purple:#806ac4; --purple-dark:#614ba0; --mint:#dff6ed; --peach:#ffe5d6; --white:#fff; --shadow:0 10px 34px rgba(80,60,120,.13); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; }
+.music-rhythm-picker label.music-instrument-label,.music-learning-picker label.music-instrument-label{display:flex;align-items:center;gap:5px;flex:0 0 auto;margin:0;color:var(--muted);font-size:12px;white-space:nowrap}
+.music-rhythm-picker select.music-instrument,.music-learning-picker select.music-instrument{width:122px;flex:0 0 122px;font-size:14px}
+@media(max-width:520px){#music-rhythm-track,#music-learning-track{flex:1 0 100%;width:100%}}
 .train-toybox{position:absolute;left:3%;bottom:calc(55.5556% - 30px);width:clamp(80px,16%,120px);z-index:0;display:block;text-decoration:none;touch-action:manipulation;border-radius:15px;-webkit-tap-highlight-color:transparent;}
 .train-toybox svg{display:block;width:100%;height:auto;transition:transform .18s ease;}
 .train-toybox:hover svg,.train-toybox:focus-visible svg{transform:translateY(-3px) rotate(-2deg);}

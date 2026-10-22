@@ -2,9 +2,9 @@
    音符データを持たずに仮の音を作らない。score-data.js が提供する音符を、
    Web Audio の予約と画面表示の両方で共有する。 */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'));
-  else root.LittleCompanionMusicLearning = factory(root.LittleCompanionMusicTablet);
-}(typeof self !== 'undefined' ? self : this, function (Tablet) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'), require('./music-instruments.js'));
+  else root.LittleCompanionMusicLearning = factory(root.LittleCompanionMusicTablet, root.LittleCompanionMusicInstruments);
+}(typeof self !== 'undefined' ? self : this, function (Tablet, Instruments) {
   'use strict';
 
   const SPEEDS = Object.freeze({ slow: 0.5, gentle: 0.75, normal: 1 });
@@ -117,6 +117,8 @@
     this.score = null;
     this.trackId = '';
     this.edition = 'tablet';
+    this.instrument = 'piano';
+    this.onInstrumentChange = typeof options.onInstrumentChange === 'function' ? options.onInstrumentChange : null;
     this.phraseIndex = 0;
     this.position = 0;
     this.speed = 0.75;
@@ -144,7 +146,7 @@
   };
   MusicLearningController.prototype.notify = function () { if (this.onChange) this.onChange(this.getState()); };
   MusicLearningController.prototype.getState = function () {
-    return { trackId: this.trackId, position: this.getPosition(), speed: this.speed, playing: this.playing, active: this.isActive(), repeat: this.repeat, phraseIndex: this.phraseIndex, showNotes: this.showNotes, showKeyboard: this.showKeyboard, score: this.score };
+    return { instrument:this.instrument, trackId: this.trackId, position: this.getPosition(), speed: this.speed, playing: this.playing, active: this.isActive(), repeat: this.repeat, phraseIndex: this.phraseIndex, showNotes: this.showNotes, showKeyboard: this.showKeyboard, score: this.score };
   };
   MusicLearningController.prototype.isActive = function () {
     return Boolean(this.playing || this.manualVoices.size || this.manualResumePromise);
@@ -168,6 +170,15 @@
     this.data = data || null;
     if (this.trackId) this.score = normalizeScore(Tablet.arrange(getScoreMap(this.data)[this.trackId], this.edition));
     this.renderSignature = '';
+    this.emit();
+  };
+  MusicLearningController.prototype.setInstrument = function (instrument) {
+    const next = Instruments.normalize(instrument);
+    if (next === this.instrument) return;
+    this.stop(false);
+    this.instrument = next;
+    this.renderSignature = '';
+    if (this.onInstrumentChange) this.onInstrumentChange(next);
     this.emit();
   };
   MusicLearningController.prototype.setEdition = function (edition) {
@@ -249,10 +260,8 @@
     let oscillator;
     let gain;
     try {
-      oscillator = ctx.createOscillator();
+      oscillator = Instruments.createSource(ctx, this.instrument, frequency(value));
       gain = ctx.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency(value), when);
       gain.gain.setValueAtTime(0.0001, when);
       gain.gain.exponentialRampToValueAtTime(0.16, when + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.0001, when + MANUAL_DURATION);
@@ -306,10 +315,8 @@
       let oscillator;
       let gain;
       try {
-        oscillator = this.ctx.createOscillator();
+        oscillator = Instruments.createSource(this.ctx, this.instrument, frequency(note.midi));
         gain = this.ctx.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(frequency(note.midi), when);
         gain.gain.setValueAtTime(0.0001, when);
         gain.gain.exponentialRampToValueAtTime(0.16, when + Math.min(0.04, duration / 3));
         gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
@@ -463,6 +470,8 @@
     if (select) { select.value = this.trackId; select.addEventListener('change', () => this.select(select.value)); }
     this.root.querySelector('.music-learning-picker').insertAdjacentHTML('beforeend', '<select class="music-edition" aria-label="おぼえる演奏版"><option value="tablet">タブレット版</option><option value="original">原曲版</option></select>');
     const edition = this.root.querySelector('.music-edition'); edition.value = this.edition; edition.addEventListener('change', () => this.setEdition(edition.value));
+    this.root.querySelector('.music-learning-picker').insertAdjacentHTML('beforeend', `<label class="music-instrument-label">音色<select class="music-instrument" aria-label="おぼえるの音色" title="切替で曲のはじめに戻る">${Instruments.optionsHtml()}</select></label>`);
+    const instrument = this.root.querySelector('.music-instrument'); instrument.value = this.instrument; instrument.addEventListener('change', () => this.setInstrument(instrument.value));
     if (!score) { this.root.insertAdjacentHTML('beforeend', '<p class="music-learning-empty" role="status">曲をえらんでね</p>'); return; }
     // 技術的な出典はデータに保持するが、子ども向け画面には学習の目的だけを表示する。
     const source = `<small>${this.edition === 'tablet' ? (score.arranged ? 'タブレット版の編曲をおぼえよう' : 'タブレット版・メロディーをおぼえよう') : '原曲版・メロディーをおぼえよう'}</small>`;

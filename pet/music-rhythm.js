@@ -1,8 +1,8 @@
 /* おんがくリズムゲーム。表示と採点は音声の時計を共有し、押した鍵盤だけを鳴らす。 */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'));
-  else root.LittleCompanionMusicRhythm = factory(root.LittleCompanionMusicTablet);
-}(typeof self !== 'undefined' ? self : this, function (Tablet) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'), require('./music-instruments.js'));
+  else root.LittleCompanionMusicRhythm = factory(root.LittleCompanionMusicTablet, root.LittleCompanionMusicInstruments);
+}(typeof self !== 'undefined' ? self : this, function (Tablet, Instruments) {
   'use strict';
 
   const COUNTDOWN_MS = 3000;
@@ -100,6 +100,8 @@
     this.score = null;
     this.trackId = '';
     this.edition = 'tablet';
+    this.instrument = 'piano';
+    this.onInstrumentChange = typeof options.onInstrumentChange === 'function' ? options.onInstrumentChange : null;
     this.speed = SPEEDS.gentle;
     this.phase = 'idle';
     this.generation = 0;
@@ -141,6 +143,15 @@
     return ctx && Number.isFinite(ctx.currentTime) ? ctx.currentTime : this.now() / 1000;
   };
   MusicRhythmController.prototype.getScore = function (id) { const score = getScoreMap(this.data)[id]; return normalizeScore(score && score.id ? Tablet.arrange(score, this.edition) : null); };
+  MusicRhythmController.prototype.setInstrument = function (instrument) {
+    const next = Instruments.normalize(instrument);
+    if (next === this.instrument) return;
+    this.stop(false);
+    this.instrument = next;
+    this.renderSignature = '';
+    if (this.onInstrumentChange) this.onInstrumentChange(next);
+    this.emit();
+  };
   MusicRhythmController.prototype.setEdition = function (edition) {
     const next = edition === 'original' ? 'original' : 'tablet';
     if (next === this.edition) return;
@@ -285,8 +296,8 @@
     while (this.voices.size >= MAX_VOICES) { const oldest = this.voices.values().next().value; this.releaseVoice(oldest); }
     try {
       if (!this.keyOutput) { this.keyOutput = ctx.createGain(); this.keyOutput.gain.setValueAtTime(this.volume, at); this.keyOutput.connect(this.outputNode || ctx.destination); }
-      const oscillator = ctx.createOscillator(); const gain = ctx.createGain();
-      const frequency = 440 * Math.pow(2, (midi - 69) / 12); oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(frequency, at);
+      const frequency = 440 * Math.pow(2, (midi - 69) / 12);
+      const oscillator = Instruments.createSource(ctx, this.instrument, frequency, 'triangle'); const gain = ctx.createGain();
       gain.gain.setValueAtTime(.0001, at);
       if (gain.gain.linearRampToValueAtTime) gain.gain.linearRampToValueAtTime(.16, at + .008);
       else gain.gain.exponentialRampToValueAtTime(.16, at + .008);
@@ -357,7 +368,7 @@
     const activeNotes = scheduled.filter(item => now >= item.due && now < item.due + item.note.duration / this.speed).map(item => Object.assign({}, item.note, { index:item.index }));
     const visibleNotes = scheduled.filter(item => now < item.due + item.note.duration / this.speed && item.due - now <= LOOK_AHEAD_SECONDS).map(item => Object.assign({}, item.note, { index:item.index, untilMs:(item.due - now) * 1000 }));
     const hitFeedback = this.phase === 'playing' && this.lastHit && now - this.lastHit.at < HIT_FEEDBACK_SECONDS ? this.lastHit : null;
-    return { hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
+    return { instrument:this.instrument, hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
   };
   MusicRhythmController.prototype.mount = function (rootNode) {
     if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -400,6 +411,8 @@
       const select = this.root.querySelector('#music-rhythm-track'); if (select) { select.value = this.trackId; select.addEventListener('change', () => this.select(select.value)); }
       this.root.querySelector('.music-rhythm-picker').insertAdjacentHTML('beforeend', `<select class="music-edition" aria-label="リズムの演奏版"><option value="tablet">タブレット版</option><option value="original">原曲版</option></select>`);
       const edition = this.root.querySelector('.music-edition'); edition.value = this.edition; edition.addEventListener('change', () => this.setEdition(edition.value));
+    this.root.querySelector('.music-rhythm-picker').insertAdjacentHTML('beforeend', `<label class="music-instrument-label">音色<select class="music-instrument" aria-label="リズムの音色" title="切替で曲のはじめに戻る">${Instruments.optionsHtml()}</select></label>`);
+    const instrument = this.root.querySelector('.music-instrument'); instrument.value = this.instrument; instrument.addEventListener('change', () => this.setInstrument(instrument.value));
       this.root.querySelector('.music-rhythm-stage').insertAdjacentHTML('beforebegin', '<p class="music-rhythm-width-hint" role="status">横向きにすると、全部のけんばんが見えるよ</p>');
       this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<div class="music-rhythm-result" role="status" aria-live="polite" hidden><div><span>今回のスコア</span><strong class="music-rhythm-points"></strong></div><p class="music-rhythm-breakdown"></p></div>');
       this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<strong class="music-rhythm-key-feedback" aria-hidden="true" hidden></strong>');

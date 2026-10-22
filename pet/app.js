@@ -1983,7 +1983,7 @@
       state.musicRecorder = new MusicRecording.MusicRecordingController({ audioBus:state.musicAudioBus, radioEngine:state.radioEngine, onChange:value => musicRecordingUi(value) });
     }
     if (MusicLearning && MusicLearning.MusicLearningController) {
-      state.musicLearning = new MusicLearning.MusicLearningController({ scoreData: window.LittleCompanionMusicScoreData || null, trackIds: MusicBox ? MusicBox.TRACKS.map(track => track.id) : [], audioContext:musicRoute && musicRoute.context, outputNode:musicRoute && musicRoute.output, beforePlay: () => {
+      state.musicLearning = new MusicLearning.MusicLearningController({ onInstrumentChange: value => state.musicRhythm?.setInstrument(value), scoreData: window.LittleCompanionMusicScoreData || null, trackIds: MusicBox ? MusicBox.TRACKS.map(track => track.id) : [], audioContext:musicRoute && musicRoute.context, outputNode:musicRoute && musicRoute.output, beforePlay: () => {
         if (state.data && state.data.soundMode === 'text') { showMusicMuteHint(); return false; }
         if (state.musicPlayer && state.musicPlayer.trackId) { state.musicPlayer.stop(); musicRefresh(); }
         return true;
@@ -1994,7 +1994,7 @@
       state.musicLearning.mount($('music-learning-root'));
     }
     if (MusicRhythm && MusicRhythm.MusicRhythmController) {
-      state.musicRhythm = new MusicRhythm.MusicRhythmController({ scoreData:window.LittleCompanionMusicScoreData || null, trackIds:MusicBox ? MusicBox.TRACKS.map(track => track.id) : [], audioContext:musicRoute && musicRoute.context, outputNode:musicRoute && musicRoute.output, beforePlay:() => {
+      state.musicRhythm = new MusicRhythm.MusicRhythmController({ onInstrumentChange: value => state.musicLearning?.setInstrument(value), scoreData:window.LittleCompanionMusicScoreData || null, trackIds:MusicBox ? MusicBox.TRACKS.map(track => track.id) : [], audioContext:musicRoute && musicRoute.context, outputNode:musicRoute && musicRoute.output, beforePlay:() => {
         if (state.data && state.data.soundMode === 'text') { showMusicMuteHint(); return false; }
         if (state.musicPlayer && state.musicPlayer.trackId) { state.musicPlayer.stop(); musicRefresh(); }
         if (state.musicLearning) state.musicLearning.stop();
@@ -2093,7 +2093,7 @@
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     schedulePuniWander();
     window.setInterval(() => { if (state.data && !document.hidden) { ritualTick(); sulkTick(); puniWakeCheck(); } }, 60000);
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=101').catch(() => {}));
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=instruments-102').catch(() => {}));
   }
   function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2200); }
   initialize();
