@@ -10,8 +10,8 @@
 
   const RULES = {
     baby:  { days: 0, care: 3, cap: 1  },
-    child: { days: 2, care: 3, cap: 4  },
-    big:   { days: 5, care: 5, cap: 10 },
+    child: { days: 1, care: 15, cap: 2 },
+    big:   { days: 2, care: 20, cap: 4 },
     adult: { days: 7, care: 5, cap: 14 }
   };
   const phrases = {
