@@ -13,10 +13,13 @@
   const TRACKS = [
     { id:'twinkle', file:'twinkle.mp3',          art:'⭐', name:'きらきらぼし' },
     { id:'kakkou', file:'kakkou.mp3',            art:'🐦', name:'かっこう' },
+    { id:'london', file:'london.mp3',            art:'🌉', name:'ロンドンばし' },
     { id:'chouchou', file:'chouchou.mp3',        art:'🦋', name:'ちょうちょう' },
     { id:'joy',     file:'joy.mp3',              art:'🌞', name:'よろこびのうた' },
     { id:'musunde', file:'musunde.mp3',          art:'👏', name:'むすんでひらいて' },
     { id:'ofuro',    file:'ofuro.mp3',           art:'🛁', name:'にんぎょうの ゆめ' },
+    { id:'grace', file:'grace.mp3', art:'🕊️', name:'アメイジング・グレイス（やさしい編曲）' },
+    { id:'minuet', file:'minuet.mp3', art:'🎵', name:'メヌエット ト長調（主旋律）' },
     { id:'canon',    file:'canon.mp3',           art:'🎼', name:'かのん' },
     { id:'jesu',     file:'jesu.mp3',            art:'🎹', name:'しゅよ ひとの のぞみの よろこびよ' },
     { id:'haru',     file:'haru.mp3',             art:'🌸', name:'はる' },

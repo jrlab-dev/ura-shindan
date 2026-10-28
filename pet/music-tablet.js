@@ -34,7 +34,7 @@
   }
   const cache = new WeakMap();
   function schoolKeyboardRange(score) {
-    if (!score || !['twinkle','kakkou','chouchou','joy','musunde','ofuro'].includes(score.id)) return null;
+    if (!score || !['twinkle','kakkou','chouchou','joy','musunde','ofuro','london','grace'].includes(score.id)) return null;
     return score.notes?.length && score.notes.every(note => note.midi >= 53 && note.midi <= 77) ? [53,77] : null;
   }
   function arrange(score, edition = 'tablet') {

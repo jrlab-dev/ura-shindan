@@ -24,6 +24,9 @@
   const DIFFICULTY_TABLE = Object.freeze({
     twinkle:{ group:'easy', reason:'白鍵中心・単旋律・6音の入口' },
     kakkou:{ group:'easy', reason:'白鍵5音・3拍子・短い旋律で長音を練習' },
+    london:{ group:'step', reason:'白鍵6音・短い曲で付点リズムを練習' },
+    grace:{ group:'normal', reason:'長い音と黒鍵・短い音型を含むゆったりした旋律' },
+    minuet:{ group:'normal', reason:'3拍子・八分音符の連続・黒鍵と広めの移動' },
     chouchou:{ group:'step', reason:'白鍵5音・同音反復と順次進行' },
     joy:{ group:'step', reason:'白鍵の単旋律で付点と八分音符に進む' },
     musunde:{ group:'step', reason:'白鍵6音・八分音符のリズムをゆったり練習' },
