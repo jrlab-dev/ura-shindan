@@ -1,8 +1,8 @@
-/* おんがくリズムゲーム。表示と採点は音声の時計を共有し、押した鍵盤だけを鳴らす。 */
+/* おんがくリズムゲーム。表示・採点・任意の伴奏は音声の時計を共有する。 */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'), require('./music-instruments.js'));
-  else root.LittleCompanionMusicRhythm = factory(root.LittleCompanionMusicTablet, root.LittleCompanionMusicInstruments);
-}(typeof self !== 'undefined' ? self : this, function (Tablet, Instruments) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-tablet.js'), require('./music-instruments.js'), require('./music-accompaniment.js'));
+  else root.LittleCompanionMusicRhythm = factory(root.LittleCompanionMusicTablet, root.LittleCompanionMusicInstruments, root.LittleCompanionMusicAccompaniment);
+}(typeof self !== 'undefined' ? self : this, function (Tablet, Instruments, Accompaniment) {
   'use strict';
 
   const COUNTDOWN_MS = 3000;
@@ -132,6 +132,9 @@
     this.heldInputs = new Map();
     this.volume = .9;
     this.keyOutput = null;
+    this.accompaniment = false;
+    this.accompanimentVolume = .35;
+    this.accompanimentPlayer = null;
     this.renderSignature = '';
   }
   MusicRhythmController.prototype.emit = function () { if (this.onChange) this.onChange(this.getState()); this.render(); };
@@ -205,6 +208,15 @@
     }
     this.paint();
   };
+  MusicRhythmController.prototype.setAccompaniment = function (enabled) {
+    if (this.accompaniment === Boolean(enabled)) return;
+    this.stop(false); this.accompaniment = Boolean(enabled); this.emit();
+  };
+  MusicRhythmController.prototype.setAccompanimentVolume = function (value) {
+    this.accompanimentVolume = Math.max(0, Math.min(1, number(value, this.accompanimentVolume)));
+    if (this.accompanimentPlayer) this.accompanimentPlayer.setVolume(this.accompanimentVolume);
+    this.paint();
+  };
   MusicRhythmController.prototype.endVoice = function (entry, at = this.audioTime()) {
     if (!entry || entry.released || Number.isFinite(entry.noteOffAt) || at >= entry.naturalEndAt) return;
     entry.noteOffAt = at;
@@ -232,6 +244,7 @@
     if (this.onRunCancel) this.onRunCancel();
     this.generation += 1;
     this.clearTimers(); this.clearVoices();
+    if (this.accompanimentPlayer) this.accompanimentPlayer.stop();
     this.phase = 'idle'; this.startedAt = 0; this.countdownEnd = 0; this.nextIndex = 0;
     this.judged = []; this.hits = 0; this.perfect = 0; this.nice = 0; this.missed = 0;
     this.combo = 0; this.maxCombo = 0; this.hitSequence = 0; this.lastGrade = '';
@@ -258,6 +271,11 @@
     if (!this.fitsViewport()) { this.emit(); return false; }
     this.phase = 'countdown'; this.error = ''; this.message = 'じゅんび… 3'; this.countdownEnd = this.audioTime() + COUNTDOWN_MS / 1000;
     if (this.onRunStart) this.onRunStart(this);
+    if (this.accompaniment && Accompaniment) {
+      if (!this.accompanimentPlayer) this.accompanimentPlayer = new Accompaniment.Player(ctx, this.outputNode);
+      this.accompanimentPlayer.setVolume(this.accompanimentVolume);
+      this.accompanimentPlayer.start(this.trackId, this.countdownEnd, this.speed);
+    }
     this.timer = this.setInterval(() => this.tick(), 50);
     this.countdownTimer = this.setTimeout(() => this.begin(token), COUNTDOWN_MS + 20);
     if (this.requestFrame) {
@@ -280,6 +298,7 @@
   MusicRhythmController.prototype.dueTime = function (note) { const base = this.phase === 'countdown' ? this.countdownEnd : this.startedAt; return base + note.start / this.speed; };
   MusicRhythmController.prototype.songTime = function (atTime = this.audioTime()) { return Math.max(0, (atTime - this.startedAt) * this.speed); };
   MusicRhythmController.prototype.tick = function () {
+    if (this.accompanimentPlayer && (this.phase === 'countdown' || this.phase === 'playing')) this.accompanimentPlayer.pump();
     if (this.phase === 'countdown') {
       const left = Math.max(0, this.countdownEnd - this.audioTime());
       this.message = left <= 0 ? 'スタート！' : `じゅんび… ${Math.ceil(left)}`;
@@ -369,6 +388,7 @@
     this.lastGrade = '';
     this.lastHit = null;
     this.phase = 'finished'; this.clearTimers(); this.clearVoices(); this.message = 'おつかれさま！ もういちど あそぼう';
+    if (this.accompanimentPlayer) this.accompanimentPlayer.stop();
     if (this.onRunFinish) this.onRunFinish(this.getState());
     this.emit();
   };
@@ -378,7 +398,7 @@
     const activeNotes = scheduled.filter(item => now >= item.due && now < item.due + item.note.duration / this.speed).map(item => Object.assign({}, item.note, { index:item.index }));
     const visibleNotes = scheduled.filter(item => now < item.due + item.note.duration / this.speed && item.due - now <= LOOK_AHEAD_SECONDS).map(item => Object.assign({}, item.note, { index:item.index, untilMs:(item.due - now) * 1000 }));
     const hitFeedback = this.phase === 'playing' && this.lastHit && now - this.lastHit.at < HIT_FEEDBACK_SECONDS ? this.lastHit : null;
-    return { instrument:this.instrument, hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
+    return { accompaniment:this.accompaniment, accompanimentVolume:this.accompanimentVolume, instrument:this.instrument, hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
   };
   MusicRhythmController.prototype.mount = function (rootNode) {
     if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -424,6 +444,11 @@
     this.root.querySelector('.music-rhythm-picker').insertAdjacentHTML('beforeend', `<label class="music-instrument-label">音色<select class="music-instrument" aria-label="リズムの音色" title="切替で曲のはじめに戻る">${Instruments.optionsHtml()}</select></label>`);
     const instrument = this.root.querySelector('.music-instrument'); instrument.value = this.instrument; instrument.addEventListener('change', () => this.setInstrument(instrument.value));
       this.root.querySelector('.music-rhythm-stage').insertAdjacentHTML('beforebegin', '<p class="music-rhythm-width-hint" role="status">横向きにすると、全部のけんばんが見えるよ</p>');
+      this.root.querySelector('.music-rhythm-stage').insertAdjacentHTML('beforebegin', '<div class="music-accompaniment-controls"><label class="music-accompaniment-toggle"><input type="checkbox" aria-label="伴奏あり" title="切替で曲のはじめに戻る">伴奏あり</label><label class="music-accompaniment-volume">伴奏の音量<input type="range" min="0" max="100" step="5" aria-label="伴奏の音量"><output></output></label></div>');
+      const accompaniment = this.root.querySelector('.music-accompaniment-toggle input');
+      accompaniment.addEventListener('change', () => this.setAccompaniment(accompaniment.checked));
+      const accompanimentVolume = this.root.querySelector('.music-accompaniment-volume input');
+      accompanimentVolume.addEventListener('input', () => this.setAccompanimentVolume(Number(accompanimentVolume.value) / 100));
       this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<div class="music-rhythm-result" role="status" aria-live="polite" hidden><div><span>今回のスコア</span><strong class="music-rhythm-points"></strong></div><p class="music-rhythm-breakdown"></p></div>');
       this.root.querySelector('.music-rhythm-lane').insertAdjacentHTML('beforeend', '<strong class="music-rhythm-key-feedback" aria-hidden="true" hidden></strong>');
       this.root.querySelector('.music-rhythm-controls').insertAdjacentHTML('beforeend', '<label class="music-rhythm-volume">音量<input type="range" min="0" max="100" step="5" aria-label="鍵盤の音量"><output></output></label>');
@@ -464,6 +489,10 @@
   MusicRhythmController.prototype.paint = function () {
     if (!this.root || !this.score) return;
     const state = this.getState(); const select = this.root.querySelector('#music-rhythm-track'); if (select) select.value = this.trackId;
+    const accompaniment = this.root.querySelector('.music-accompaniment-toggle input'); if (accompaniment) accompaniment.checked = this.accompaniment;
+    const accompanimentVolume = this.root.querySelector('.music-accompaniment-volume input');
+    if (accompanimentVolume) { accompanimentVolume.value = String(Math.round(this.accompanimentVolume * 100)); accompanimentVolume.disabled = !this.accompaniment; }
+    const accompanimentLevel = this.root.querySelector('.music-accompaniment-volume output'); if (accompanimentLevel) accompanimentLevel.textContent = `${Math.round(this.accompanimentVolume * 100)}%`;
     const difficulty = this.root.querySelector('.music-rhythm-difficulty'); if (difficulty) difficulty.textContent = DIFFICULTIES[difficultyFor(this.trackId).group];
     const fits = this.fitsViewport();
     this.root.classList.toggle('is-tablet', this.edition === 'tablet');

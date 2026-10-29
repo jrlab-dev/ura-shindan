@@ -709,6 +709,13 @@ body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-aw
 .music-dialog{max-height:92svh;overflow:auto}
 /* おんがくリズムゲーム。レーンと鍵盤は同じ横スクロール領域を使う。 */
 #music-rhythm-panel{padding:0 0 24px}
+.music-accompaniment-controls{display:flex;align-items:center;justify-content:space-between;gap:4px 16px;flex-wrap:wrap;margin:2px 0 6px;padding:0 10px;border-radius:12px;background:#f4eefb;color:var(--ink);font-size:12px}
+.music-accompaniment-controls label{display:flex;align-items:center;gap:6px;min-height:44px;margin:0;white-space:nowrap}
+.music-accompaniment-toggle{cursor:pointer;font-weight:700}
+.music-accompaniment-toggle input{width:20px;height:20px;accent-color:var(--purple);margin:0 4px 0 0}
+.music-accompaniment-volume input{width:100px;min-width:70px;height:44px;margin:0;padding:0;accent-color:var(--purple);touch-action:pan-x}
+.music-accompaniment-volume output{width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.music-accompaniment-volume input:disabled{opacity:.45}
 .music-rhythm-picker select.music-edition,.music-learning-picker select.music-edition{flex:0 0 132px;width:132px;min-height:44px}
 .music-rhythm-stage .music-rhythm-lane{overflow:hidden}
 .music-rhythm-controls .music-rhythm-volume{display:flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap;margin:0 0 0 auto;min-height:44px}
@@ -790,6 +797,15 @@ body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-aw
   .music-learning-error{display:block;position:absolute;top:46px;right:0;z-index:5;max-width:45%;max-height:22px;overflow:hidden;margin:0;padding:2px 6px;border:1px solid #f2ccd5;border-radius:6px;background:#fff8fa;color:#a65069;text-align:left;pointer-events:none}
   .music-learning-error:empty{display:none}
   #music-rhythm-panel{padding:0}.music-rhythm-picker{margin:0 0 3px}.music-rhythm-guide{display:none}.music-rhythm-stage{height:170px}.music-rhythm-lane{height:64px}.music-rhythm-controls{margin-top:3px}
+  #music-rhythm-root{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:6px}
+  .music-rhythm-picker{grid-column:1;grid-row:1;min-width:0;gap:4px}
+  .music-rhythm-picker>label,.music-rhythm-difficulty{display:none}
+  .music-rhythm-picker label.music-instrument-label{font-size:0;gap:0}
+  .music-rhythm-picker select.music-edition{flex-basis:104px;width:104px;font-size:12px}
+  .music-rhythm-picker select.music-instrument{flex-basis:94px;width:94px;font-size:12px}
+  .music-accompaniment-controls{grid-column:2;grid-row:1;gap:8px;padding:0 6px;flex-wrap:nowrap;margin:0 0 3px;font-size:11px}
+  .music-accompaniment-volume input{width:70px}
+  .music-rhythm-stage,.music-rhythm-controls,.music-rhythm-status,.music-rhythm-width-hint{grid-column:1/-1}
 }
 
 .puni[data-puni-sleep="true"]::after{content:"ZZZ";position:absolute;top:12px;right:-40px;font-size:17px;font-weight:700;line-height:1;color:#76519f;animation:puni-zz-float 3s ease-in-out infinite;pointer-events:none;text-shadow:0 1px 3px #fff}
