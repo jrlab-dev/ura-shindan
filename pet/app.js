@@ -2002,6 +2002,14 @@
         if (state.musicLearning) state.musicLearning.stop();
         return true;
       }, onChange:value => { document.body.classList.toggle('music-rhythm-playing', Boolean(value.active)); } });
+      const effects = window.LittleCompanionMusicEffects;
+      let storage; try { storage = window.localStorage; } catch (_) {}
+      const effectsMode = effects.load(storage);
+      state.musicRhythm.setEffectsMode(effectsMode);
+      const effectsSelect = $('music-effects-mode');
+      effectsSelect.value = effectsMode;
+      effectsSelect.addEventListener('change', () => { effects.save(storage,effectsSelect.value); state.musicRhythm.setEffectsMode(effectsSelect.value); });
+      state.musicRhythm.motionQuery?.addEventListener?.('change', () => state.musicRhythm.paint());
       state.musicRhythm.select('twinkle');
       state.musicRhythm.mount($('music-rhythm-root'));
     }
@@ -2095,7 +2103,7 @@
     window.setInterval(() => { if (state.data && !document.hidden) renderTwoPets(); }, 60000);
     schedulePuniWander();
     window.setInterval(() => { if (state.data && !document.hidden) { ritualTick(); sulkTick(); puniWakeCheck(); } }, 60000);
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=accompaniment-106').catch(() => {}));
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js?v=effects-107').catch(() => {}));
   }
   function showToast(message) { const node = $('toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2200); }
   initialize();

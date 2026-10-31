@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://pokofuwa.jr-genius.jp/">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=accompaniment-106">
+  <link rel="stylesheet" href="styles.css?v=effects-107">
   <title>声まねするペットゲーム｜ちいさなともだち「ぽこ・ふわ」</title>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ちいさなともだち","alternateName":"ぽこ・ふわ","url":"https://pokofuwa.jr-genius.jp/","inLanguage":"ja"}</script>
 </head>
@@ -249,6 +249,8 @@
       <div class="settings-list">
         <label class="setting-row"><span>音声入力を使う</span><input id="speech-input-toggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
         <label class="setting-row"><span>音声出力を使う</span><input id="speech-output-toggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
+        <label class="setting-row"><span>リズムの演出</span><select id="music-effects-mode" aria-label="リズムの演出"><option value="normal">ふつう</option><option value="quiet">ひかえめ</option></select></label>
+        <p class="small-note">端末で動きを減らす設定をしている場合は、ひかえめになります。</p>
         <label class="setting-row"><span>音モード</span><select id="sound-mode-select" aria-label="音モード"><option value="auto">自動</option><option value="pet">ペット声だけ</option><option value="text">文字だけ</option></select></label>
         <label class="setting-row"><span>教えた声をこのブラウザに覚える</span><input id="voice-memory-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label><p class="memory-summary">おとなと一緒に使う機能。オフにすると録音・再生を止めます。声は「声の記憶だけ消す」から消せます。このブラウザと同じ公開URLだけに保存されます。</p>
         <label class="setting-row"><span>まねっこ遊びを使う</span><input id="echo-mode-toggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label><p class="memory-summary">話した声を最大5秒だけ、その場で高くして返します。保存・送信せず、内容は理解しません。</p>
@@ -335,7 +337,8 @@
     <script src="music-learning.js?v=instruments-102" defer></script>
     <script src="music-accompaniment-data.js?v=accompaniment-106" defer></script>
     <script src="music-accompaniment.js?v=accompaniment-106" defer></script>
-    <script src="music-rhythm.js?v=accompaniment-106" defer></script>
+    <script src="music-effects.js?v=effects-107" defer></script>
+    <script src="music-rhythm.js?v=effects-107" defer></script>
     <script src="companion-scenes.js?v=101" defer></script>
     <script src="companion-director.js?v=101" defer></script>
     <script src="activity-lock.js?v=101" defer></script>
@@ -350,7 +353,7 @@
     <script src="sulk-engine.js?v=101" defer></script>
     <script src="growth-engine.js?v=101" defer></script>
     <script src="generation-engine.js?v=growth-104" defer></script>
-    <script src="music-video.js?v=video-103" defer></script>
-    <script src="app.js?v=accompaniment-106" defer></script>
+    <script src="music-video.js?v=effects-107" defer></script>
+    <script src="app.js?v=effects-107" defer></script>
 </body>
 </html>

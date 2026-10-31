@@ -813,3 +813,10 @@ body.music-playing .pet:not([data-state="sleepy"]):not([data-sulk]):not([data-aw
 @keyframes puni-zz-float{0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
 
 .music-c-sticker{position:absolute;bottom:26px;left:50%;width:23px;height:23px;display:grid;place-items:center;box-sizing:border-box;border:2px solid #fff;border-radius:50%;background:#ffe071;color:#6b4b17;font-style:normal;font-size:16px;line-height:1;transform:translateX(-50%) rotate(-10deg);box-shadow:0 1px 3px #49381755;pointer-events:none;z-index:1}
+
+/* Success decorations stay inside existing keyboard and result regions. */
+.music-hit-ring{position:absolute;top:6px;left:50%;width:min(84%,28px);aspect-ratio:1;border:2px solid #a27ac5;border-radius:50%;pointer-events:none;z-index:3;box-sizing:border-box}
+.music-result-pet{width:48px;height:52px;flex:0 0 48px;pointer-events:none}
+.music-effects-quiet .music-rhythm-key-feedback,.music-effects-quiet .music-rhythm-feedback,.music-effects-quiet .music-rhythm-key.is-cue{animation:none!important;transition:none!important}
+@media(max-height:500px) and (orientation:landscape){.music-result-pet{width:24px;height:26px;flex-basis:24px}.music-rhythm-lane .music-rhythm-result{gap:16px}}
+@media(max-width:520px){.music-result-pet{display:none}}

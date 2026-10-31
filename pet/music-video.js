@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-rhythm.js'));
-  else root.LittleCompanionMusicVideo = factory(root.LittleCompanionMusicRhythm);
-}(typeof self !== 'undefined' ? self : this, function (Rhythm) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./music-rhythm.js'), require('./music-effects.js'));
+  else root.LittleCompanionMusicVideo = factory(root.LittleCompanionMusicRhythm, root.LittleCompanionMusicEffects);
+}(typeof self !== 'undefined' ? self : this, function (Rhythm, Effects) {
   'use strict';
   const DB_NAME = 'little-companion-music-video-v1';
   const MAX_BYTES = 64 * 1024 * 1024;
@@ -151,7 +151,8 @@
     text(state.score.title || state.trackId,24,70,27);
     text(`${TONES[state.instrument] || TONES.piano} ・ ${state.speed === .5 ? 'ゆっくり' : state.speed === .75 ? 'すこしゆっくり' : 'ふつう'} ・ ${controller.edition === 'original' ? '原曲版' : 'タブレット版'}`,24,102,15);
     text(`${state.points} 点`,936,62,29,'#72519d','right');
-    text(`${state.combo} COMBO`,936,99,18,'#72519d','right');
+    const fx = Effects.view(state.effectEvents, controller.audioTime(), state.effectsQuiet);
+    text(`${fx.milestone ? '★ ' : ''}${state.combo} COMBO`,936,99,18*fx.scale,'#72519d','right');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(left,124,width,hitY - 120);
     ctx.save(); ctx.beginPath(); ctx.rect(left,124,width,hitY - 120); ctx.clip();
     (state.visibleNotes || []).forEach(note => {
@@ -177,6 +178,10 @@
       }
     };
     layout.keys.filter(k => !k.black).forEach(drawKey); layout.keys.filter(k => k.black).forEach(drawKey);
+    fx.rings.forEach(ring => {
+      const pos = Rhythm.keyPosition(layout,ring.midi), w=pos.width/100*width;
+      ctx.save();ctx.globalAlpha=.45*(1-ring.progress);ctx.strokeStyle='#a27ac5';ctx.lineWidth=2;ctx.beginPath();ctx.arc(left+(pos.left+pos.width/2)/100*width,keyY+19,Math.min(14,w*.42)*(.65+.35*ring.progress),0,Math.PI*2);ctx.stroke();ctx.restore();
+    });
     if (state.hitFeedback) {
       const pos = Rhythm.keyPosition(layout,state.hitFeedback.midi);
       const x = Math.max(85,Math.min(875,left+(pos.left+pos.width/2)/100*width));
@@ -185,10 +190,11 @@
     text(state.phase === 'countdown' ? `じゅんび… ${Math.ceil(state.countdownMs/1000)}` : '光ったら おしてね',480,518,18,'#87729e','center');
     if (state.phase === 'finished') {
       ctx.fillStyle = '#ffffff'; ctx.fillRect(210,154,540,172);
+      Effects.drawPet(ctx,226,204,48,false,fx.bow); Effects.drawPet(ctx,686,204,48,true,fx.bow);
       text('今回のスコア',480,190,18,'#87729e','center');
       text(`${state.points} 点 / 100`,480,244,44,'#72519d','center');
       text(`GREAT ${state.perfect}　GOOD ${state.nice}　最大 ${state.maxCombo} COMBO`,480,287,17,'#534461','center');
-      ctx.fillStyle = '#f7f3fc'; ctx.fillRect(0,493,960,47); text('おつかれさま！',480,521,22,'#72519d','center');
+      ctx.fillStyle = '#f7f3fc'; ctx.fillRect(0,493,960,47); text(Effects.resultMessage(state.hits),480,521,22,'#72519d','center');
     }
   }
 
