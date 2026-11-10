@@ -23,6 +23,7 @@
   /* 標準速度の密度・黒鍵・音域・跳躍を見比べた初版の分類表。曲データの音を変更しない。 */
   const DIFFICULTY_TABLE = Object.freeze({
     twinkle:{ group:'easy', reason:'白鍵中心・単旋律・6音の入口' },
+    kaeru:{ group:'easy', reason:'白鍵6音・短い旋律で同音反復と八分音符を練習' },
     kakkou:{ group:'easy', reason:'白鍵5音・3拍子・短い旋律で長音を練習' },
     london:{ group:'step', reason:'白鍵6音・短い曲で付点リズムを練習' },
     grace:{ group:'normal', reason:'長い音と黒鍵・短い音型を含むゆったりした旋律' },

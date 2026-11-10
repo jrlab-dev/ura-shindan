@@ -36897,6 +36897,416 @@
         "scoreCopySha256": "3203893470da7a35fad5fedf7bc4949a2e33459afc2020c29e9e839857f82a27"
       }
     },
+    "kaeru": {
+      "id": "kaeru",
+      "title": "かえるのうた",
+      "sourceLabel": "ドイツ民謡『かえるのうた』（主旋律）",
+      "duration": 19.2,
+      "notes": [
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 0.0,
+          "duration": 0.6,
+          "beat": 0.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 0.6,
+          "duration": 0.6,
+          "beat": 1.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 1.2,
+          "duration": 0.6,
+          "beat": 2.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 1.8,
+          "duration": 0.6,
+          "beat": 3.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 2.4,
+          "duration": 0.6,
+          "beat": 4.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 3.0,
+          "duration": 0.6,
+          "beat": 5.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 3.6,
+          "duration": 1.2,
+          "beat": 6.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 4.8,
+          "duration": 0.6,
+          "beat": 8.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 5.4,
+          "duration": 0.6,
+          "beat": 9.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 6.0,
+          "duration": 0.6,
+          "beat": 10.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 69,
+          "name": "A4",
+          "step": "A",
+          "octave": 4,
+          "accidental": null,
+          "start": 6.6,
+          "duration": 0.6,
+          "beat": 11.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 67,
+          "name": "G4",
+          "step": "G",
+          "octave": 4,
+          "accidental": null,
+          "start": 7.2,
+          "duration": 0.6,
+          "beat": 12.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 7.8,
+          "duration": 0.6,
+          "beat": 13.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 8.4,
+          "duration": 1.2,
+          "beat": 14.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 9.6,
+          "duration": 1.2,
+          "beat": 16.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 10.8,
+          "duration": 1.2,
+          "beat": 18.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 12.0,
+          "duration": 1.2,
+          "beat": 20.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 13.2,
+          "duration": 1.2,
+          "beat": 22.0,
+          "beats": 2.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 14.4,
+          "duration": 0.3,
+          "beat": 24.0,
+          "beats": 0.5
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 14.7,
+          "duration": 0.3,
+          "beat": 24.5,
+          "beats": 0.5
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.0,
+          "duration": 0.3,
+          "beat": 25.0,
+          "beats": 0.5
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.3,
+          "duration": 0.3,
+          "beat": 25.5,
+          "beats": 0.5
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.6,
+          "duration": 0.3,
+          "beat": 26.0,
+          "beats": 0.5
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 15.9,
+          "duration": 0.3,
+          "beat": 26.5,
+          "beats": 0.5
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 16.2,
+          "duration": 0.3,
+          "beat": 27.0,
+          "beats": 0.5
+        },
+        {
+          "midi": 65,
+          "name": "F4",
+          "step": "F",
+          "octave": 4,
+          "accidental": null,
+          "start": 16.5,
+          "duration": 0.3,
+          "beat": 27.5,
+          "beats": 0.5
+        },
+        {
+          "midi": 64,
+          "name": "E4",
+          "step": "E",
+          "octave": 4,
+          "accidental": null,
+          "start": 16.8,
+          "duration": 0.6,
+          "beat": 28.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 62,
+          "name": "D4",
+          "step": "D",
+          "octave": 4,
+          "accidental": null,
+          "start": 17.4,
+          "duration": 0.6,
+          "beat": 29.0,
+          "beats": 1.0
+        },
+        {
+          "midi": 60,
+          "name": "C4",
+          "step": "C",
+          "octave": 4,
+          "accidental": null,
+          "start": 18.0,
+          "duration": 1.2,
+          "beat": 30.0,
+          "beats": 2.0
+        }
+      ],
+      "phrases": [
+        {
+          "start": 0.0,
+          "end": 8.4,
+          "firstNote": 0,
+          "lastNote": 12
+        },
+        {
+          "start": 8.4,
+          "end": 16.5,
+          "firstNote": 13,
+          "lastNote": 24
+        },
+        {
+          "start": 16.5,
+          "end": 19.2,
+          "firstNote": 25,
+          "lastNote": 28
+        }
+      ],
+      "source": {
+        "kind": "midi",
+        "midiPath": "kaeru_theme.mid",
+        "midiSha256": "17c2222a55f987ed7cd62a2044c8c0ab0cee06bc547b0f78c7dbc84d14a834d6",
+        "scoreSource": "ドイツ民謡『かえるのうた』（主旋律）",
+        "scoreCopy": "kaeru_reference.pdf",
+        "selectionRule": "伝承旋律のみ1回。参考譜の音価を2倍にして8小節32拍に表記。歌詞・現代伴奏・譜面画像は配信しない。",
+        "scoreLicense": "public-domain-melody",
+        "scoreLicenseUrl": "https://mu-tech.org/scoreSSL/kaeru.pdf",
+        "sourceDataset": "https://mu-tech.org/scoreSSL/kaeru.pdf",
+        "sourceCatalogueId": null,
+        "sourceArchiveMember": null,
+        "sourceMetadataId": null,
+        "sourceWorkId": "かえるのうた",
+        "tempoBpm": 100.0,
+        "tempoChanges": [
+          {
+            "tick": 0,
+            "beat": 0.0,
+            "bpm": 100.0
+          }
+        ],
+        "timingBasis": "学習版は元MIDIの拍位置を保持し、設計テンポBPMで秒化する。原MIDIの実時間を再現する値ではない。tempoイベントは照合用に記録",
+        "restPolicy": "休符はnotesに追加せず、前後のstart差（空白）として保持",
+        "audioDurationSec": 22.230204,
+        "trimLeadSec": 0.0,
+        "tempoMode": "constant",
+        "scoreNoteEvents": 29,
+        "scoreTempoMarks": [
+          {
+            "measure": 1,
+            "bpm": 100
+          }
+        ],
+        "tempoEvidence": "初級練習用の一定テンポ。音高・拍・音価は主旋律を保持",
+        "scoreToRawReason": "目視照合した主旋律のMIDI note-on/offを全音採用、伴奏・歌詞は含めない",
+        "learningStartMeasure": null,
+        "learningStartBeat": null,
+        "learningStartSec": null,
+        "learningStartNote": null,
+        "suffixPolicy": null,
+        "extractionVersion": "music-learning-v2-source-20261011-3",
+        "extraction": {
+          "partIndex": 0,
+          "partName": "Theme melody",
+          "ticksPerBeat": 384,
+          "rawTrackIndex": 1,
+          "rawNotePairs": 29,
+          "selectedRawNotes": 29,
+          "simultaneousGroupsCollapsed": 0,
+          "rawTimingMatchCount": 29,
+          "rawTimingMaxDeltaBeats": 0,
+          "tempoEventsRaw": [
+            {
+              "tick": 0,
+              "beat": 0.0,
+              "bpm": 100.0
+            }
+          ]
+        },
+        "scoreToSelectedRawDelta": 0,
+        "scoreCopySha256": "194b9993dd3fd999411c9804bc49f20144bcf6978f1dfab499d839db9f2d3c49"
+      }
+    },
     "london": {
       "id": "london",
       "title": "ロンドンばし",

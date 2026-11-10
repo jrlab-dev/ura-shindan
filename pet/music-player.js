@@ -12,6 +12,7 @@
 
   const TRACKS = [
     { id:'twinkle', file:'twinkle.mp3',          art:'⭐', name:'きらきらぼし' },
+    { id:'kaeru', file:'kaeru.mp3', art:'🐸', name:'かえるのうた' },
     { id:'kakkou', file:'kakkou.mp3',            art:'🐦', name:'かっこう' },
     { id:'london', file:'london.mp3',            art:'🌉', name:'ロンドンばし' },
     { id:'chouchou', file:'chouchou.mp3',        art:'🦋', name:'ちょうちょう' },
