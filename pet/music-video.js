@@ -12,11 +12,11 @@
   const NAMES = ['ド','ド♯','レ','レ♯','ミ','ファ','ファ♯','ソ','ソ♯','ラ','ラ♯','シ'];
   function validClip(c) {
     return Boolean(c && typeof c.id === 'string' && c.id.length < 160 && typeof c.title === 'string' && c.title.length <= 100 &&
-      Number.isInteger(c.points) && c.points > 0 && c.points <= 100 && Number.isFinite(c.createdAt) &&
+      Number.isInteger(c.points) && c.points >= 0 && c.points <= 100 && Number.isFinite(c.createdAt) &&
       c.blob instanceof Blob && c.blob.size > 0 && c.blob.size <= MAX_BYTES && /^video\/(mp4|webm)(;|$)/.test(c.blob.type) &&
       Number.isFinite(c.durationMs) && c.durationMs > 0 && c.durationMs <= MAX_MS + 2000);
   }
-  function rank(clips) { return clips.filter(validClip).sort((a,b) => b.points - a.points || b.createdAt - a.createdAt || b.id.localeCompare(a.id)).slice(0,2); }
+  function rank(clips) { return clips.filter(c => validClip(c) && c.points > 0).sort((a,b) => b.points - a.points || b.createdAt - a.createdAt || b.id.localeCompare(a.id)).slice(0,2); }
   function pickMime(MR) { return MR && typeof MR.isTypeSupported === 'function' ? MIME_TYPES.find(type => MR.isTypeSupported(type)) || '' : ''; }
   // Streaming WebM has no duration. Add it to an unindexed, unknown-size Segment.
   // Indexed or unfamiliar files are preserved; MP4 is already finalized by the browser.
@@ -94,10 +94,11 @@
     const db = await this.open();
     try {
       return await new Promise((resolve,reject) => {
-        const tx = db.transaction(['clips','meta'],'readonly'); let clips = [], epoch = 0;
-        const rows = tx.objectStore('clips').getAll(); rows.onsuccess = () => { clips = rank(rows.result); };
+        const tx = db.transaction(['clips','meta'],'readonly'); let clips = [], epoch = 0, replayId = null;
+        const rows = tx.objectStore('clips').getAll(); rows.onsuccess = () => { clips = rows.result; };
         const meta = tx.objectStore('meta').get('epoch'); meta.onsuccess = () => { epoch = meta.result?.value || 0; };
-        tx.oncomplete = () => resolve({clips,epoch}); tx.onabort = tx.onerror = () => reject(tx.error || new Error('storage-failed'));
+        const latest = tx.objectStore('meta').get('replay'); latest.onsuccess = () => { replayId = latest.result?.value || null; };
+        tx.oncomplete = () => resolve({clips:rank(clips),replay:clips.find(c => c.id === replayId && validClip(c)) || null,epoch}); tx.onabort = tx.onerror = () => reject(tx.error || new Error('storage-failed'));
       });
     } finally { db.close(); }
   };
@@ -111,12 +112,16 @@
         let all, current, result = {kept:false,reason:'stale'};
         const decide = () => {
           if (all === undefined || current === undefined || current !== epoch) return;
-          const winners = rank([...all.filter(c => c.id !== clip.id),clip]);
+          const candidates = [...all.filter(c => c.id !== clip.id),clip];
+          const replay = candidates.filter(validClip).sort((a,b) => b.createdAt-a.createdAt || b.id.localeCompare(a.id))[0];
+          const winners = rank(candidates);
+          if (!winners.some(c => c.id === replay.id)) winners.push(replay);
           result = {kept:winners.some(c => c.id === clip.id),reason:'rank'};
           if (!result.kept) return;
           const keep = new Set(winners.map(c => c.id));
           all.forEach(c => { if (!keep.has(c.id)) store.delete(c.id); });
           store.put(clip);
+          tx.objectStore('meta').put({key:'replay',value:replay.id});
         };
         const rows = store.getAll(); rows.onsuccess = () => { all = rows.result; decide(); };
         const meta = tx.objectStore('meta').get('epoch'); meta.onsuccess = () => { current = meta.result?.value || 0; decide(); };
@@ -132,7 +137,7 @@
         const meta = tx.objectStore('meta'), request = meta.get('epoch');
         request.onsuccess = () => {
           meta.put({key:'epoch',value:(request.result?.value || 0) + 1});
-          if (id === null) tx.objectStore('clips').clear(); else tx.objectStore('clips').delete(id);
+          if (id === null) { tx.objectStore('clips').clear(); meta.delete('replay'); } else tx.objectStore('clips').delete(id);
         };
         tx.oncomplete = resolve; tx.onabort = tx.onerror = () => reject(tx.error || new Error('storage-failed'));
       });
@@ -142,6 +147,7 @@
   function drawFrame(canvas, controller, finalState) {
     const state = finalState || controller.getState(), ctx = canvas.getContext('2d');
     if (!ctx || !state.score) return;
+    ctx.setTransform(canvas.width/960,0,0,canvas.height/540,0,0);
     const layout = Rhythm.keyboardLayout(state.score), left = 24, width = 912, hitY = 354, laneHeight = 226, keyY = 368, keyHeight = 112;
     ctx.fillStyle = '#f7f3fc'; ctx.fillRect(0,0,960,540);
     const text = (value,x,y,size,color = '#4b3b62',align = 'left') => {
@@ -221,16 +227,16 @@
       if (!mimeType || !canvas.captureStream || !route?.destination?.stream || !route.destination.stream.getAudioTracks().length) throw new Error('unsupported');
       const state = controller.getState();
       if (state.score.duration / state.speed * 1000 + 5000 > MAX_MS) { this.message('この曲の長さでは録画できません。ゲームは遊べるよ'); return; }
-      canvas.width = 960; canvas.height = 540; this.draw(canvas,controller);
+      canvas.width = 640; canvas.height = 360; this.draw(canvas,controller);
       session = {controller,canvas,startedAt:this.now(),id:`${this.now()}-${++this.serial}-${Math.random().toString(36).slice(2)}`,chunks:[],bytes:0,tracks:[],cancelled:false,complete:false,done:false};
       this.sessions.add(session); this.active = session;
-      const video = canvas.captureStream(24); session.tracks.push(...video.getVideoTracks());
+      const video = canvas.captureStream(15); session.tracks.push(...video.getVideoTracks());
       // Keep silent countdown samples flowing so the encoder shares the video timeline.
       session.clock = route.context.createConstantSource();
       session.clock.offset.value = 0; session.clock.connect(route.destination); session.clock.start();
       session.tracks.push(...route.destination.stream.getAudioTracks().map(track => track.clone()));
       session.epoch = this.store.read().then(result => result.epoch).catch(() => { this.fail(session,'動画を残せません。端末の空き容量や保存設定を確認してね'); return null; });
-      session.recorder = new this.MR(this.makeStream(session.tracks), {mimeType,videoBitsPerSecond:800000,audioBitsPerSecond:96000});
+      session.recorder = new this.MR(this.makeStream(session.tracks), {mimeType,videoBitsPerSecond:450000,audioBitsPerSecond:96000});
       session.recorder.ondataavailable = event => {
         if (session.cancelled || !event.data?.size) return;
         session.bytes += event.data.size;
@@ -243,9 +249,9 @@
       session.paintTimer = this.setInterval(() => {
         if (session.cancelled || session.stopping) return;
         try { this.draw(canvas,controller,session.finalState); } catch (_) { this.fail(session,'録画できませんでした。ゲームは続けられるよ'); }
-      },1000/24);
+      },1000/15);
       session.limitTimer = this.setTimeout(() => this.fail(session,'録画の時間を超えました。ゲームは続けられるよ'),MAX_MS);
-      this.message('● 自動録画中 — 高得点の2件を残すよ',true);
+      this.message('● 録画中 — ベスト2件＋直前の演奏1件',true);
     } catch (_) {
       if (session) this.fail(session,'この端末では自動録画できません。ゲームは遊べるよ');
       else this.message('この端末では自動録画できません。ゲームは遊べるよ');
@@ -253,7 +259,6 @@
   };
   VideoRecorder.prototype.finish = function (state) {
     const s = this.active; if (!s || s.cancelled || s.complete) return;
-    if (state.points <= 0) { this.cancel(); this.message('点数がついた演奏を、上位2件まで残すよ'); return; }
     s.complete = true; s.finalState = state;
     s.metadata = {id:s.id,title:String(state.score.title || state.trackId).slice(0,100),trackId:state.trackId,points:state.points,createdAt:s.startedAt,instrument:state.instrument,speed:state.speed,edition:s.controller.edition,maxCombo:state.maxCombo};
     this.draw(s.canvas,s.controller,state);
@@ -289,7 +294,7 @@
       if (!await this.inspect(blob)) throw new Error('unplayable');
       if (s.cancelled) return;
       const result = await this.store.offer(clip,epoch);
-      if (!this.active) this.message(result.kept ? 'ベスト動画に残したよ！ あとから見て保存できるよ' : result.reason === 'stale' ? '動画の更新を取り消しました' : '今回は前のベスト動画を残したよ');
+      if (!this.active) this.message(result.kept ? 'リプレイを残したよ！ あとから見て保存できるよ' : result.reason === 'stale' ? '動画の更新を取り消しました' : '今回は前のベスト動画を残したよ');
     } catch (_) { if (!this.active) this.message('動画を保存できませんでした。前の動画は残っているよ'); }
     finally { s.chunks = []; this.sessions.delete(s); }
   };
@@ -314,7 +319,7 @@
       recorder.enabled = toggle.checked;
       try { localStorage.setItem(SETTING,recorder.enabled ? 'on' : 'off'); } catch (_) {}
       if (!recorder.enabled) recorder.cancel();
-      recorder.message(recorder.enabled ? '高得点の2件を自動更新。声やカメラは録りません' : '自動録画はオフ。前の動画は残っているよ');
+      recorder.message(recorder.enabled ? 'ベスト2件＋直前の演奏1件。下のボタンから見られるよ' : '自動録画はオフ。前の動画は残っているよ');
     });
     const urls = new Set(); let viewToken = 0;
     function releaseVideos() { list.querySelectorAll('video').forEach(v => { v.pause(); v.removeAttribute('src'); v.load(); }); urls.forEach(url => URL.revokeObjectURL(url)); urls.clear(); }
@@ -322,11 +327,12 @@
     async function refresh() {
       const token = ++viewToken; releaseVideos(); list.replaceChildren(element('p','動画を読み込んでいます…'));
       try {
-        const {clips} = await recorder.store.read(); if (token !== viewToken || !dialog.open) return;
+        const {clips,replay} = await recorder.store.read(); if (token !== viewToken || !dialog.open) return;
         list.replaceChildren();
-        if (!clips.length) list.append(element('p','まだ動画がありません。最後まで弾くと、高得点の2件をここに残すよ。','music-video-empty'));
-        clips.forEach((clip,index) => {
-          const card = element('article',null,'music-video-card'), heading = element('h3',`${index+1}位　${clip.title}　${clip.points}点`);
+        if (!clips.length && !replay) list.append(element('p','まだ動画がありません。最後まで弾くと、ベスト2件と直前の演奏1件を残すよ。','music-video-empty'));
+        const entries = [...(replay ? [{clip:replay,label:'直前の演奏をリプレイ'}] : []), ...clips.filter(c => c.id !== replay?.id).map(c => ({clip:c,label:`ベスト ${clips.indexOf(c)+1}位`}))];
+        entries.forEach(({clip,label}) => {
+          const card = element('article',null,'music-video-card'), heading = element('h3',`${label}${clip.id === replay?.id && clips.some(c => c.id === clip.id) ? `（ベスト ${clips.findIndex(c => c.id === clip.id)+1}位）` : ''}　${clip.title}　${clip.points}点`);
           const meta = element('p',`${TONES[clip.instrument] || 'ピアノ'} · ${clip.speed === .5 ? 'ゆっくり' : clip.speed === .75 ? 'すこしゆっくり' : 'ふつう'} · ${clip.edition === 'original' ? '原曲版' : 'タブレット版'} · ${new Date(clip.createdAt).toLocaleString('ja-JP')}`,'music-video-meta');
           const url = URL.createObjectURL(clip.blob); urls.add(url);
           const video = element('video'); video.controls = true; video.playsInline = true; video.preload = 'metadata'; video.src = url; video.setAttribute('aria-label',`${clip.title} ${clip.points}点の演奏動画`);
@@ -339,7 +345,7 @@
           const remove = element('button','削除','small-button'); remove.type = 'button';
           const confirm = element('div',null,'music-video-confirm'); confirm.hidden = true;
           const yes = element('button','この動画を削除','danger-button'), no = element('button','やめる','small-button'); yes.type = no.type = 'button';
-          confirm.append(element('p','この端末のベスト動画から削除しますか？'),yes,no);
+          confirm.append(element('p','この動画を削除しますか？ ベストとリプレイで共通の動画は両方から消えます。'),yes,no);
           remove.addEventListener('click',() => { confirm.hidden = false; }); no.addEventListener('click',() => { confirm.hidden = true; });
           yes.addEventListener('click',async () => { yes.disabled = true; try { await recorder.clear(clip.id); await refresh(); } catch (_) { notice.textContent = '削除できませんでした。もう一度ためしてね'; yes.disabled = false; } });
           actions.append(save,remove); card.append(heading,meta,video,actions,notice,confirm); list.append(card);

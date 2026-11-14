@@ -54,7 +54,9 @@
   function difficultyFor(id) { return DIFFICULTY_TABLE[id] || { group:'normal', reason:'音数・音域を基準に分類' }; }
   function scorePoints(total, perfect, nice) { return total > 0 ? Math.max(0, Math.min(100, Math.round((perfect + nice * .7) / total * 100))) : 0; }
   function isBlack(midi) { return PITCH_CLASSES.includes(((Math.round(midi) % 12) + 12) % 12); }
+  const layoutCache = new WeakMap();
   function keyboardLayout(score) {
+    if (score && layoutCache.has(score)) return layoutCache.get(score);
     if (!score || !score.notes || !score.notes.length) return { min:0, max:0, whiteCount:0, keys:[] };
     const minNote = Math.min(...score.notes.map(note => note.midi));
     const maxNote = Math.max(...score.notes.map(note => note.midi));
@@ -67,7 +69,8 @@
       if (isBlack(midi)) keys.push({ midi, black:true, boundary:whiteIndex });
       else { keys.push({ midi, black:false, boundary:whiteIndex }); whiteIndex += 1; }
     }
-    return { min, max, whiteCount:whiteIndex, keys };
+    const layout = { min, max, whiteCount:whiteIndex, keys };
+    layoutCache.set(score, layout); return layout;
   }
   function keyPosition(layout, midi) {
     const key = layout.keys.find(item => item.midi === midi);
@@ -141,7 +144,7 @@
     this.accompanimentPlayer = null;
     this.renderSignature = '';
   }
-  MusicRhythmController.prototype.emit = function () { if (this.onChange) this.onChange(this.getState()); this.render(); };
+  MusicRhythmController.prototype.emit = function () { if (this.onChange) this.onChange(this.getState()); if (!this.frame || !['playing','countdown'].includes(this.phase)) this.render(); };
   MusicRhythmController.prototype.audio = function () {
     if (this.ctx) return this.ctx;
     if (this.audioContext) { this.ctx = this.audioContext; return this.ctx; }
@@ -251,6 +254,7 @@
     this.effects.reset(this.generation);
     this.clearTimers(); this.clearVoices();
     if (this.accompanimentPlayer) this.accompanimentPlayer.stop();
+    this.lastFrameAt = null; this.resumePosition = null; this.resuming = false;
     this.phase = 'idle'; this.startedAt = 0; this.countdownEnd = 0; this.nextIndex = 0;
     this.judged = []; this.hits = 0; this.perfect = 0; this.nice = 0; this.missed = 0;
     this.combo = 0; this.maxCombo = 0; this.hitSequence = 0; this.lastGrade = '';
@@ -266,7 +270,8 @@
   };
   MusicRhythmController.prototype.start = async function () {
     if (!this.score || !this.score.notes.length) { this.error = '曲をえらんでね'; this.emit(); return false; }
-    this.stop(false);
+    const resume = this.phase === 'paused';
+    if (!resume) this.stop(false);
     if (!this.fitsViewport()) { this.emit(); return false; }
     if (this.beforePlay && this.beforePlay() === false) { this.error = '音がオフだよ。上の🔊でオンにしてね'; this.emit(); return false; }
     const ctx = this.audio();
@@ -276,19 +281,24 @@
     try { if (ctx.state === 'suspended' && ctx.resume) await ctx.resume(); } catch (_) { if (token === this.generation) { this.error = '音を準備できなかったよ。もう一度おしてね'; this.emit(); } return false; }
     if (token !== this.generation) return false;
     if (!this.fitsViewport()) { this.emit(); return false; }
+    this.resuming = resume;
     this.phase = 'countdown'; this.error = ''; this.message = 'じゅんび… 3'; this.countdownEnd = this.audioTime() + COUNTDOWN_MS / 1000;
-    if (this.onRunStart) this.onRunStart(this);
-    if (this.accompaniment && Accompaniment) {
+    if (!resume && this.onRunStart) this.onRunStart(this);
+    if (!resume && this.accompaniment && Accompaniment) {
       if (!this.accompanimentPlayer) this.accompanimentPlayer = new Accompaniment.Player(ctx, this.outputNode);
       this.accompanimentPlayer.setVolume(this.accompanimentVolume);
       this.accompanimentPlayer.start(this.trackId, this.countdownEnd, this.speed);
     }
+    this.lastFrameAt = this.requestFrame && this.root ? this.audioTime() : null;
     this.timer = this.setInterval(() => this.tick(), 50);
     this.countdownTimer = this.setTimeout(() => this.begin(token), COUNTDOWN_MS + 20);
     if (this.requestFrame) {
       const animate = () => {
         if (token !== this.generation || (this.phase !== 'countdown' && this.phase !== 'playing')) return;
-        this.paint();
+        if (this.checkStall()) return;
+        const now = this.audioTime();
+        if (this.lastPaintAt == null || now-this.lastPaintAt >= 1/30) { this.paint(); this.lastPaintAt=now; }
+        this.lastFrameAt = this.root ? now : null;
         this.frame = this.requestFrame(animate);
       };
       this.frame = this.requestFrame(animate);
@@ -299,12 +309,33 @@
   };
   MusicRhythmController.prototype.begin = function (token = this.generation) {
     if (token !== this.generation || this.phase !== 'countdown') return false;
-    this.phase = 'playing'; this.startedAt = this.countdownEnd; this.nextIndex = 0; this.judged = this.score.notes.map(() => 'pending'); this.message = 'けんばんが光ったら おしてね';
+    this.phase = 'playing';
+    if (this.resuming) {
+      this.startedAt = this.countdownEnd - this.resumePosition / this.speed;
+      this.resuming = false;
+      if (this.accompanimentPlayer && this.accompaniment) this.accompanimentPlayer.start(this.trackId,this.startedAt,this.speed);
+    } else { this.startedAt = this.countdownEnd; this.nextIndex = 0; this.judged = this.score.notes.map(() => 'pending'); }
+    this.message = 'けんばんが光ったら おしてね';
     this.emit(); return true;
   };
-  MusicRhythmController.prototype.dueTime = function (note) { const base = this.phase === 'countdown' ? this.countdownEnd : this.startedAt; return base + note.start / this.speed; };
+  MusicRhythmController.prototype.dueTime = function (note) { const base = this.phase === 'countdown' ? this.countdownEnd : this.startedAt; return base + (note.start - (this.phase === 'countdown' && this.resuming ? this.resumePosition : 0)) / this.speed; };
   MusicRhythmController.prototype.songTime = function (atTime = this.audioTime()) { return Math.max(0, (atTime - this.startedAt) * this.speed); };
+  MusicRhythmController.prototype.checkStall = function () {
+    if (!['playing','countdown'].includes(this.phase) || this.lastFrameAt == null || this.audioTime()-this.lastFrameAt < .5) return false;
+    const playing = this.phase === 'playing';
+    const position = playing ? this.songTime(this.lastFrameAt) : 0;
+    this.clearTimers(); this.clearVoices();
+    if (this.accompanimentPlayer) this.accompanimentPlayer.stop();
+    if (this.onRunCancel) this.onRunCancel();
+    if (playing) { this.pausedAt=this.lastFrameAt; this.resumePosition=position; this.phase='paused'; }
+    else { this.phase='idle'; this.resuming=false; }
+    this.lastFrameAt=null; this.lastHit=null; this.effects.reset(this.generation);
+    this.message=playing ? '動きが遅れたので とめたよ。「つづきから」で再開できるよ（今回は録画なし）' : '動きが遅れたので とめたよ。もう一度 はじめてね';
+    this.emit(); return true;
+  };
   MusicRhythmController.prototype.tick = function () {
+    if (this.checkStall()) return;
+    if (this.lastFrameAt != null && this.audioTime()-this.lastFrameAt > .1) return;
     if (this.accompanimentPlayer && (this.phase === 'countdown' || this.phase === 'playing')) this.accompanimentPlayer.pump();
     if (this.phase === 'countdown') {
       const left = Math.max(0, this.countdownEnd - this.audioTime());
@@ -351,6 +382,7 @@
   };
   MusicRhythmController.prototype.pressKey = async function (midi, atTime = null, inputId = null) {
     if (!this.score) return { ok:false, reason:'inactive' };
+    if (this.checkStall()) return { ok:false, reason:'paused' };
     midi = Math.round(number(midi, -1));
     if (midi < 0 || midi > 127) return { ok:false, reason:'invalid' };
     if (inputId != null && this.heldInputs.has(inputId)) return { ok:false, reason:'repeat' };
@@ -411,10 +443,17 @@
     this.emit();
   };
   MusicRhythmController.prototype.getState = function () {
-    const now = this.audioTime();
-    const scheduled = (this.phase === 'countdown' || this.phase === 'playing') && this.score ? this.score.notes.map((note, index) => ({ note, index, due:this.dueTime(note) })) : [];
-    const activeNotes = scheduled.filter(item => now >= item.due && now < item.due + item.note.duration / this.speed).map(item => Object.assign({}, item.note, { index:item.index }));
-    const visibleNotes = scheduled.filter(item => now < item.due + item.note.duration / this.speed && item.due - now <= LOOK_AHEAD_SECONDS).map(item => Object.assign({}, item.note, { index:item.index, untilMs:(item.due - now) * 1000 }));
+    const now = this.phase === 'paused' ? this.pausedAt : this.audioTime();
+    const activeNotes=[], visibleNotes=[];
+    if (['countdown','playing','paused'].includes(this.phase) && this.score) {
+      for (let index=0;index<this.score.notes.length;index++) {
+        const note=this.score.notes[index], due=this.dueTime(note);
+        if (due-now > LOOK_AHEAD_SECONDS) break;
+        if (now >= due+note.duration/this.speed) continue;
+        if (now >= due) activeNotes.push({...note,index});
+        visibleNotes.push({...note,index,untilMs:(due-now)*1000});
+      }
+    }
     const hitFeedback = this.phase === 'playing' && this.lastHit && now - this.lastHit.at < HIT_FEEDBACK_SECONDS ? this.lastHit : null;
     return { effectEvents:this.effects.snapshot(), effectsQuiet:this.effectsMode === 'quiet' || Boolean(this.motionQuery && this.motionQuery.matches), accompaniment:this.accompaniment, accompanimentVolume:this.accompanimentVolume, instrument:this.instrument, hitFeedback, trackId:this.trackId, phase:this.phase, playing:this.phase === 'playing', active:this.phase === 'countdown' || this.phase === 'playing' || this.voices.size > 0, combo:this.combo, maxCombo:this.maxCombo, lastGrade:this.lastGrade, points:scorePoints(this.score ? this.score.notes.length : 0, this.perfect, this.nice), speed:this.speed, countdownMs:this.phase === 'countdown' ? Math.max(0, Math.round((this.countdownEnd - now) * 1000)) : 0, hits:this.hits, perfect:this.perfect, nice:this.nice, missed:this.missed, total:this.score ? this.score.notes.length : 0, nextIndex:this.nextIndex, message:this.message, error:this.error, visibleNotes, activeNotes, score:this.score };
   };
@@ -516,7 +555,7 @@
     this.root.classList.toggle('is-tablet', this.edition === 'tablet');
     this.root.classList.toggle('is-width-blocked', !fits);
     const guide = this.root.querySelector('.music-rhythm-guide'); if (guide) guide.textContent = (this.score.arranged ? '画面におさまる編曲だよ。' : '') + '光ったら おしてね。長くおすと 音の余韻がつづくよ';
-    const start = this.root.querySelector('.music-rhythm-start'); if (start) { start.disabled = state.phase === 'countdown' || state.phase === 'playing'; start.textContent = state.phase === 'finished' ? '▶ もういちど' : '▶ はじめる'; }
+    const start = this.root.querySelector('.music-rhythm-start'); if (start) { start.disabled = state.phase === 'countdown' || state.phase === 'playing'; start.textContent = state.phase === 'paused' ? '▶ つづきから' : state.phase === 'finished' ? '▶ もういちど' : '▶ はじめる'; }
     if (start && !fits) start.disabled = true;
     const status = this.root.querySelector('.music-rhythm-status');
     if (status) {
@@ -590,7 +629,20 @@
       }
     }
     if (lane) lane.style.setProperty('--rhythm-lane-width', `${layout.whiteCount * 44}px`);
-    if (notes) { const laneHeight = lane && lane.clientHeight || 150; const hitY = laneHeight - 9; if (lane) lane.dataset.hitlineY = String(hitY); notes.innerHTML = state.visibleNotes.map(note => { const pos = keyPosition(layout, note.midi); const progress = Math.min(LOOK_AHEAD_SECONDS, note.untilMs / 1000); const height = Math.max(10, note.duration / this.speed / LOOK_AHEAD_SECONDS * laneHeight); const top = hitY - progress / LOOK_AHEAD_SECONDS * laneHeight - height; return `<span class="music-rhythm-note" data-index="${note.index}" data-until-ms="${Math.round(note.untilMs)}" style="left:${pos.left}%;width:${pos.width}%;top:${Math.round(top)}px;height:${Math.round(height)}px"><span class="music-rhythm-leading" aria-hidden="true"></span></span>`; }).join(''); }
+    if (notes) {
+      const laneHeight = lane && lane.clientHeight || 150, hitY=laneHeight-9;
+      if (lane) lane.dataset.hitlineY=String(hitY);
+      const keep=new Set(state.visibleNotes.map(n=>String(n.index)));
+      const nodes=new Map(Array.from(notes.children).map(n=>[n.dataset.index,n]));
+      nodes.forEach((node,id)=>{ if (!keep.has(id)) node.remove(); });
+      state.visibleNotes.forEach(note=>{
+        let node=nodes.get(String(note.index));
+        if (!node) { node=document.createElement('span'); node.className='music-rhythm-note'; node.dataset.index=String(note.index); const leading=document.createElement('span'); leading.className='music-rhythm-leading'; leading.setAttribute('aria-hidden','true'); node.appendChild(leading); notes.appendChild(node); }
+        const pos=keyPosition(layout,note.midi), height=Math.max(10,note.duration/this.speed/LOOK_AHEAD_SECONDS*laneHeight);
+        const top=hitY-Math.min(LOOK_AHEAD_SECONDS,note.untilMs/1000)/LOOK_AHEAD_SECONDS*laneHeight-height;
+        node.dataset.untilMs=String(Math.round(note.untilMs)); node.style.left=`${pos.left}%`; node.style.width=`${pos.width}%`; node.style.height=`${Math.round(height)}px`; node.style.top='0'; node.style.transform=`translateY(${Math.round(top)}px)`;
+      });
+    }
   };
   return { COUNTDOWN_MS, PERFECT_MS, NICE_MS, SPEEDS, SPEED_LABELS, DIFFICULTIES, DIFFICULTY_TABLE, scorePoints, normalizeScore, difficultyFor, keyboardLayout, keyPosition, MusicRhythmController };
 }));
