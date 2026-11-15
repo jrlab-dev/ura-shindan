@@ -321,16 +321,16 @@
       if (!recorder.enabled) recorder.cancel();
       recorder.message(recorder.enabled ? 'ベスト2件＋直前の演奏1件。下のボタンから見られるよ' : '自動録画はオフ。前の動画は残っているよ');
     });
-    const urls = new Set(); let viewToken = 0;
+    const urls = new Set(); let viewToken = 0, replayOnly = false;
     function releaseVideos() { list.querySelectorAll('video').forEach(v => { v.pause(); v.removeAttribute('src'); v.load(); }); urls.forEach(url => URL.revokeObjectURL(url)); urls.clear(); }
     function element(tag,text,className) { const node = doc.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node; }
-    async function refresh() {
+    async function refresh(autoplay = false) {
       const token = ++viewToken; releaseVideos(); list.replaceChildren(element('p','動画を読み込んでいます…'));
       try {
         const {clips,replay} = await recorder.store.read(); if (token !== viewToken || !dialog.open) return;
         list.replaceChildren();
-        if (!clips.length && !replay) list.append(element('p','まだ動画がありません。最後まで弾くと、ベスト2件と直前の演奏1件を残すよ。','music-video-empty'));
-        const entries = [...(replay ? [{clip:replay,label:'直前の演奏をリプレイ'}] : []), ...clips.filter(c => c.id !== replay?.id).map(c => ({clip:c,label:`ベスト ${clips.indexOf(c)+1}位`}))];
+        if (replayOnly ? !replay : !clips.length && !replay) list.append(element('p',replayOnly ? 'まだリプレイがありません。「自動録画」をオンにして、最後まで弾いてね。動画を準備中のときは、少し待って開き直してね。' : 'まだ動画がありません。最後まで弾くと、ベスト2件と直前の演奏1件を残すよ。','music-video-empty'));
+        const entries = [...(replay ? [{clip:replay,label:'直前の演奏をリプレイ'}] : []), ...(replayOnly ? [] : clips).filter(c => c.id !== replay?.id).map(c => ({clip:c,label:`ベスト ${clips.indexOf(c)+1}位`}))];
         entries.forEach(({clip,label}) => {
           const card = element('article',null,'music-video-card'), heading = element('h3',`${label}${clip.id === replay?.id && clips.some(c => c.id === clip.id) ? `（ベスト ${clips.findIndex(c => c.id === clip.id)+1}位）` : ''}　${clip.title}　${clip.points}点`);
           const meta = element('p',`${TONES[clip.instrument] || 'ピアノ'} · ${clip.speed === .5 ? 'ゆっくり' : clip.speed === .75 ? 'すこしゆっくり' : 'ふつう'} · ${clip.edition === 'original' ? '原曲版' : 'タブレット版'} · ${new Date(clip.createdAt).toLocaleString('ja-JP')}`,'music-video-meta');
@@ -349,10 +349,16 @@
           remove.addEventListener('click',() => { confirm.hidden = false; }); no.addEventListener('click',() => { confirm.hidden = true; });
           yes.addEventListener('click',async () => { yes.disabled = true; try { await recorder.clear(clip.id); await refresh(); } catch (_) { notice.textContent = '削除できませんでした。もう一度ためしてね'; yes.disabled = false; } });
           actions.append(save,remove); card.append(heading,meta,video,actions,notice,confirm); list.append(card);
+          if (autoplay && replayOnly) {
+            try { const pending = video.play(); if (pending && pending.catch) pending.catch(() => { if (token === viewToken && dialog.open) notice.textContent = '動画の ▶ を押すと再生できるよ'; }); }
+            catch (_) { notice.textContent = '動画の ▶ を押すと再生できるよ'; }
+          }
         });
       } catch (_) { if (token === viewToken) list.replaceChildren(element('p','動画を読み込めません。端末の保存設定を確認してね')); }
     }
-    doc.getElementById('music-videos-open').addEventListener('click',() => { options.beforeView(); dialog.showModal(); refresh(); });
+    function openVideos(onlyReplay) { options.beforeView(); replayOnly=onlyReplay; const title=doc.getElementById('music-videos-title'); if (title) title.textContent=onlyReplay ? '直前の演奏をリプレイ' : 'ベスト動画'; dialog.showModal(); refresh(onlyReplay); }
+    doc.getElementById('music-videos-open').addEventListener('click',() => openVideos(false));
+    doc.getElementById('music-replay-open')?.addEventListener('click',() => openVideos(true));
     dialog.addEventListener('close',() => { viewToken++; releaseVideos(); list.replaceChildren(); });
     doc.addEventListener('visibilitychange',() => { if (doc.hidden) { recorder.cancel(); list.querySelectorAll('video').forEach(v => v.pause()); } });
     return recorder;
