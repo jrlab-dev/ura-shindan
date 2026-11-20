@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://pokofuwa.jr-genius.jp/">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/poko.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=effects-107">
+  <link rel="stylesheet" href="styles.css?v=clock-112">
   <title>声まねするペットゲーム｜ちいさなともだち「ぽこ・ふわ」</title>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ちいさなともだち","alternateName":"ぽこ・ふわ","url":"https://pokofuwa.jr-genius.jp/","inLanguage":"ja"}</script>
 </head>
@@ -72,6 +72,25 @@
           <div class="light-glow"></div>
         </div>
       </div>
+      <a id="room-clock" class="room-clock" href="https://jrlab-dev.github.io/asobi-lab/clock/" target="_blank" rel="noopener noreferrer" aria-label="からくりどけいを ひらく（べつのタブでひらきます）" title="からくりどけいを ひらく">
+        <svg viewBox="0 0 60 76" aria-hidden="true" focusable="false">
+          <path d="M13 25h34v27q0 18-17 21-17-3-17-21z" fill="#c99368" stroke="#90684f" stroke-width="2"/>
+          <rect x="22" y="41" width="16" height="25" rx="8" fill="#785e51"/>
+          <g class="clock-pendulum">
+            <path d="M30 44v14" stroke="#ecd38c" stroke-width="2"/>
+            <circle cx="30" cy="59" r="4.5" fill="#f1cd75"/>
+          </g>
+          <path d="M6 25 30 6l24 19v12H6z" fill="#cc9a71" stroke="#90684f" stroke-width="2" stroke-linejoin="round"/>
+          <path d="m4 23 26-20 26 20" fill="none" stroke="#8d6550" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="30" cy="30" r="18" fill="#fff4d9" stroke="#a57451" stroke-width="2.5"/>
+          <path d="M30 15v3m15 12h-3M30 45v-3m-15-12h3" stroke="#a57658" stroke-width="2" stroke-linecap="round"/>
+          <g stroke="#53424a" stroke-linecap="round">
+            <path id="room-clock-hour" d="M30 30v-8" stroke-width="3"/>
+            <path id="room-clock-minute" d="M30 30V18" stroke-width="2"/>
+          </g>
+          <circle cx="30" cy="30" r="2" fill="#bc8658"/>
+        </svg>
+      </a>
       <a id="train-toybox" class="train-toybox" href="https://junior-g-rail.j-kato.chatgpt.site/play/" target="_blank" rel="noopener noreferrer" aria-label="でんしゃのおもちゃで あそぶ（べつのタブでひらきます）" title="でんしゃで あそぶ">
         <svg viewBox="0 0 180 150" aria-hidden="true" focusable="false">
           <ellipse cx="91" cy="135" rx="75" ry="10" fill="#79694e" opacity=".13"/>
@@ -321,7 +340,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="brain.js?v=101" defer></script>
-  <script src="room-background.js?v=101" defer></script>
+  <script src="room-background.js?v=clock-111" defer></script>
   <script src="pet-life.js?v=101" defer></script>
   <script src="story-engine.js?v=101" defer></script>
   <script src="week-engine.js?v=101" defer></script>
